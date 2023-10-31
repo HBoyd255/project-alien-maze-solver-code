@@ -1,25 +1,22 @@
 #ifndef MOTOR_CONTROL_H
 #define MOTOR_CONTROL_H
 
-#include <Arduino.h>
-
-typedef enum { forward,
-               right,
-               backwards,
-               left } DriveDirection;
-
-typedef enum { antiClockwise,
-               clockwise } MotorDirection;
-
 typedef enum { left_motor,
                right_motor } Motors;
 
-void setupMotorControl();
 
-void setDriveDirection(DriveDirection dir);
-void setDriveSpeed(uint8_t speed);
-void setMotorDirection(Motors motor, MotorDirection dir);
-void setMotorSpeed(Motors motor, uint8_t speed);
 
+/**
+ * @brief Initializes the motors and sets up the necessary pins and configurations.
+ * 
+ * This function should be called once during the setup phase of the program.
+ * It initializes the motors and sets up the necessary pins and configurations
+ * for the motor control to work properly.
+ */
+void setupMotors();
+
+//TODO write documentation
+//Takes a motor and a value from -100 to 100
+int setMotorSpeed(Motors motor, signed char formatted_speed);
 
 #endif  // MOTOR_CONTROL_H
