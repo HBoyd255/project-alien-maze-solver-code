@@ -20,7 +20,7 @@ void setupMotors() {
     pinMode(RIGHT_MOTOR_SPEED_PIN, OUTPUT);
 }
 
-int setMotorSpeed(Motors motor, signed char formatted_speed) {
+int setMotorSpeed(Motors motor, int formatted_speed) {
     // Make sure that the provided value is withing the range of -100 to 100,
     // return 1 if not to signify an error.
     if ((formatted_speed > 100) || (formatted_speed < -100)) {

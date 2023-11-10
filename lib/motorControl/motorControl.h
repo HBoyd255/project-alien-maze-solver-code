@@ -17,6 +17,6 @@ void setupMotors();
 
 //TODO write documentation
 //Takes a motor and a value from -100 to 100
-int setMotorSpeed(Motors motor, signed char formatted_speed);
+int setMotorSpeed(Motors motor, int formatted_speed);
 
 #endif  // MOTOR_CONTROL_H
