@@ -1,77 +1,110 @@
+/**
+ * File: pixels.cpp
+ *
+ *
+ */
 
 #include "pixels.h"
 
-#include <vector>
-
-#define LED_GROUP_COUNT 8
-#define MAX_LED_PER_GROUP 2
-#define MAX_PIXEL_COUNT LED_GROUP_COUNT * MAX_LED_PER_GROUP
-
-const std::vector<std::vector<uint8_t>> ledGroups = {
+const char ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
     {1, 2},
     {3, 4},
-    {5},
+    {5, 5},
     {6, 7},
     {8, 9},
     {10, 11},
-    {12},
+    {12, 12},
     {13, 0}};
 
-Pixels::Pixels(uint8_t data_pin)
-    : strip(MAX_PIXEL_COUNT, data_pin), data_pin(data_pin) {
+/**
+ * @brief Default constructor for the Pixels class.
+ *
+ */
+Pixels::Pixels()
+    : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, LED_STRIP_PIN) {
 }
 
+/**
+ * @brief Sets up the pixels by calling the begin function on the led_strip
+ * object from the NeoPixelBus library and then calling the show function to
+ * flush the buffer.
+ *
+ */
 void Pixels::setup() {
-    strip.Begin();
-    strip.Show();
+    led_strip.Begin();
+    led_strip.Show();
 }
 
-void Pixels::test() {
-    Serial.println("Test In");
-    this->strip.SetPixelColor(3, RgbColor(255, 0, 255));
-    this->strip.SetPixelColor(2, RgbColor(255, 0, 255));
-    this->strip.SetPixelColor(1, RgbColor(255, 0, 255));
-    this->strip.SetPixelColor(0, RgbColor(255, 0, 255));
-
-    this->show();
-}
-
+/**
+ * @brief Sets the specified group to the specified color.
+ *
+ * @param group The group to set.
+ * @param r The red value to set.
+ * @param g The green value to set.
+ * @param b The blue value to set.
+ */
 void Pixels::setGroup(uint8_t group, uint8_t r, uint8_t g, uint8_t b) {
     this->setGroup(group, r, g, b, false);
 }
 
+/**
+ * @brief Sets the specified group to the specified color.
+ *
+ * @param group The group to set.
+ * @param r The red value to set.
+ * @param g The green value to set.
+ * @param b The blue value to set.
+ * @param show Whether or not to show the pixels after setting them.
+ */
 void Pixels::setGroup(uint8_t group, uint8_t r, uint8_t g, uint8_t b, bool show) {
-    for (unsigned int i = 0; i < ledGroups[group].size(); i++) {
-        this->strip.SetPixelColor(ledGroups[group][i], RgbColor(r, g, b));
+    for (int i = 0; i < LEDS_PER_GROUP; i++) {
+        this->led_strip.SetPixelColor(ledGroups[group][i], RgbColor(r, g, b));
     }
-    if (show) {
-        this->show();
-    }
+    if (show) this->show();
 }
 
+/**
+ * @brief Sets all the pixels to the specified color.
+ *
+ * @param r The red value to set.
+ * @param g The green value to set.
+ * @param b The blue value to set.
+ */
 void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b) {
     this->setAll(r, g, b, false);
 }
+
+/**
+ * @brief Sets all the pixels to the specified color.
+ *
+ * @param r The red value to set.
+ * @param g The green value to set.
+ * @param b The blue value to set.
+ * @param show Whether or not to show the pixels after setting them.
+ */
 void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b, bool show) {
     for (uint8_t i = 0; i < LED_GROUP_COUNT; i++) {
         this->setGroup(i, r, g, b);
     }
+
     if (show) {
         this->show();
     }
 }
 
+/**
+ * @brief Clears all the pixels by setting them to black.
+ *
+ */
 void Pixels::clear() {
     this->setAll(0, 0, 0);
 }
 
-
+/**
+ * @brief Shows the pixels by calling the show function on the led_strip object
+ * from the NeoPixelBus library.
+ *
+ */
 void Pixels::show() {
-    this->strip.Show();
+    this->led_strip.Show();
 }
-
-// void setLedGroup(int groupNumber, RgbColor color) {
-//     for (unsigned int i = 0; i < ledGroups[groupNumber].size(); i++) {
-//         Serial.println(ledGroups[groupNumber][i]);
-//     }
-// }
