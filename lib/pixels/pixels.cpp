@@ -46,6 +46,7 @@ void Pixels::setGroup(uint8_t group, uint8_t r, uint8_t g, uint8_t b,
     for (int i = 0; i < LEDS_PER_GROUP; i++) {
         this->led_strip.SetPixelColor(ledGroups[group][i], RgbColor(r, g, b));
     }
+    
     if (show) this->show();
 }
 

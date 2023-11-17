@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "bumpers.h"
+#include "motors.h"
 #include "pixels.h"
 
 Pixels pixels = Pixels();
@@ -16,7 +17,11 @@ void printByte(u_int8_t byte) {
     Serial.println(byte & 1);
 }
 
-void bumperCallback() { bumperCalled = true; }
+void bumperCallback() {
+    bumperCalled = true;
+    setMotorSpeed(left_motor, 0);
+    setMotorSpeed(right_motor, 0);
+}
 
 void setup() {
     Serial.begin(115200);
@@ -25,32 +30,49 @@ void setup() {
 
     bumper.setup();
     bumper.assignCallback(bumperCallback);
+
+    setupMotors();
 }
+
+long unsigned int timetToCallback = 0;
 
 void loop() {
     if (bumperCalled) {
-        delay(10);
-
-        Serial.print("Whacko!");
-        printByte(bumper.read());
-
         bumperCalled = false;
+
+        setMotorSpeed(left_motor, -100);
+        setMotorSpeed(right_motor, -100);
+
+        timetToCallback = millis() + 1000;
+
+        // delay(10);
+
+        // Serial.print("Whacko!");
+        // printByte(bumper.read());
     }
 
-    int red = millis() >> 4 & 255;
+    if (timetToCallback < millis()) {
+        setMotorSpeed(left_motor, 100);
+        setMotorSpeed(right_motor, 100);
 
-    int green = 100;
+        timetToCallback = 0;
+    }
 
-    int blue = 0;
+    /*
+        int red = millis() >> 4 & 255;
 
-    // Serial.print(red);
-    // Serial.print(",");
-    // Serial.print(green);
-    // Serial.print(",");
-    // Serial.println(blue);
+        int green = 100;
 
-    pixels.setAll(red, green, blue, false);
-    pixels.setGroup(LEFT_LED_GROUP, 255, 0, 0);
+        int blue = 0;
 
-    pixels.show();
+        Serial.print(red);
+        Serial.print(",");
+        Serial.print(green);
+        Serial.print(",");
+        Serial.println(blue);
+
+        pixels.setAll(red, green, blue, false);
+        pixels.setGroup(LEFT_LED_GROUP, 255, 0, 0);*/
+
+    // pixels.show();
 }

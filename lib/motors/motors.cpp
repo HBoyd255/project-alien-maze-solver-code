@@ -1,15 +1,10 @@
 
-#include "motorControl.h"
+#include "motors.h"
 
 #include <Arduino.h>
 
-#define LEFT_MOTOR_DIRECTION_PIN A0
-#define RIGHT_MOTOR_DIRECTION_PIN A1
-
-#define LEFT_MOTOR_SPEED_PIN D9
-#define RIGHT_MOTOR_SPEED_PIN D10
-
-const int DIRECTION_PINS[2] = {LEFT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_DIRECTION_PIN};
+const int DIRECTION_PINS[2] = {LEFT_MOTOR_DIRECTION_PIN,
+                               RIGHT_MOTOR_DIRECTION_PIN};
 const int SPEED_PINS[2] = {LEFT_MOTOR_SPEED_PIN, RIGHT_MOTOR_SPEED_PIN};
 
 void setupMotors() {

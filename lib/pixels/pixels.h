@@ -47,7 +47,7 @@ class Pixels {
     /**
      * @brief Sets the color of a group of LEDs.
      *
-     * @param group The group number to set the color for.
+     * @param group The index of the group to set the color for.
      * @param r The red value of the color.
      * @param g The green value of the color.
      * @param b The blue value of the color.
@@ -58,7 +58,7 @@ class Pixels {
      * @brief Sets the color of a group of LEDs with the option to show the
      * changes immediately.
      *
-     * @param group The group number to set the color for.
+     * @param group The index of the group to set the color for.
      * @param r The red value of the color.
      * @param g The green value of the color.
      * @param b The blue value of the color.
