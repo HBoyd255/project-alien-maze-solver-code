@@ -3,8 +3,7 @@
 
 #include <Arduino.h>
 
-Bumper::Bumper() {
-}
+Bumper::Bumper() {}
 
 void Bumper::setup() {
     pinMode(BUMPERS_SHIFT_REG_DATA, INPUT);
@@ -13,7 +12,8 @@ void Bumper::setup() {
 }
 
 void Bumper::assignCallback(voidFuncPtr function) {
-    attachInterrupt(digitalPinToInterrupt(BUMPERS_INTERRUPT_PIN), function, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(BUMPERS_INTERRUPT_PIN), function,
+                    CHANGE);
 }
 
 uint8_t Bumper::read() {

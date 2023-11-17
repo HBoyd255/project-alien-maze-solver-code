@@ -16,9 +16,7 @@ void printByte(u_int8_t byte) {
     Serial.println(byte & 1);
 }
 
-void bumperCallback() {
-    bumperCalled = true;
-}
+void bumperCallback() { bumperCalled = true; }
 
 void setup() {
     Serial.begin(115200);
