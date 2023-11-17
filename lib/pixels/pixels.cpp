@@ -1,9 +1,3 @@
-/**
- * File: pixels.cpp
- *
- *
- */
-
 #include "pixels.h"
 
 const char ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
@@ -21,7 +15,7 @@ const char ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
  *
  */
 Pixels::Pixels()
-    : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, LED_STRIP_PIN) {
+    : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_PIN) {
 }
 
 /**

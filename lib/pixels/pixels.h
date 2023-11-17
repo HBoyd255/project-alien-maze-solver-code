@@ -9,7 +9,7 @@
 // TODO Check this is actually good practice.
 
 // The pin the LED strip is connected to.
-#define LED_STRIP_PIN A2
+#define PIXELS_PIN A2
 
 // The number of LED groups.
 #define LED_GROUP_COUNT 8
@@ -46,7 +46,7 @@ class Pixels {
 
     /**
      * @brief Sets the color of a group of LEDs.
-     * 
+     *
      * @param group The group number to set the color for.
      * @param r The red value of the color.
      * @param g The green value of the color.
@@ -55,8 +55,9 @@ class Pixels {
     void setGroup(uint8_t group, uint8_t r, uint8_t g, uint8_t b);
 
     /**
-     * @brief Sets the color of a group of LEDs and shows the changes immediately.
-     * 
+     * @brief Sets the color of a group of LEDs with the option to show the
+     * changes immediately.
+     *
      * @param group The group number to set the color for.
      * @param r The red value of the color.
      * @param g The green value of the color.
@@ -67,7 +68,7 @@ class Pixels {
 
     /**
      * @brief Sets the color of all LEDs.
-     * 
+     *
      * @param r The red value of the color.
      * @param g The green value of the color.
      * @param b The blue value of the color.
@@ -75,8 +76,9 @@ class Pixels {
     void setAll(uint8_t r, uint8_t g, uint8_t b);
 
     /**
-     * @brief Sets the color of all LEDs and shows the changes immediately.
-     * 
+     * @brief Sets the color of all LEDs with the option to show the changes
+     * immediately.
+     *
      * @param r The red value of the color.
      * @param g The green value of the color.
      * @param b The blue value of the color.
