@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <NeoPixelBus.h>
 
+# include "systemInfo.h"
+
 // The number of LED groups.
 #define LED_GROUP_COUNT 8
 
