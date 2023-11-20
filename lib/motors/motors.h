@@ -8,6 +8,7 @@
 #define RIGHT_MOTOR_SPEED_PIN D10
 
 enum Motors { left_motor, right_motor };
+enum Directions { backwards, forwards };
 
 /**
  * @brief Initializes the motors and sets up the necessary pins and
@@ -19,8 +20,12 @@ enum Motors { left_motor, right_motor };
  */
 void setupMotors();
 
+int motorSetSpeedAndDir(Motors motor, int formatted_speed, int direction);
+
 // TODO write documentation
 // Takes a motor and a value from -100 to 100
-int setMotorSpeed(Motors motor, int formatted_speed);
+int motorSetVelocity(Motors motor, int formatted_speed);
+
+int motorStop(Motors motor);
 
 #endif  // MOTORS_H

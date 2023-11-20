@@ -1,117 +1,106 @@
 #include <Arduino.h>
 
-#include "binary.h"
-#include "bumpers.h"
 #include "motors.h"
-#include "pixels.h"
 
-#define MOTOR_LEFT_A D2
-#define MOTOR_LEFT_B D4  // USONIC4
+#define LEFT_ENCODER_PIN D2
+#define RIGHT_ENCODER_PIN D3
 
-#define MOTOR_RIGHT_A D3
-#define MOTOR_RIGHT_B D5  // USONIC3
+volatile bool left_motor_updated = false;
+void updateLeftMotor() { left_motor_updated = true; }
 
-Pixels pixels = Pixels();
-Bumper bumper = Bumper();
+volatile bool right_motor_updated = false;
+void updateRightMotor() { right_motor_updated = true; }
 
-volatile bool bumperCalled = false;
-long unsigned int timetToCallback = 0;
-
-volatile int target_steps_left = 0;
-volatile int target_steps_right = 0;
-volatile int steps_left = 0;
-volatile int steps_right = 0;
-
-void countStepsLeft() {
-    if (digitalRead(MOTOR_LEFT_A) == digitalRead(MOTOR_LEFT_B)) {
-        steps_left++;
-    } else {
-        steps_left--;
-    }
-}
-
-void countStepsRight() {
-    if (digitalRead(MOTOR_RIGHT_A) == digitalRead(MOTOR_RIGHT_B)) {
-        steps_right--;
-        // Inverted, because we are tracking the steps taken forwards
-
-    } else {
-        steps_right++;
-    }
-}
-
-void bumperCallback() {
-    bumperCalled = true;
-    setMotorSpeed(left_motor, 0);
-    setMotorSpeed(right_motor, 0);
-
-    target_steps_right = steps_right + 100;
-    target_steps_left = steps_left + 100;
+void updateMotors() {
+    left_motor_updated = true;
+    right_motor_updated = true;
 }
 
 void setup() {
     Serial.begin(115200);
 
-    pixels.setup();
+    pinMode(LEFT_ENCODER_PIN, INPUT);
+    pinMode(RIGHT_ENCODER_PIN, INPUT);
 
-    bumper.setup();
-    bumper.assignCallback(bumperCallback);
-
-    attachInterrupt(digitalPinToInterrupt(MOTOR_LEFT_A), countStepsLeft,
+    attachInterrupt(digitalPinToInterrupt(LEFT_ENCODER_PIN), updateLeftMotor,
                     CHANGE);
-    attachInterrupt(digitalPinToInterrupt(MOTOR_RIGHT_A), countStepsRight,
+    attachInterrupt(digitalPinToInterrupt(RIGHT_ENCODER_PIN), updateRightMotor,
                     CHANGE);
 
     setupMotors();
 }
 
+void motorTakeSteps(Motors motor, volatile bool *motors_enabled,
+                    volatile int *steps_remaining) {
+    // If the motor is enabled and there are still steps remaining, keep
+    // stepping.
+    if (*motors_enabled && *steps_remaining) {
+        // reduce left_steps_remaining by 1, or increase it by 1 if its
+        // negative, either way, take one step closer to 0.
+        *steps_remaining += (*steps_remaining > 0) ? -1 : 1;
+
+        // If the steps remaining is less than 5, set it to 0, this is to
+        // prevent the motor from stuttering when it gets close to the target
+        // position.
+        if (abs(*steps_remaining) < 5) {
+            *steps_remaining = 0;
+        }
+
+        // Calculate how fast to set the motor, the speed is proportional to
+        // the number of steps remaining, and is capped at 100.
+        int velocity = constrain(*steps_remaining, -100, 100);
+
+        // Set the motor to the calculated velocity.
+        motorSetVelocity(motor, velocity);
+    }
+    // if the motor is disabled, or there are no steps remaining, stop the
+    // motor.
+    else {
+        motorStop(motor);
+    }
+}
+
 void loop() {
-    if (bumperCalled) {
-        bumperCalled = false;
+    static volatile bool motors_enabled = true;
 
-        //         setMotorSpeed(left_motor, -100);
-        //         setMotorSpeed(right_motor, -100);
-        //
-        //         timetToCallback = millis() + 1000;
-        //
-        //         delay(10);
-        //
-        //         Serial.print("Whacko!");
-        //         printByte(bumper.read());
+    static volatile int left_steps_remaining = 0;
+    static volatile int right_steps_remaining = 0;
+
+    if (left_motor_updated) {
+        motorTakeSteps(left_motor, &motors_enabled, &left_steps_remaining);
+        left_motor_updated = false;
+    }
+    if (right_motor_updated) {
+        motorTakeSteps(right_motor, &motors_enabled, &right_steps_remaining);
+        right_motor_updated = false;
     }
 
-    if (timetToCallback < millis()) {
-        setMotorSpeed(left_motor, 100);
-        setMotorSpeed(right_motor, 100);
+    if (Serial.available()) {
+        char input = Serial.read();
+        switch (input) {
+            case 'w':
+                left_steps_remaining = 100;
+                right_steps_remaining = 100;
+                updateMotors();
 
-        timetToCallback = 0;
+                break;
+            case 'a':
+                left_steps_remaining = -200;
+                right_steps_remaining = 200;
+                updateMotors();
+                break;
+            case 's':
+                left_steps_remaining = -100;
+                right_steps_remaining = -100;
+                updateMotors();
+                break;
+            case 'd':
+                left_steps_remaining = 200;
+                right_steps_remaining = -200;
+                updateMotors();
+                break;
+            default:
+                break;
+        }
     }
-
-    Serial.print(steps_left);
-    Serial.print(",");
-    Serial.println(steps_right);
-
-    int left_diff = constrain(target_steps_left - steps_left, -100, 100);
-    int right_diff = constrain(target_steps_right - steps_right, -100, 100);
-
-    // setMotorSpeed(left_motor, left_diff);
-    // setMotorSpeed(right_motor, right_diff);
-
-    /*
-        int red = millis() >> 4 & 255;
-
-        int green = 100;
-
-        int blue = 0;
-
-        Serial.print(red);
-        Serial.print(",");
-        Serial.print(green);
-        Serial.print(",");
-        Serial.println(blue);
-
-        pixels.setAll(red, green, blue, false);
-        pixels.setGroup(LEFT_LED_GROUP, 255, 0, 0);*/
-
-    // pixels.show();
 }
