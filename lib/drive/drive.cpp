@@ -11,17 +11,25 @@ Drive::Drive()
 void Drive::setup() {
     this->leftMotor.setup();
     this->rightMotor.setup();
-
-    this->leftMotor.connectISR([]() {leftMotor.ISR(); });
-    this->rightMotor.connectISR([]() {rightMotor.ISR(); });
 }
 
-void Drive::move(int steps) {
+void Drive::checkEncoders() {
+    this->leftMotor.checkEncoder();
+    this->rightMotor.checkEncoder();
+}
+
+void Drive::move(int steps_CM) {
+    this->leftMotor.setSteps(steps_CM);
+    this->rightMotor.setSteps(steps_CM);
+}
+void Drive::rotate(int angle) {
+    int steps = angle * 200 / 90;
+
     this->leftMotor.setSteps(steps);
-    this->rightMotor.setSteps(steps);
+    this->rightMotor.setSteps(-steps);
 }
 
-void Drive::checkISR() {
-    this->leftMotor.checkISR();
-    this->rightMotor.checkISR();
+bool Drive::stepsRemaining() {
+    return this->leftMotor.stepsRemaining() ||
+           this->rightMotor.stepsRemaining();
 }

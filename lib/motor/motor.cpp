@@ -19,6 +19,8 @@ void Motor::setup() {
     pinMode(this->encoder_pin, INPUT);
 }
 
+// TODO Add the bit that makes it not whine when given small values
+
 void Motor::setSpeedAndDir(int formatted_speed, bool direction) {
     // Make sure that the provided value is within the range of 0 to 100,
     // return 1 if not to signify an error.
@@ -80,6 +82,11 @@ void Motor::takeStep() {
         // the number of steps remaining, and is capped at 100.
         int velocity = constrain(this->steps_remaining, -100, 100);
 
+        if (FAST_MODE) {
+            velocity = 10 * velocity;
+            velocity = constrain(velocity, -100, 100);
+        }
+
         // Set the motor to the calculated velocity.
         this->setVelocity(velocity);
     }
@@ -101,3 +108,5 @@ void Motor::checkEncoder() {
     }
     this->old_encoder_state = digitalRead(this->encoder_pin);
 }
+
+bool Motor::stepsRemaining() { return (bool)this->steps_remaining; }

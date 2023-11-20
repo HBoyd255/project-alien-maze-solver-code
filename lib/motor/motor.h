@@ -5,6 +5,8 @@
 
 #include "systemInfo.h"
 
+#define FAST_MODE true
+
 class Motor {
    public:
     Motor(int direction_pin, int speed_pin, int encoder_pin,
@@ -21,6 +23,8 @@ class Motor {
     void setSteps(int steps);
 
     void checkEncoder();
+
+    bool stepsRemaining();
 
    private:
     int direction_pin;

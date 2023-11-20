@@ -10,9 +10,14 @@ class Drive {
     Drive();
     void setup();
 
+    void checkEncoders();
+
     void move(int steps);
 
-    void checkISR();
+    void rotate(int angle);
+
+    bool stepsRemaining();
+
 
    private:
     Motor leftMotor;

@@ -1,46 +1,58 @@
 #include <Arduino.h>
 
-#include "motor.h"
+#include "drive.h"
+#include "pixels.h"
 #include "systemInfo.h"
 
-Motor leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
-                LEFT_MOTOR_ENCODER_PIN, true);
-// TODO look into deconstructor and if they are needed here.
-Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
-                 RIGHT_MOTOR_ENCODER_PIN, false);
+Drive drive;
+Pixels pixels;
 
 void setup() {
     Serial.begin(115200);
 
-    leftMotor.setup();
-    rightMotor.setup();
+    drive.setup();
+    pixels.setup();
+
+    pixels.clear();
 }
 
+int waituntill = 1000;
+
+int counter = 0;
+
 void loop() {
-    leftMotor.checkEncoder();
-    rightMotor.checkEncoder();
+    drive.checkEncoders();
+
+    if (!drive.stepsRemaining()) {
+
+        counter++;
+        counter &= 7;
+
+        pixels.clear();
+        pixels.setGroup(counter, 255, 0, 0, true);
+
+        drive.rotate(-45);
+
+    }
+
+
 
     
-
 
     if (Serial.available()) {
         char input = Serial.read();
         switch (input) {
             case 'w':
-                leftMotor.setSteps(100);
-                rightMotor.setSteps(100);
+                drive.move(100);
                 break;
             case 'a':
-                leftMotor.setSteps(-200);
-                rightMotor.setSteps(200);
+                drive.rotate(-90);
                 break;
             case 's':
-                leftMotor.setSteps(-100);
-                rightMotor.setSteps(-100);
+                drive.move(-100);
                 break;
             case 'd':
-                leftMotor.setSteps(200);
-                rightMotor.setSteps(-200);
+                drive.rotate(90);
                 break;
             default:
                 break;
