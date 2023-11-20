@@ -7,7 +7,8 @@ const char ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
  * @brief Default constructor for the Pixels class.
  *
  */
-Pixels::Pixels() : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) {}
+Pixels::Pixels()
+    : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) {}
 
 /**
  * @brief Sets up the pixels by calling the begin function on the led_strip
@@ -18,6 +19,18 @@ Pixels::Pixels() : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) 
 void Pixels::setup() {
     led_strip.Begin();
     led_strip.Show();
+}
+
+void Pixels::setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b) {
+    this->setPixel(pixel, r, g, b, false);
+}
+void Pixels::setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b,
+                      bool show) {
+    this->led_strip.SetPixelColor(pixel, RgbColor(r, g, b));
+
+    if (show) {
+        this->show();
+    }
 }
 
 /**
@@ -46,7 +59,7 @@ void Pixels::setGroup(uint8_t group, uint8_t r, uint8_t g, uint8_t b,
     for (int i = 0; i < LEDS_PER_GROUP; i++) {
         this->led_strip.SetPixelColor(ledGroups[group][i], RgbColor(r, g, b));
     }
-    
+
     if (show) this->show();
 }
 
@@ -80,14 +93,27 @@ void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b, bool show) {
 }
 
 /**
+ * @brief Clears all the pixels by setting them to black with the option to show
+ * the changes immediately.
+ *
+ * @param show - Whether to show the cleared pixels or not.
+ */
+void Pixels::clear(bool show) {
+    this->setAll(0, 0, 0);
+    if (show) {
+        this->show();
+    }
+}
+
+/**
  * @brief Clears all the pixels by setting them to black.
  *
  */
-void Pixels::clear() { this->setAll(0, 0, 0); }
+void Pixels::clear() { this->clear(false); }
 
 /**
- * @brief Shows the pixels by calling the show function on the led_strip object
- * from the NeoPixelBus library.
+ * @brief Shows the pixels by calling the show function on the led_strip
+ * object from the NeoPixelBus library.
  *
  */
 void Pixels::show() { this->led_strip.Show(); }

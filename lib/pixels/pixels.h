@@ -1,10 +1,19 @@
+
+/**
+ * @file pixels.h
+ * @brief Header file for the Pixels class.
+ *
+ * This file contains the declaration of the Pixels class, which is responsible
+ * for controlling an LED strip.
+ */
+
 #ifndef PIXELS_H
 #define PIXELS_H
 
 #include <Arduino.h>
 #include <NeoPixelBus.h>
 
-# include "systemInfo.h"
+#include "systemInfo.h"
 
 // The number of LED groups.
 #define LED_GROUP_COUNT 8
@@ -25,7 +34,12 @@ enum LEDGroups {
 };
 
 /**
- * @brief Class for controlling NeoPixel LED strips.
+ * @class Pixels
+ * @brief Class for controlling an LED strip.
+ *
+ * The Pixels class provides methods for setting the color of individual LEDs,
+ * groups of LEDs, and all LEDs on the strip. It also provides methods for
+ * clearing the strip and showing the changes made.
  */
 class Pixels {
    public:
@@ -38,6 +52,28 @@ class Pixels {
      * @brief Initializes the LED strip.
      */
     void setup();
+
+    /**
+     * @brief Sets the color of an individual LED.
+     *
+     * @param pixel The index of the LED to set the color for.
+     * @param r The red value of the color.
+     * @param g The green value of the color.
+     * @param b The blue value of the color.
+     */
+    void setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b);
+
+    /**
+     * @brief Sets the color of an individual LED, with the option to show the
+     * changes immediately.
+     *
+     * @param pixel The index of the LED to set the color for.
+     * @param r The red value of the color.
+     * @param g The green value of the color.
+     * @param b The blue value of the color.
+     * @param show Whether to show the changes immediately.
+     */
+    void setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b, bool show);
 
     /**
      * @brief Sets the color of a group of LEDs.
@@ -83,8 +119,16 @@ class Pixels {
 
     /**
      * @brief Clears the LED strip.
+     *
      */
     void clear();
+
+    /**
+     * @brief Clears the LED strip.
+     *
+     * @param show Whether to show the changes immediately.
+     */
+    void clear(bool show);
 
     /**
      * @brief Shows the changes made to the LED strip.
