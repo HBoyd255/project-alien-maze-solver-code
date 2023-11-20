@@ -1,7 +1,7 @@
 
 #include "motors.h"
 
-motor::motor(int direction_pin, int speed_pin, int encoder_pin,
+Motor::Motor(int direction_pin, int speed_pin, int encoder_pin,
              bool rotation_direction_inverted) {
     this->direction_pin = direction_pin;
     this->speed_pin = speed_pin;
@@ -11,15 +11,21 @@ motor::motor(int direction_pin, int speed_pin, int encoder_pin,
 
     this->enabled = true;
     this->steps_remaining = 0;
+
+    this->isr_flag = false;
 }
 
-void motor::setup() {
+void Motor::setup() {
     pinMode(this->direction_pin, OUTPUT);
     pinMode(this->speed_pin, OUTPUT);
     pinMode(this->encoder_pin, INPUT);
 }
 
-void motor::setSpeedAndDir(int formatted_speed, bool direction) {
+void Motor::connectISR(voidFuncPtr function) {
+    attachInterrupt(digitalPinToInterrupt(this->encoder_pin), function, CHANGE);
+}
+
+void Motor::setSpeedAndDir(int formatted_speed, bool direction) {
     // Make sure that the provided value is within the range of 0 to 100,
     // return 1 if not to signify an error.
     if ((formatted_speed > 100) || (formatted_speed < 0)) {
@@ -44,7 +50,7 @@ void motor::setSpeedAndDir(int formatted_speed, bool direction) {
     analogWrite(this->speed_pin, scaled_speed);
 }
 
-void motor::setVelocity(int formatted_velocity) {
+void Motor::setVelocity(int formatted_velocity) {
     // Make sure that the provided value is withing the range of -100 to
     // 100, return 1 if not to signify an error.
     if ((formatted_velocity > 100) || (formatted_velocity < -100)) {
@@ -59,9 +65,9 @@ void motor::setVelocity(int formatted_velocity) {
     this->setSpeedAndDir(abs(formatted_velocity), direction);
 }
 
-void motor::stop() {}
+void Motor::stop() {}
 
-void motor::takeStep() {
+void Motor::takeStep() {
     // If the motor is enabled and there are still steps remaining, keep
     // stepping.
     if (this->enabled && this->steps_remaining) {
@@ -88,4 +94,18 @@ void motor::takeStep() {
     else {
         this->stop();
     }
+}
+
+void Motor::ISR() { this->isr_flag = true; }
+
+void Motor::checkISR() {
+    if (this->isr_flag) {
+        this->takeStep();
+        this->isr_flag = false;
+    }
+}
+
+void Motor::setSteps(int steps) {
+    this->steps_remaining = steps;
+    this->ISR();
 }

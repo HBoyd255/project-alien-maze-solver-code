@@ -3,34 +3,36 @@
 
 #include <Arduino.h>
 
-#define LEFT_MOTOR_DIRECTION_PIN A0
-#define RIGHT_MOTOR_DIRECTION_PIN A1
-
-#define LEFT_MOTOR_SPEED_PIN D9
-#define RIGHT_MOTOR_SPEED_PIN D10
-
-#define LEFT_ENCODER_PIN D2
-#define RIGHT_ENCODER_PIN D3
+#include "systemInfo.h"
 
 enum Directions { backwards, forwards };
 
-class motor {
+class Motor {
    public:
-    motor(int direction_pin, int speed_pin, int encoder_pin,
+    Motor(int direction_pin, int speed_pin, int encoder_pin,
           bool rotation_direction_inverted);
     void setup();
+    void connectISR(voidFuncPtr function);
+
     void setSpeedAndDir(int formatted_speed, bool direction);
     void setVelocity(int formatted_velocity);
     void stop();
+
     void takeStep();
 
-    volatile int steps_remaining;
+    void setSteps(int steps);
+
+    void ISR();
+    void checkISR();
+
 
    private:
+    bool isr_flag;
     int direction_pin;
     int speed_pin;
     int encoder_pin;
 
+    volatile int steps_remaining;
     bool rotation_direction_inverted;
 
     volatile bool enabled;
