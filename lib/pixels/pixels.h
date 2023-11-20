@@ -4,13 +4,6 @@
 #include <Arduino.h>
 #include <NeoPixelBus.h>
 
-// I was going to make make the pin configurable, but I don't think its
-// necessary, The way I see it, If its Hard-wired, it may as well be hard-coded.
-// TODO Check this is actually good practice.
-
-// The pin the LED strip is connected to.
-#define PIXELS_PIN A2
-
 // The number of LED groups.
 #define LED_GROUP_COUNT 8
 

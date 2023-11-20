@@ -7,7 +7,7 @@ const char ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
  * @brief Default constructor for the Pixels class.
  *
  */
-Pixels::Pixels() : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_PIN) {}
+Pixels::Pixels() : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) {}
 
 /**
  * @brief Sets up the pixels by calling the begin function on the led_strip

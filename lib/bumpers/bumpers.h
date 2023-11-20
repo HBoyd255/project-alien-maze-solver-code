@@ -3,11 +3,7 @@
 
 #include <Arduino.h>
 
-#define BUMPERS_SHIFT_REG_DATA A7
-#define BUMPERS_SHIFT_REG_LOAD A6
-#define BUMPERS_SHIFT_REG_CLOCK A3
-
-#define BUMPERS_INTERRUPT_PIN D8
+# include "systemInfo.h"
 
 class Bumper {
    public:
