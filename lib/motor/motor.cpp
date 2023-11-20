@@ -1,5 +1,5 @@
 
-#include "motors.h"
+#include "motor.h"
 
 Motor::Motor(int direction_pin, int speed_pin, int encoder_pin,
              bool rotation_direction_inverted) {
@@ -11,18 +11,12 @@ Motor::Motor(int direction_pin, int speed_pin, int encoder_pin,
 
     this->enabled = true;
     this->steps_remaining = 0;
-
-    this->isr_flag = false;
 }
 
 void Motor::setup() {
     pinMode(this->direction_pin, OUTPUT);
     pinMode(this->speed_pin, OUTPUT);
     pinMode(this->encoder_pin, INPUT);
-}
-
-void Motor::connectISR(voidFuncPtr function) {
-    attachInterrupt(digitalPinToInterrupt(this->encoder_pin), function, CHANGE);
 }
 
 void Motor::setSpeedAndDir(int formatted_speed, bool direction) {
@@ -96,16 +90,14 @@ void Motor::takeStep() {
     }
 }
 
-void Motor::ISR() { this->isr_flag = true; }
-
-void Motor::checkISR() {
-    if (this->isr_flag) {
-        this->takeStep();
-        this->isr_flag = false;
-    }
-}
-
 void Motor::setSteps(int steps) {
     this->steps_remaining = steps;
-    this->ISR();
+    this->takeStep();
+}
+
+void Motor::checkEncoder() {
+    if (digitalRead(this->encoder_pin) != this->old_encoder_state) {
+        this->takeStep();
+    }
+    this->old_encoder_state = digitalRead(this->encoder_pin);
 }

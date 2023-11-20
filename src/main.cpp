@@ -1,26 +1,27 @@
 #include <Arduino.h>
 
-#include "motors.h"
+#include "motor.h"
+#include "systemInfo.h"
 
 Motor leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
-                LEFT_ENCODER_PIN, true);
+                LEFT_MOTOR_ENCODER_PIN, true);
 // TODO look into deconstructor and if they are needed here.
 Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
-                 RIGHT_ENCODER_PIN, false);
+                 RIGHT_MOTOR_ENCODER_PIN, false);
 
 void setup() {
     Serial.begin(115200);
 
     leftMotor.setup();
     rightMotor.setup();
-
-    leftMotor.connectISR([]() { leftMotor.ISR(); });
-    rightMotor.connectISR([]() { rightMotor.ISR(); });
 }
 
 void loop() {
-    leftMotor.checkISR();
-    rightMotor.checkISR();
+    leftMotor.checkEncoder();
+    rightMotor.checkEncoder();
+
+    
+
 
     if (Serial.available()) {
         char input = Serial.read();
