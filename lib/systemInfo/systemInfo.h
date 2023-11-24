@@ -21,8 +21,8 @@
 // Hardware definitions
 
 // LEDs
-//  The pin that D1 of the LED strip is connected to.
-#define PIXELS_DATA_PIN A2 //GPIO 4
+// The pin that D1 of the LED strip is connected to.
+#define PIXELS_DATA_PIN A2  // GPIO 4
 
 // Motors
 // Left
@@ -37,18 +37,16 @@
 
 // Bumpers
 // Shift register
-#define BUMPERS_SHIFT_REG_DATA A7 //GPIO 1
-#define BUMPERS_SHIFT_REG_LOAD A6 //GPIO 2
-#define BUMPERS_SHIFT_REG_CLOCK A3 //GPIO 3
+#define BUMPERS_SHIFT_REG_DATA A7   // GPIO 1
+#define BUMPERS_SHIFT_REG_LOAD A6   // GPIO 2
+#define BUMPERS_SHIFT_REG_CLOCK A3  // GPIO 3
 // Interrupt pin
 #define BUMPERS_INTERRUPT_PIN D8
 
-
 // USONIC
-// TRIG - USONIC 1 TRIG
-// ECHO - USONIC 2 TRIG 
-
-
+#define ULTRASONIC_TRIGGER D7  // USONIC1
+#define ULTRASONIC_ECHO D6     // USONIC2
+#define ULTRASONIC_TIMEOUT 2000UL
 
 
 #endif  // SYSTEM_INFO_H

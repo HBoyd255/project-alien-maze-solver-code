@@ -43,10 +43,11 @@ enum LEDGroups {
  */
 class Pixels {
    public:
+    // TODO Make the pins configurable, then use the consts in the initializer.
     /**
      * @brief Constructor for Pixels class.
      */
-    Pixels();
+    Pixels(): led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) {};
 
     /**
      * @brief Initializes the LED strip.

@@ -2,11 +2,7 @@
 
 #include "drive.h"
 
-Drive::Drive()
-    : leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
-                LEFT_MOTOR_ENCODER_PIN, true),
-      rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
-                 RIGHT_MOTOR_ENCODER_PIN, false) {}
+// TODO Document all the drive stuff
 
 void Drive::setup() {
     this->leftMotor.setup();

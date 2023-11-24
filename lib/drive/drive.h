@@ -7,7 +7,11 @@
 
 class Drive {
    public:
-    Drive();
+    Drive()
+        : leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
+                    LEFT_MOTOR_ENCODER_PIN, true),
+          rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
+                     RIGHT_MOTOR_ENCODER_PIN, false){};
     void setup();
 
     void checkEncoders();
@@ -17,7 +21,6 @@ class Drive {
     void rotate(int angle);
 
     bool stepsRemaining();
-
 
    private:
     Motor leftMotor;

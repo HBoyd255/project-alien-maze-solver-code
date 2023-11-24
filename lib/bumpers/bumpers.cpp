@@ -3,8 +3,6 @@
 
 #include <Arduino.h>
 
-Bumper::Bumper() {}
-
 void Bumper::setup() {
     pinMode(BUMPERS_SHIFT_REG_DATA, INPUT);
     pinMode(BUMPERS_SHIFT_REG_LOAD, OUTPUT);

@@ -3,11 +3,11 @@
 
 #include <Arduino.h>
 
-# include "systemInfo.h"
+#include "systemInfo.h"
 
 class Bumper {
    public:
-    Bumper();
+    Bumper(){};
     void setup();
     void assignCallback(voidFuncPtr function);
     byte read();

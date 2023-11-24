@@ -4,10 +4,12 @@
 #include "drive.h"
 #include "pixels.h"
 #include "systemInfo.h"
+#include "ultrasonic.h"
 
 Drive drive;
 Pixels pixels;
 Bumper bumper;
+Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, 20000UL);
 
 bool bumperUpdated = false;
 
@@ -15,62 +17,35 @@ void bumperCallback() { bumperUpdated = true; }
 
 void setup() {
     Serial.begin(115200);
-
-    drive.setup();
+    //
+    // drive.setup();
     pixels.setup();
-    bumper.setup();
 
-    bumper.assignCallback(bumperCallback);
+    //     bumper.setup();
+    //
+    //     bumper.assignCallback(bumperCallback);
+    //
+    //     pixels.clear();
 
-    pixels.clear();
+    ultrasonic.setup();
 }
 
-int waituntill = 1000;
-
-int counter = 0;
-
 void loop() {
-    // if (bumperUpdated) {
-    //     bumperUpdated = false;
-    //     Serial.println("Bumper pressed");
-    //     Serial.println(bumper.read());
-    // }
+    // drive.checkEncoders();
 
-    //     drive.checkEncoders();
-    // 
-    //     if (!drive.stepsRemaining()) {
-    // 
-    //         counter++;
-    //         counter &= 7;
-    // 
-    //         pixels.clear();
-    //         pixels.setGroup(counter, 255, 0, 0, true);
-    // 
-    //         drive.rotate(-45);
-    // 
-    //     }
-    // 
-    // 
-    // 
-    // 
-    // 
-    //     if (Serial.available()) {
-    //         char input = Serial.read();
-    //         switch (input) {
-    //             case 'w':
-    //                 drive.move(100);
-    //                 break;
-    //             case 'a':
-    //                 drive.rotate(-90);
-    //                 break;
-    //             case 's':
-    //                 drive.move(-100);
-    //                 break;
-    //             case 'd':
-    //                 drive.rotate(90);
-    //                 break;
-    //             default:
-    //                 break;
-    //         }
-    //     }
+    unsigned int distance = ultrasonic.read();
+
+    Serial.println(distance);
+
+//     if (distance < 1000) {
+//         int diff = distance - 200;
+// 
+// 
+//         drive.move(diff);
+//     }
+//     else
+//     {
+//         drive.move(0);
+//     }
+    
 }

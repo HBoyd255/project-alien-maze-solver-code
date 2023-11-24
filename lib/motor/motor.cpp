@@ -61,6 +61,7 @@ void Motor::setVelocity(int formatted_velocity) {
     this->setSpeedAndDir(abs(formatted_velocity), direction);
 }
 
+//TODO FIX
 void Motor::stop() {}
 
 void Motor::takeStep() {
