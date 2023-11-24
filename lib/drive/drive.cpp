@@ -25,7 +25,12 @@ void Drive::rotate(int angle) {
     this->rightMotor.setSteps(-steps);
 }
 
-bool Drive::stepsRemaining() {
-    return this->leftMotor.stepsRemaining() ||
-           this->rightMotor.stepsRemaining();
+bool Drive::hasStepsRemaining() {
+    return this->leftMotor.hasStepsRemaining() ||
+           this->rightMotor.hasStepsRemaining();
+}
+
+void Drive::setVelocity(int velocity) {
+    this->leftMotor.setVelocity(velocity);
+    this->rightMotor.setVelocity(velocity);
 }

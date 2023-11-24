@@ -17,35 +17,26 @@ void bumperCallback() { bumperUpdated = true; }
 
 void setup() {
     Serial.begin(115200);
-    //
-    // drive.setup();
+    drive.setup();
     pixels.setup();
-
-    //     bumper.setup();
-    //
-    //     bumper.assignCallback(bumperCallback);
-    //
-    //     pixels.clear();
 
     ultrasonic.setup();
 }
 
 void loop() {
-    // drive.checkEncoders();
 
     unsigned int distance = ultrasonic.read();
 
-    Serial.println(distance);
+    if (distance < 600) {
+        int diff = distance - 200;
 
-//     if (distance < 1000) {
-//         int diff = distance - 200;
-// 
-// 
-//         drive.move(diff);
-//     }
-//     else
-//     {
-//         drive.move(0);
-//     }
-    
+        Serial.println(diff);
+
+        drive.setVelocity(constrain(diff, -100, 100));
+
+    } else {
+        drive.setVelocity(0);
+    }
+
+    delay(10);
 }

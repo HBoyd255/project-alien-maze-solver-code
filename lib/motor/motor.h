@@ -24,7 +24,7 @@ class Motor {
 
     void checkEncoder();
 
-    bool stepsRemaining();
+    bool hasStepsRemaining();
 
    private:
     int direction_pin;

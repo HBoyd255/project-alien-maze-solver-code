@@ -29,6 +29,12 @@ void Motor::setSpeedAndDir(int formatted_speed, bool direction) {
         return;
     }
 
+    // If the speed is less than 5, set it to 0, this is to prevent the motor
+    // from just whining when it gets a small value.
+    if (formatted_speed < 10) {
+        formatted_speed = 0;
+    }
+
     // scale the speed from a directional value from -100 to 100, to a
     // directionless value from 0 to 255, ready to be fed into the pwm signal.
     int scaled_speed = abs(formatted_speed) * 2.55;
@@ -61,7 +67,7 @@ void Motor::setVelocity(int formatted_velocity) {
     this->setSpeedAndDir(abs(formatted_velocity), direction);
 }
 
-//TODO FIX
+// TODO FIX
 void Motor::stop() {}
 
 void Motor::takeStep() {
@@ -110,4 +116,4 @@ void Motor::checkEncoder() {
     this->old_encoder_state = digitalRead(this->encoder_pin);
 }
 
-bool Motor::stepsRemaining() { return (bool)this->steps_remaining; }
+bool Motor::hasStepsRemaining() { return (bool)this->steps_remaining; }

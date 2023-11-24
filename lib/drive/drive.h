@@ -20,7 +20,9 @@ class Drive {
 
     void rotate(int angle);
 
-    bool stepsRemaining();
+    bool hasStepsRemaining();
+
+    void setVelocity(int velocity);
 
    private:
     Motor leftMotor;
