@@ -43,10 +43,13 @@
 // Interrupt pin
 #define BUMPERS_INTERRUPT_PIN D8
 
-// USONIC
+// Ultrasonic
 #define ULTRASONIC_TRIGGER D7  // USONIC1
 #define ULTRASONIC_ECHO D6     // USONIC2
 #define ULTRASONIC_TIMEOUT 2000UL
 
+// Infrared
+#define LEFT_INFRARED_INDEX 0
+#define RIGHT_INFRARED_INDEX 1
 
 #endif  // SYSTEM_INFO_H

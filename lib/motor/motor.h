@@ -5,16 +5,14 @@
 
 #include "systemInfo.h"
 
-#define FAST_MODE true
-
 class Motor {
    public:
-    Motor(int direction_pin, int speed_pin, int encoder_pin,
-          bool rotation_direction_inverted);
+    Motor(int directionPin, int speedPin, int encoderPin,
+          bool rotationInverted);
     void setup();
 
-    void setSpeedAndDir(int formatted_speed, bool direction);
-    void setVelocity(int formatted_velocity);
+    void setSpeedAndDir(int formattedSpeed, bool direction);
+    void setVelocity(int formattedVelocity);
 
     void stop();
 
@@ -27,16 +25,13 @@ class Motor {
     bool hasStepsRemaining();
 
    private:
-    int direction_pin;
-    int speed_pin;
-    int encoder_pin;
+    int directionPin;
+    int speedPin;
+    int encoderPin;
 
-    bool rotation_direction_inverted;
+    bool rotationInverted;
 
-    volatile int steps_remaining;
-
-    bool old_encoder_state;
-
-    volatile bool enabled;
+    volatile int stepsRemaining;
+    bool oldEncoderState;
 };
 #endif  // MOTORS_H

@@ -24,6 +24,8 @@ class Drive {
 
     void setVelocity(int velocity);
 
+    void stop();
+
    private:
     Motor leftMotor;
     Motor rightMotor;

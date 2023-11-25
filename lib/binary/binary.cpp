@@ -2,10 +2,10 @@
 
 #include "binary.h"
 
-void printByte(uint8_t byte) {
+void printByte(byte byteToPrint) {
     for (int b = 7; b; b--) {
-        Serial.print((byte >> b) & 1);
+        Serial.print((byteToPrint >> b) & 1);
         Serial.print(",");
     }
-    Serial.println(byte & 1);
+    Serial.println(byteToPrint & 1);
 }

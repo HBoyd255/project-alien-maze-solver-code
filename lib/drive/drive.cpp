@@ -34,3 +34,8 @@ void Drive::setVelocity(int velocity) {
     this->leftMotor.setVelocity(velocity);
     this->rightMotor.setVelocity(velocity);
 }
+
+void Drive::stop() {
+    this->leftMotor.stop();
+    this->rightMotor.stop();
+}

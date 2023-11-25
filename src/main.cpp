@@ -1,29 +1,47 @@
+
+
 #include <Arduino.h>
 
 #include "bumpers.h"
 #include "drive.h"
+#include "infrared.h"
 #include "pixels.h"
 #include "systemInfo.h"
 #include "ultrasonic.h"
 
 Drive drive;
 Pixels pixels;
-Bumper bumper;
+
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, 20000UL);
-
-bool bumperUpdated = false;
-
-void bumperCallback() { bumperUpdated = true; }
+Infrared leftInfrared(LEFT_INFRARED_INDEX);
+Infrared rightInfrared(RIGHT_INFRARED_INDEX);
 
 void setup() {
     Serial.begin(115200);
     drive.setup();
     pixels.setup();
 
+    leftInfrared.setup();
+    rightInfrared.setup();
+
     ultrasonic.setup();
 }
 
 void loop() {
+    // Print out values over serial
+    // Serial.print("Left: ");
+    // Serial.print(leftInfrared.read());
+    // Serial.print("mm, Front: ");
+    // Serial.print(ultrasonic.read());
+    // Serial.print("mm, Right:");
+    // Serial.print(rightInfrared.read());
+    // Serial.println("mm");
+
+    int leftDistance = leftInfrared.read();
+
+    int intensity = constrain(300 - leftDistance, 0, 255);
+
+    pixels.setGroup(LEFT_LED_GROUP, intensity, 0, 0, true);
 
     unsigned int distance = ultrasonic.read();
 
@@ -35,7 +53,7 @@ void loop() {
         drive.setVelocity(constrain(diff, -100, 100));
 
     } else {
-        drive.setVelocity(0);
+        drive.stop();
     }
 
     delay(10);
