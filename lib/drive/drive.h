@@ -18,6 +18,8 @@ class Drive {
 
     void move(int steps);
 
+    void setSteps(int stepsLeft, int stepsRight);
+
     void rotate(int angle);
 
     bool hasStepsRemaining();

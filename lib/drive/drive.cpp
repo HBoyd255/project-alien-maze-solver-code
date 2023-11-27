@@ -18,6 +18,11 @@ void Drive::move(int steps_CM) {
     this->leftMotor.setSteps(steps_CM);
     this->rightMotor.setSteps(steps_CM);
 }
+void Drive::setSteps(int stepsLeft, int stepsRight) {
+    this->leftMotor.setSteps(stepsLeft);
+    this->rightMotor.setSteps(stepsRight);
+}
+
 void Drive::rotate(int angle) {
     int steps = angle * 200 / 90;
 

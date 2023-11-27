@@ -2,8 +2,6 @@
 
 #include <Arduino.h>
 
-// REMOVE
-#include "Motor.h"
 #include "bumper.h"
 #include "drive.h"
 #include "infrared.h"
@@ -11,7 +9,7 @@
 #include "systemInfo.h"
 #include "ultrasonic.h"
 
-// Drive drive;
+Drive drive;
 Pixels pixels;
 
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, 20000UL);
@@ -19,19 +17,13 @@ Infrared leftInfrared(LEFT_INFRARED_INDEX);
 Infrared rightInfrared(RIGHT_INFRARED_INDEX);
 Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN);
-
-Motor leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
-                LEFT_MOTOR_ENCODER_PIN, true);
-Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
-                 RIGHT_MOTOR_ENCODER_PIN, false);
-
 bool bumperUpdate = false;
 
 // TODO do some pid stuff
 
 void setup() {
     Serial.begin(115200);
-    // drive.setup();
+    drive.setup();
     pixels.setup();
 
     leftInfrared.setup();
@@ -41,9 +33,6 @@ void setup() {
 
     bumper.setup();
     bumper.assignCallback([]() { bumperUpdate = true; });
-
-    leftMotor.setup();
-    rightMotor.setup();
 }
 
 void loop() {
@@ -85,41 +74,26 @@ void loop() {
         pixels.displayBumperHard(bumperData);
 
         if (bumperData) {
-            leftMotor.setSteps(-12);
-            rightMotor.setSteps(-10);
+            drive.setSteps(-10, -15);
         }
     }
 
+    int frontDistance = ultrasonic.read();
     int leftDistance = leftInfrared.read();
     int rightDistance = rightInfrared.read();
 
-    int width = leftDistance + rightDistance;
-
-    int distanceToMoveLeft = leftDistance - width / 2;
-    int distanceToMoveRight = rightDistance - width / 2;
+    if (frontDistance > leftDistance && frontDistance > rightDistance) {
+        drive.setSteps(10, 10);
+    } else {
+        if (leftDistance > rightDistance) {
+            drive.setSteps(0, 10);
+        } else {
+            drive.setSteps(10, 0);
+        }
+    }
 
     // Serial.print("L: ");
     // Serial.print(distanceToMoveLeft);
     // Serial.print(" R: ");
     // Serial.println(distanceToMoveRight);
-
-    int frontDistance = ultrasonic.read();
-
-    distanceToMoveLeft /= 10;
-    distanceToMoveRight /= 10;
-
-    int pidL = constrain(75 - distanceToMoveLeft, -100, 100);
-    int pidR = constrain(75 - distanceToMoveRight, -100, 100);
-
-
-    if (leftMotor.hasStepsRemaining() || rightMotor.hasStepsRemaining()) {
-        leftMotor.checkEncoder();
-        rightMotor.checkEncoder();
-    } else {
-
-
-
-        leftMotor.setVelocity(pidL);
-        rightMotor.setVelocity(pidR);
-    }
 }
