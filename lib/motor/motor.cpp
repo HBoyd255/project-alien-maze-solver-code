@@ -60,6 +60,8 @@ void Motor::setVelocity(int formattedVelocity) {
     // Direction represents the drive direction, not the rotation direction
     bool direction = formattedVelocity > 0;
 
+    Serial.println(formattedVelocity);
+
     this->setSpeedAndDir(abs(formattedVelocity), direction);
 }
 

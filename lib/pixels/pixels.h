@@ -46,8 +46,10 @@ class Pixels {
     // TODO Make the pins configurable, then use the consts in the initializer.
     /**
      * @brief Constructor for Pixels class.
+     * 
+     * @param dataPin The pin that D1 of the LED strip is connected to.
      */
-    Pixels() : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN){};
+    Pixels(int dataPin);
 
     /**
      * @brief Initializes the LED strip.
@@ -143,6 +145,7 @@ class Pixels {
 
    private:
     NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> led_strip;
+    int dataPin;
 };
 
 #endif  // PIXELS_H
