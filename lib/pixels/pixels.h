@@ -47,7 +47,7 @@ class Pixels {
     /**
      * @brief Constructor for Pixels class.
      */
-    Pixels(): led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) {};
+    Pixels() : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN){};
 
     /**
      * @brief Initializes the LED strip.
@@ -117,6 +117,11 @@ class Pixels {
      * @param show Whether to show the changes immediately.
      */
     void setAll(uint8_t r, uint8_t g, uint8_t b, bool show);
+
+    // TODO comment
+    void displayBumperSoft(uint8_t bumperData);
+
+    void displayBumperHard(uint8_t bumperData);
 
     /**
      * @brief Clears the LED strip.

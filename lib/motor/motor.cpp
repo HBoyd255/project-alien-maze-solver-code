@@ -75,16 +75,24 @@ void Motor::takeStep() {
         // negative, either way, take one step closer to 0.
         this->stepsRemaining += (this->stepsRemaining > 0) ? -1 : 1;
 
-        // If the steps remaining is less than 5, set it to 0, this is to
-        // prevent the motor from stuttering when it gets close to the target
-        // position.
-        if (abs(this->stepsRemaining) < 5) {
-            this->stepsRemaining = 0;
-        }
+
+    //TODO add a better way to stop motor stuttering
+
 
         // Calculate how fast to set the motor, the speed is proportional to
         // the number of steps remaining, and is capped at 100.
         int velocity = constrain(this->stepsRemaining, -100, 100);
+
+        // If the velocity is between 0 and 10, set it to 10-
+        if (velocity > 0 && velocity < 50) {
+            velocity = 50;
+        }
+        // If the velocity is between -10 and 0, set it to -10
+        else if (velocity < 0 && velocity > -50) {
+            velocity = -50;
+        }
+
+        Serial.println(velocity);
 
         // Set the motor to the calculated velocity.
         this->setVelocity(velocity);

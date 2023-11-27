@@ -3,7 +3,6 @@
 const char ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
     {1, 2}, {3, 4}, {5, 5}, {6, 7}, {8, 9}, {10, 11}, {12, 12}, {13, 0}};
 
-
 /**
  * @brief Sets up the pixels by calling the begin function on the led_strip
  * object from the NeoPixelBus library and then calling the show function to
@@ -86,9 +85,26 @@ void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b, bool show) {
     }
 }
 
+void Pixels::displayBumperSoft(u_int8_t bumperData) {
+    for (int i = 0; i < 8; i++) {
+        bool bit = (bumperData >> i) & 1;
+        if (bit) {
+            this->setGroup(i, 255, 0, 0);
+        }
+    }
+}
+
+void Pixels::displayBumperHard(u_int8_t bumperData) {
+    this->clear();
+
+    this->displayBumperSoft(bumperData);
+
+    this->show();
+}
+
 /**
- * @brief Clears all the pixels by setting them to black with the option to show
- * the changes immediately.
+ * @brief Clears all the pixels by setting them to black with the option to
+ * show the changes immediately.
  *
  * @param show - Whether to show the cleared pixels or not.
  */
