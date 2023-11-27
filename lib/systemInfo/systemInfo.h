@@ -35,13 +35,13 @@
 #define RIGHT_MOTOR_SPEED_PIN D10
 #define RIGHT_MOTOR_ENCODER_PIN D3
 
-// Bumpers
+// Bumper
 // Shift register
-#define BUMPERS_SHIFT_REG_DATA A7   // GPIO 1
-#define BUMPERS_SHIFT_REG_LOAD A6   // GPIO 2
-#define BUMPERS_SHIFT_REG_CLOCK A3  // GPIO 3
+#define BUMPER_SHIFT_REG_DATA A7   // GPIO 1
+#define BUMPER_SHIFT_REG_LOAD A6   // GPIO 2
+#define BUMPER_SHIFT_REG_CLOCK A3  // GPIO 3
 // Interrupt pin
-#define BUMPERS_INTERRUPT_PIN D8
+#define BUMPER_INTERRUPT_PIN D8
 
 // Ultrasonic
 #define ULTRASONIC_TRIGGER D7  // USONIC1

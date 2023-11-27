@@ -8,12 +8,7 @@ Bumper::Bumper(int dataPin, int loadPin, int clockPin, int interruptPin) {
     this->loadPin = loadPin;
     this->clockPin = clockPin;
     this->interruptPin = interruptPin;
-
-
-
-
 }
-
 
 void Bumper::setup() {
     pinMode(dataPin, INPUT);
@@ -22,8 +17,7 @@ void Bumper::setup() {
 }
 
 void Bumper::assignCallback(voidFuncPtr function) {
-    attachInterrupt(digitalPinToInterrupt(interruptPin), function,
-                    CHANGE);
+    attachInterrupt(digitalPinToInterrupt(interruptPin), function, CHANGE);
 }
 
 uint8_t Bumper::read() {
