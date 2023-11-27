@@ -68,8 +68,8 @@ void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 /**
- * @brief Sets all the pixels to the specified color.
- *
+ * @brief Sets all the pixels to the specified color, by iterating through all
+ * the groups.
  * @param r The red value to set.
  * @param g The green value to set.
  * @param b The blue value to set.
@@ -79,6 +79,7 @@ void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b, bool show) {
     for (uint8_t i = 0; i < LED_GROUP_COUNT; i++) {
         this->setGroup(i, r, g, b);
     }
+
 
     if (show) {
         this->show();
