@@ -17,7 +17,7 @@ void ErrorIndicator::setup() { pinMode(LED_BUILTIN, OUTPUT); }
  *
  * @param pixelsPtr A pointer to the Pixels object.
  */
-void ErrorIndicator::setPixels(Pixels* pixelsPtr) {
+void ErrorIndicator::assignPixels(Pixels* pixelsPtr) {
     this->pixelsPtr = pixelsPtr;
 }
 /**
@@ -25,7 +25,7 @@ void ErrorIndicator::setPixels(Pixels* pixelsPtr) {
  *
  * @param drivePtr A pointer to the Drive object.
  */
-void ErrorIndicator::setDrive(Drive* drivePtr) { this->drivePtr = drivePtr; }
+void ErrorIndicator::assignDrive(Drive* drivePtr) { this->drivePtr = drivePtr; }
 
 /**
  * @brief Handles the occurrence of an error and displays an error message.

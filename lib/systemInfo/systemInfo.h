@@ -18,6 +18,9 @@
     "206740f3-4a1b-43f3-ac27-504f771b825b"
 #define LED_CHARACTERISTIC_UUID "c0b778f3-9921-475c-8992-4450dfa7f5ca"
 
+// Serial
+#define SERIAL_BAUD_RATE 115200
+
 // Hardware definitions
 
 // LEDs

@@ -6,8 +6,6 @@
 #include "drive.h"
 #include "pixels.h"
 
-#define ERROR_INDICATOR_DELAY = 500;
-
 /**
  * @brief The ErrorIndicator class represents an error indicator module.
  *
@@ -31,14 +29,14 @@ class ErrorIndicator {
      *
      * @param pixelsPtr A pointer to the Pixels object.
      */
-    void setPixels(Pixels* pixelsPtr);
+    void assignPixels(Pixels* pixelsPtr);
 
     /**
      * @brief Sets the drive pointer.
      *
      * @param drivePtr A pointer to the Drive object.
      */
-    void setDrive(Drive* drivePtr);
+    void assignDrive(Drive* drivePtr);
 
     /**
      * @brief Indicates that an error has occurred.
