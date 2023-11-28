@@ -23,7 +23,7 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
 
 BluetoothLowEnergy ble(&errorIndicator);
 
-bool bumperUpdate = false;
+volatile bool bumperUpdate = 0;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -50,12 +50,21 @@ void setup() {
     ble.setup();
 }
 
+struct RangeSensorData
+{
+    uint16_t leftInfrared;
+    uint16_t ultrasonic;
+    uint16_t rightInfrared;
+    uint8_t bumper;
+};
+
 
 void loop() {
-    
     millis();
 
     ble.poll();
+
+    // drive.setVelocity(100);
 
     Serial.print("Left:");
     Serial.print(leftInfrared.read());
@@ -64,7 +73,9 @@ void loop() {
     Serial.print(" Right:");
     Serial.println(rightInfrared.read());
 
-    sensorData.left = leftInfrared.read();
-
-
+    // if (bumperUpdate) {
+    //     bumperUpdate = false;
+    //     Serial.print("Bumper:");
+    //     Serial.println(bumper.read());
+    // }
 }

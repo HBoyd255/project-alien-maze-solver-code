@@ -30,8 +30,8 @@
  *
  * @param channel The channel number to set.
  */
-void setMultiplexer(int channel) {
-    if ((channel >= MULTIPLEXER_CHANNEL_COUNT) | (channel < 0)) {
+void setMultiplexer(uint8_t channel) {
+    if (channel >= MULTIPLEXER_CHANNEL_COUNT) {
         Serial.println("Invalid, there are only");
         Serial.println(MULTIPLEXER_CHANNEL_COUNT);
         Serial.println("Channels.");
@@ -48,7 +48,7 @@ void setMultiplexer(int channel) {
  *
  * @param index The index of the infrared sensor.
  */
-Infrared::Infrared(int index) { this->index = index; }
+Infrared::Infrared(uint8_t index) { this->index = index; }
 
 /**
  * @brief Initializes the infrared sensor.
@@ -90,7 +90,7 @@ void Infrared::setup() {
  *
  * @return The distance in millimeters.
  */
-int Infrared::read() {
+uint16_t Infrared::read() {
     grabMultiplexer();
 
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
@@ -105,15 +105,15 @@ int Infrared::read() {
         Serial.println(".");
     }
 
-    byte high = Wire.read();
-    byte low = Wire.read();
+    uint8_t high = Wire.read();
+    uint8_t low = Wire.read();
 
     // The given formula for calculating distance is:
     // distance(cm) = (high * 16 + low)/16/(int)pow(2,shift);
     // Which can be simplified to:
     // distance(mm) = (((high << 4) | low) * 10) >> (4 + shiftValue);
 
-    int distance = (((high << 4) | low) * 10) >> (4 + shiftValue);
+    uint16_t distance = (((high << 4) | low) * 10) >> (4 + this->shiftValue);
 
     // int distance = high >> this->shiftValue;
     return distance;

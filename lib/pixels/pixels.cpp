@@ -3,7 +3,7 @@
 const char ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
     {1, 2}, {3, 4}, {5, 5}, {6, 7}, {8, 9}, {10, 11}, {12, 12}, {13, 0}};
 
-Pixels::Pixels(int dataPin)
+Pixels::Pixels(uint8_t dataPin)
     : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) {
     this->dataPin = dataPin;
 }

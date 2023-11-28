@@ -5,19 +5,19 @@
 
 #include "systemInfo.h"
 
-//TODO - Add comments
 class Bumper {
    public:
-    Bumper(int dataPin, int loadPin, int clockPin, int interruptPin);
+    Bumper(uint8_t dataPin, uint8_t loadPin, uint8_t clockPin,
+           uint8_t interruptPin);
     void setup();
     void assignCallback(voidFuncPtr function);
-    byte read();
+    uint8_t read();
 
-    private:
-    int dataPin;
-    int loadPin;
-    int clockPin;
-    int interruptPin;
+   private:
+    uint8_t dataPin;
+    uint8_t loadPin;
+    uint8_t clockPin;
+    uint8_t interruptPin;
 };
 
 #endif  // BUMPER_H

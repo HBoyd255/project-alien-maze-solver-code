@@ -4,7 +4,7 @@
 
 #define TRIGGER_PULSE_DURATION 10
 
-Ultrasonic::Ultrasonic(int triggerPin, int echoPin, unsigned long timeout) {
+Ultrasonic::Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout) {
     this->triggerPin = triggerPin;
     this->echoPin = echoPin;
     this->timeout = timeout;
@@ -20,17 +20,17 @@ void Ultrasonic::setup() {
  *
  * @return The distance measured in millimeters.
  */
-unsigned int Ultrasonic::read() {
+uint16_t Ultrasonic::read() {
     digitalWrite(this->triggerPin, LOW);
     delayMicroseconds(TRIGGER_PULSE_DURATION);
     digitalWrite(this->triggerPin, HIGH);
     delayMicroseconds(TRIGGER_PULSE_DURATION);
     digitalWrite(this->triggerPin, LOW);
 
-    unsigned long reflectionDuration =
+    uint16_t reflectionDuration =
         pulseIn(this->echoPin, HIGH, this->timeout);
 
-    unsigned long duration = reflectionDuration >> 1;
+    uint16_t duration = reflectionDuration >> 1;
 
     // distance = speed * time
 
@@ -41,7 +41,7 @@ unsigned int Ultrasonic::read() {
 
     // millimeters = (meters per millisecond) * milliseconds
 
-    int distance = duration * 0.343;
+    uint16_t distance = constrain(duration * 0.343, 0x0000, 0xFFFF);
 
     return distance;
 }

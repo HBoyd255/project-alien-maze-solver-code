@@ -10,14 +10,14 @@
 
 class Ultrasonic {
    public:
-    Ultrasonic(int triggerPin, int echoPin, unsigned long timeout);
+    Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout);
     void setup();
-    unsigned int read();
+    uint16_t read();
 
    private:
-    int triggerPin;
-    int echoPin;
-    unsigned long timeout;
+    uint8_t triggerPin;
+    uint8_t echoPin;
+    uint32_t timeout;
 };
 
 #endif  // ULTRASONIC_H

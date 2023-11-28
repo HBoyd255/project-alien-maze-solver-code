@@ -49,7 +49,7 @@ class Pixels {
      * 
      * @param dataPin The pin that D1 of the LED strip is connected to.
      */
-    Pixels(int dataPin);
+    Pixels(uint8_t dataPin);
 
     /**
      * @brief Initializes the LED strip.
@@ -145,7 +145,7 @@ class Pixels {
 
    private:
     NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> led_strip;
-    int dataPin;
+    uint8_t dataPin;
 };
 
 #endif  // PIXELS_H

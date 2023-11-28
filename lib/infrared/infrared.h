@@ -21,7 +21,10 @@ class Infrared {
      *
      * @param index The index of the infrared sensor.
      */
-    Infrared(int index);
+    Infrared(uint8_t index);
+    
+    
+    
     /**
      * @brief Initializes the infrared sensor.
      *
@@ -35,11 +38,11 @@ class Infrared {
      *
      * @return The distance in millimeters.
      */
-    int read();
+    uint16_t read();
 
    private:
-    int index;        // The index of the infrared sensor
-    byte shiftValue;  // The shift value of the infrared sensor
+    uint8_t index;        // The index of the infrared sensor
+    uint8_t shiftValue;  // The shift value of the infrared sensor
     /**
      * @brief Grabs the I2C bus multiplexer.
      *

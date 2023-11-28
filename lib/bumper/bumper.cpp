@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 
-Bumper::Bumper(int dataPin, int loadPin, int clockPin, int interruptPin) {
+Bumper::Bumper(uint8_t dataPin, uint8_t loadPin, uint8_t clockPin,
+               uint8_t interruptPin) {
     this->dataPin = dataPin;
     this->loadPin = loadPin;
     this->clockPin = clockPin;
@@ -28,7 +29,7 @@ uint8_t Bumper::read() {
     digitalWrite(loadPin, HIGH);
     delayMicroseconds(1);
 
-    for (int i = 0; i < 8; i++) {
+    for (uint8_t i = 0; i < 8; i++) {
         shiftRegisterContents <<= 1;
 
         shiftRegisterContents |= digitalRead(dataPin);

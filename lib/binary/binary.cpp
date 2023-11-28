@@ -1,9 +1,9 @@
 
 
-#include "binary.h"
+#include "binary.hpp"
 
-void printByte(byte byteToPrint) {
-    for (int b = 7; b; b--) {
+void printByte(uint8_t byteToPrint) {
+    for (uint8_t b = 7; b; b--) {
         Serial.print((byteToPrint >> b) & 1);
         Serial.print(",");
     }

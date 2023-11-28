@@ -1,7 +1,7 @@
 
 #include "motor.h"
 
-Motor::Motor(int directionPin, int speedPin, int encoderPin,
+Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderPin,
              bool rotationInverted) {
     this->directionPin = directionPin;
     this->speedPin = speedPin;
@@ -17,10 +17,10 @@ void Motor::setup() {
     pinMode(this->encoderPin, INPUT);
 }
 
-void Motor::setSpeedAndDir(int formattedSpeed, bool direction) {
+void Motor::setSpeedAndDir(uint8_t formattedSpeed, bool direction) {
     // Make sure that the provided value is within the range of 0 to 100,
     // return 1 if not to signify an error.
-    if ((formattedSpeed > 100) || (formattedSpeed < 0)) {
+    if (formattedSpeed > 100) {
         Serial.println("Speed must be between 0 and 100");
         return;
     }
@@ -48,7 +48,7 @@ void Motor::setSpeedAndDir(int formattedSpeed, bool direction) {
     analogWrite(this->speedPin, scaledSpeed);
 }
 
-void Motor::setVelocity(int formattedVelocity) {
+void Motor::setVelocity(int8_t formattedVelocity) {
     // Make sure that the provided value is withing the range of -100 to
     // 100, return 1 if not to signify an error.
     if ((formattedVelocity > 100) || (formattedVelocity < -100)) {

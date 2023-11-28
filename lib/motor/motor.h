@@ -7,12 +7,12 @@
 
 class Motor {
    public:
-    Motor(int directionPin, int speedPin, int encoderPin,
+    Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderPin,
           bool rotationInverted);
     void setup();
 
-    void setSpeedAndDir(int formattedSpeed, bool direction);
-    void setVelocity(int formattedVelocity);
+    void setSpeedAndDir(uint8_t formattedSpeed, bool direction);
+    void setVelocity(int8_t formattedVelocity);
 
     void stop();
 
@@ -25,13 +25,13 @@ class Motor {
     bool hasStepsRemaining();
 
    private:
-    int directionPin;
-    int speedPin;
-    int encoderPin;
+    uint8_t directionPin;
+    uint8_t speedPin;
+    uint8_t encoderPin;
 
     bool rotationInverted;
 
-    volatile int stepsRemaining;
+    volatile uint16_t stepsRemaining;
     bool oldEncoderState;
 };
 #endif  // MOTORS_H
