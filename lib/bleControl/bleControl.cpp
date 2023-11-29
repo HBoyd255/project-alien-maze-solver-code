@@ -5,7 +5,7 @@
 
 
 
-BLEService generalService(SENSOR_SERVICE_UUID);
+BLEService generalService(MAIN_SERVICE_UUID);
 BLEByteCharacteristic bumperCharacteristic(BUMPER_CHARACTERISTIC_UUID,
                                            BLERead | BLENotify);
 BLEUnsignedLongCharacteristic millisCharacteristic(MILLIS_CHARACTERISTIC_UUID,

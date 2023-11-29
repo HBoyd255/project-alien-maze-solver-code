@@ -8,13 +8,23 @@ struct {
     uint16_t rightInfrared;
 } typedef RangeSensorData;
 
-BLEService sensorService(SENSOR_SERVICE_UUID);
+struct {
+    int16_t x;
+    int16_t y;
+    int16_t angle;
+} typedef PositionStruct;
+
+BLEService mainService(MAIN_SERVICE_UUID);
 
 BLEByteCharacteristic bumperCharacteristic(BUMPER_CHARACTERISTIC_UUID,
                                            BLERead | BLENotify);
-BLECharacteristic sensorDataCharacteristic(RANGE_SENSORS_CHARACTERISTIC_UUID,
-                                           BLERead | BLENotify,
-                                           sizeof(RangeSensorData));
+BLECharacteristic rangeSensorsCharacteristic(RANGE_SENSORS_CHARACTERISTIC_UUID,
+                                             BLERead | BLENotify,
+                                             sizeof(RangeSensorData));
+
+BLECharacteristic positionCharacteristic(POSITION_CHARACTERISTIC_UUID,
+                                         BLERead | BLENotify,
+                                         sizeof(PositionStruct));
 
 BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr) {
     this->errorIndicator = errorIndicatorPtr;
@@ -46,10 +56,11 @@ void BluetoothLowEnergy::setup() {
     BLE.setDeviceName(BLE_DEVICE_NAME);
     BLE.setLocalName(BLE_DEVICE_NAME);
 
-    sensorService.addCharacteristic(sensorDataCharacteristic);
-    sensorService.addCharacteristic(bumperCharacteristic);
-    BLE.addService(sensorService);
-    BLE.setAdvertisedService(sensorService);
+    mainService.addCharacteristic(rangeSensorsCharacteristic);
+    mainService.addCharacteristic(bumperCharacteristic);
+    mainService.addCharacteristic(positionCharacteristic);
+    BLE.addService(mainService);
+    BLE.setAdvertisedService(mainService);
 
     // Start advertising
     BLE.advertise();
@@ -66,10 +77,9 @@ void BluetoothLowEnergy::updateRangeSensors(uint16_t leftSensor,
 
     // Write the sensor data to the characteristic
 
-
-    //TODO fix this so it casts to three uint16_t
-    sensorDataCharacteristic.writeValue((uint8_t*)&sensorData,
-                                        sizeof(RangeSensorData));
+    // TODO fix this so it casts to three uint16_t
+    rangeSensorsCharacteristic.writeValue((uint8_t*)&sensorData,
+                                          sizeof(RangeSensorData));
 }
 
 void BluetoothLowEnergy::updateBumper(uint8_t value) {
@@ -79,6 +89,18 @@ void BluetoothLowEnergy::updateBumper(uint8_t value) {
         bumperCharacteristic.writeValue(value);
         lastValue = value;
     }
+}
+
+void BluetoothLowEnergy::updatePosition(uint16_t x, uint16_t y,
+                                        uint16_t angle) {
+    static PositionStruct PositionData;
+
+    PositionData.x = x;
+    PositionData.y = y;
+    PositionData.angle = angle;
+
+    positionCharacteristic.writeValue((uint8_t*)&PositionData,
+                                      sizeof(RangeSensorData));
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }

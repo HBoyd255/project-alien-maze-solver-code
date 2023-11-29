@@ -1,20 +1,24 @@
 
 #include "motor.h"
 
-Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderPin,
-             bool rotationInverted) {
+Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,
+             uint8_t encoderBPin, bool rotationInverted) {
     this->directionPin = directionPin;
     this->speedPin = speedPin;
-    this->encoderPin = encoderPin;
+    this->encoderAPin = encoderAPin;
+    this->encoderBPin = encoderBPin;
 
     this->rotationInverted = rotationInverted;
-    this->stepsRemaining = 0;
+    this->steps = 0;
 }
 
-void Motor::setup() {
+void Motor::setup(voidFuncPtr isrPtr) {
+    attachInterrupt(digitalPinToInterrupt(this->encoderAPin), isrPtr, CHANGE);
+
     pinMode(this->directionPin, OUTPUT);
     pinMode(this->speedPin, OUTPUT);
-    pinMode(this->encoderPin, INPUT);
+    pinMode(this->encoderAPin, INPUT);
+    pinMode(this->encoderBPin, INPUT);
 }
 
 void Motor::setSpeedAndDir(uint8_t formattedSpeed, bool direction) {
@@ -67,55 +71,24 @@ void Motor::setVelocity(int8_t formattedVelocity) {
 
 void Motor::stop() {
     this->setSpeedAndDir(0, 0);
-    this->stepsRemaining = 0;
+    this->steps = 0;
 }
 
-void Motor::takeStep() {
-    // If there are steps remaining, take a step.
-    if (this->hasStepsRemaining()) {
-        // reduce stepsRemaining by 1, or increase it by 1 if its
-        // negative, either way, take one step closer to 0.
-        this->stepsRemaining += (this->stepsRemaining > 0) ? -1 : 1;
-
-
-    //TODO add a better way to stop motor stuttering
-
-
-        // Calculate how fast to set the motor, the speed is proportional to
-        // the number of steps remaining, and is capped at 100.
-        int velocity = constrain(this->stepsRemaining, -100, 100);
-
-        // If the velocity is between 0 and 10, set it to 10-
-        if (velocity > 0 && velocity < 50) {
-            velocity = 50;
-        }
-        // If the velocity is between -10 and 0, set it to -10
-        else if (velocity < 0 && velocity > -50) {
-            velocity = -50;
-        }
-
-        Serial.println(velocity);
-
-        // Set the motor to the calculated velocity.
-        this->setVelocity(velocity);
-    }
-    // if the motor is disabled, or there are no steps remaining, stop the
-    // motor.
-    else {
-        this->stop();
+void Motor::isr() {
+    if (digitalRead(this->encoderAPin) !=
+        (digitalRead(this->encoderBPin) ^ this->rotationInverted)) {
+        this->steps++;
+    } else {
+        this->steps--;
     }
 }
 
-void Motor::setSteps(int steps) {
-    this->stepsRemaining = steps;
-    this->takeStep();
-}
+int32_t Motor::getStepsInMillimeters() {
+    // One rotation is 300 steps
+    // and the wheel circumference is 147.65mm
+    // so 1 step is like 0.5mm
 
-void Motor::checkEncoder() {
-    if (digitalRead(this->encoderPin) != this->oldEncoderState) {
-        this->takeStep();
-    }
-    this->oldEncoderState = digitalRead(this->encoderPin);
-}
+    // so to get the steps in mm, multiply by 0.5
 
-bool Motor::hasStepsRemaining() { return (bool)this->stepsRemaining; }
+    return this->steps / 2;
+}

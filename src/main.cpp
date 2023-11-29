@@ -7,13 +7,22 @@
 #include "errorIndicator.h"
 #include "harrysBle.h"
 #include "infrared.h"
+#include "motor.h"
 #include "pixels.h"
 #include "systemInfo.h"
 #include "ultrasonic.h"
 
 ErrorIndicator errorIndicator;
 
-Drive drive;
+Motor leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
+                LEFT_MOTOR_ENCODER_A_PIN, LEFT_MOTOR_ENCODER_B_PIN,
+                LEFT_MOTOR_ROTATION_INVERTED);
+
+Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
+                 RIGHT_MOTOR_ENCODER_A_PIN, RIGHT_MOTOR_ENCODER_B_PIN,
+                 RIGHT_MOTOR_ROTATION_INVERTED);
+
+Drive drive(&leftMotor, &rightMotor);
 Pixels pixels(PIXELS_DATA_PIN);
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, ULTRASONIC_TIMEOUT);
 Infrared leftInfrared(LEFT_INFRARED_INDEX);
@@ -34,7 +43,9 @@ void setup() {
     errorIndicator.assignDrive(&drive);
     errorIndicator.setup();
 
-    drive.setup();
+    leftMotor.setup([]() { leftMotor.isr(); });
+    rightMotor.setup([]() { rightMotor.isr(); });
+
     pixels.setup();
 
     leftInfrared.setup();
@@ -51,29 +62,40 @@ void setup() {
 }
 
 void loop() {
+    Serial.print("left motor steps: ");
+    Serial.print(leftMotor.getStepsInMillimeters());
+    Serial.print("right motor steps: ");
+    Serial.print(rightMotor.getStepsInMillimeters());
+
+    int16_t diff =
+        leftMotor.getStepsInMillimeters() - rightMotor.getStepsInMillimeters();
+
+    // doing one rotation of the robot involves a difference in steps of 780mm
+    // between the two motors.
+    // so the degree of rotation is the difference between the two motors
+    // divided by 2.16 (with 2.16 being approximately 780/360)
+
+    uint16_t degree = diff / 2.16;
+
+    Serial.print("degree: ");
+    Serial.println(degree);
+
     uint16_t leftSensor = leftInfrared.read();
     uint16_t frontSensor = ultrasonic.read();
     uint16_t rightSensor = rightInfrared.read();
 
-    Serial.print("Left:");
-    Serial.print(leftSensor);
-    Serial.print(" Front:");
-    Serial.print(frontSensor);
-    Serial.print(" Right:");
-    Serial.println(rightSensor);
+    // Serial.print("Left:");
+    // Serial.print(leftSensor);
+    // Serial.print(" Front:");
+    // Serial.print(frontSensor);
+    // Serial.print(" Right:");
+    // Serial.println(rightSensor);
 
     harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
     harrysBle.updateBumper(bumper.read());
+    harrysBle.updatePosition(100,
+                             100, degree);
     harrysBle.poll();
 
-
-    
-
-    // delay(1000);
-
-    // if (bumperUpdate) {
-    //     bumperUpdate = false;
-    //     Serial.print("Bumper:");
-    //     Serial.println(bumper.read());
-    // }
+    delay(1000);
 }

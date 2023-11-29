@@ -19,6 +19,7 @@ class BluetoothLowEnergy {
     void updateRangeSensors(uint16_t leftSensor, uint16_t frontSensor,
                             uint16_t rightSensor);
     void updateBumper(uint8_t value);
+    void updatePosition(uint16_t x, uint16_t y, uint16_t angle);
     void poll();
 
    private:
