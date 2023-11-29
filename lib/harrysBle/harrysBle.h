@@ -1,5 +1,7 @@
-#ifndef BLE_H
-#define BLE_H
+
+
+#ifndef HARRYS_BLE_H
+#define HARRYS_BLE_H
 
 // https://www.arduino.cc/reference/en/
 #include <Arduino.h>
@@ -14,10 +16,16 @@ class BluetoothLowEnergy {
    public:
     BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr);
     void setup();
+    void updateRangeSensors(uint16_t leftSensor, uint16_t frontSensor,
+                            uint16_t rightSensor);
+    void updateBumper(uint8_t value);
     void poll();
 
    private:
     ErrorIndicator* errorIndicator;
 };
 
-#endif  // BLE_H
+// TODO rename this file, it cant be called ble.h because that is the name of
+// the library
+
+#endif  // HARRYS_BLE_H

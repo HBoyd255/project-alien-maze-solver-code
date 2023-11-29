@@ -2,10 +2,10 @@
 
 #include <Arduino.h>
 
-#include "ble.h"
 #include "bumper.h"
 #include "drive.h"
 #include "errorIndicator.h"
+#include "harrysBle.h"
 #include "infrared.h"
 #include "pixels.h"
 #include "systemInfo.h"
@@ -21,9 +21,11 @@ Infrared rightInfrared(RIGHT_INFRARED_INDEX);
 Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN);
 
-BluetoothLowEnergy ble(&errorIndicator);
+BluetoothLowEnergy harrysBle(&errorIndicator);
 
 volatile bool bumperUpdate = 0;
+
+// void ISR() { ultrasonic.isr(); }
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -37,9 +39,7 @@ void setup() {
 
     leftInfrared.setup();
     rightInfrared.setup();
-    ultrasonic.setup();
-
-    ultrasonic.setup();
+    ultrasonic.setup([]() { ultrasonic.isr(); });
 
     bumper.setup();
 
@@ -47,31 +47,29 @@ void setup() {
     // pressed or released.
     bumper.assignCallback([]() { bumperUpdate = true; });
 
-    ble.setup();
+    harrysBle.setup();
 }
 
-struct RangeSensorData
-{
-    uint16_t leftInfrared;
-    uint16_t ultrasonic;
-    uint16_t rightInfrared;
-    uint8_t bumper;
-};
-
-
 void loop() {
-    millis();
-
-    ble.poll();
-
-    // drive.setVelocity(100);
+    uint16_t leftSensor = leftInfrared.read();
+    uint16_t frontSensor = ultrasonic.read();
+    uint16_t rightSensor = rightInfrared.read();
 
     Serial.print("Left:");
-    Serial.print(leftInfrared.read());
+    Serial.print(leftSensor);
     Serial.print(" Front:");
-    Serial.print(ultrasonic.read());
+    Serial.print(frontSensor);
     Serial.print(" Right:");
-    Serial.println(rightInfrared.read());
+    Serial.println(rightSensor);
+
+    harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
+    harrysBle.updateBumper(bumper.read());
+    harrysBle.poll();
+
+
+    
+
+    // delay(1000);
 
     // if (bumperUpdate) {
     //     bumperUpdate = false;
