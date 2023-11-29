@@ -64,7 +64,7 @@ void setup() {
 void loop() {
     Serial.print("left motor steps: ");
     Serial.print(leftMotor.getStepsInMillimeters());
-    Serial.print("right motor steps: ");
+    Serial.print(" right motor steps: ");
     Serial.print(rightMotor.getStepsInMillimeters());
 
     int16_t diff =
@@ -75,9 +75,16 @@ void loop() {
     // so the degree of rotation is the difference between the two motors
     // divided by 2.16 (with 2.16 being approximately 780/360)
 
-    uint16_t degree = diff / 2.16;
 
-    Serial.print("degree: ");
+    Serial.print(" diff: ");
+    Serial.print(diff);
+
+
+    int16_t degree = diff / 2.16;
+
+    
+
+    Serial.print(" degree: ");
     Serial.println(degree);
 
     uint16_t leftSensor = leftInfrared.read();
@@ -93,9 +100,8 @@ void loop() {
 
     harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
     harrysBle.updateBumper(bumper.read());
-    harrysBle.updatePosition(100,
-                             100, degree);
+    harrysBle.updatePosition(100, 100, degree);
     harrysBle.poll();
 
-    delay(1000);
+
 }
