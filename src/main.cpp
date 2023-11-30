@@ -61,31 +61,68 @@ void setup() {
     harrysBle.setup();
 }
 
-void loop() {
-    Serial.print("left motor steps: ");
-    Serial.print(leftMotor.getStepsInMillimeters());
-    Serial.print(" right motor steps: ");
-    Serial.print(rightMotor.getStepsInMillimeters());
-
-    int16_t diff =
+void getDiff(int16_t &diff, int16_t &degree) {
+    diff =
         leftMotor.getStepsInMillimeters() - rightMotor.getStepsInMillimeters();
+    degree = diff / 2.16;
+}
+
+int16_t last_av_steps = 0;
+
+float running_x_pos = 0;
+float running_y_pos = 0;
+
+void update_pos(int32_t av, uint16_t degree) {
+    int16_t diff = av - last_av_steps;
+
+    running_x_pos += diff * sin(radians(degree));
+    running_y_pos += diff * cos(radians(degree));
+
+    last_av_steps = av;
+}
+
+void loop() {
+    int32_t leftSteps = leftMotor.getStepsInMillimeters();
+    int32_t rightSteps = rightMotor.getStepsInMillimeters();
+
+    int32_t diff = leftSteps - rightSteps;
+
+    // Serial.print("Dif ");
+    // Serial.print(diff);
 
     // doing one rotation of the robot involves a difference in steps of 780mm
     // between the two motors.
     // so the degree of rotation is the difference between the two motors
     // divided by 2.16 (with 2.16 being approximately 780/360)
 
+    int16_t degree = diff / 2.28;
 
-    Serial.print(" diff: ");
-    Serial.print(diff);
-
-
-    int16_t degree = diff / 2.16;
-
-    
+    int32_t average_steps = (leftSteps + rightSteps) / 2;
 
     Serial.print(" degree: ");
-    Serial.println(degree);
+    Serial.print(degree);
+    Serial.print(" average steps: ");
+    Serial.print(average_steps);
+
+    update_pos(average_steps, degree);
+
+    Serial.print(" X:");
+    Serial.print(running_x_pos);
+    Serial.print(" Y:");
+    Serial.println(running_y_pos);
+
+    int16_t discreet_x_pos = (int16_t)running_x_pos;
+    int16_t discreet_y_pos = (int16_t)running_y_pos;
+
+    Serial.print(" X:");
+    Serial.print(running_x_pos);
+    Serial.print(" Y:");
+    Serial.print(running_y_pos);
+
+    Serial.print(" XD:");
+    Serial.print(discreet_x_pos);
+    Serial.print(" YD:");
+    Serial.println(discreet_y_pos);
 
     uint16_t leftSensor = leftInfrared.read();
     uint16_t frontSensor = ultrasonic.read();
@@ -100,8 +137,6 @@ void loop() {
 
     harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
     harrysBle.updateBumper(bumper.read());
-    harrysBle.updatePosition(100, 100, degree);
+    harrysBle.updatePosition(discreet_x_pos, discreet_y_pos, degree);
     harrysBle.poll();
-
-
 }

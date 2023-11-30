@@ -69,7 +69,7 @@ void BluetoothLowEnergy::setup() {
 void BluetoothLowEnergy::updateRangeSensors(uint16_t leftSensor,
                                             uint16_t frontSensor,
                                             uint16_t rightSensor) {
-    static RangeSensorData sensorData;
+    RangeSensorData sensorData;
 
     sensorData.leftInfrared = leftSensor;
     sensorData.ultrasonic = frontSensor;
