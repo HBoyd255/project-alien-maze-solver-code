@@ -71,6 +71,7 @@ void Infrared::setup() {
 
     Wire.requestFrom(IR_SLAVE_ADDRESS, 1);
 
+    // TODO add a timeout, and connect it to the error indicator
     // Wait until the data is available, then read it
     while (!Wire.available()) {
         Serial.print("value not received for sensor ");

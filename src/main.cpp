@@ -1,4 +1,26 @@
 
+// Im just going to put this here for now to keep track
+//  Im basing the positioning of the traditional polar coordinate system
+//  Not the flipped y system that graphical programs use,
+//  Like in this image
+//  https://en.wikipedia.org/wiki/Body_relative_direction#/media/File:XYZ_model.jpg
+//  On this wikipedia page
+//  https://en.wikipedia.org/wiki/Body_relative_direction
+// X and Y are measured in millimeters, and the angle is measured in degrees
+// 0 degrees is the positive x axis, and the angle increases in the clockwise
+// direction
+
+// For now im just going to add a Screenshot in this directory to show the
+// coordinate system.
+
+// This does mean that at the start of the program, the robot facing 90 degrees.
+// This is because the robot is facing the positive x axis, and the angle
+// increases in the clockwise direction.
+
+// angle can be calculated using the formula degrees(atan2(y,x))
+
+#define INITIAL_ANGLE 90
+
 
 #include <Arduino.h>
 
@@ -27,6 +49,9 @@ Pixels pixels(PIXELS_DATA_PIN);
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, ULTRASONIC_TIMEOUT);
 Infrared leftInfrared(LEFT_INFRARED_INDEX);
 Infrared rightInfrared(RIGHT_INFRARED_INDEX);
+Infrared alignmentLeftInfrared(ALIGNMENT_LEFT_INFRARED_INDEX);
+Infrared alignmentRightInfrared(ALIGNMENT_RIGHT_INFRARED_INDEX);
+
 Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN);
 
@@ -50,6 +75,9 @@ void setup() {
 
     leftInfrared.setup();
     rightInfrared.setup();
+    alignmentLeftInfrared.setup();
+    alignmentRightInfrared.setup();
+
     ultrasonic.setup([]() { ultrasonic.isr(); });
 
     bumper.setup();
@@ -59,12 +87,6 @@ void setup() {
     bumper.assignCallback([]() { bumperUpdate = true; });
 
     harrysBle.setup();
-}
-
-void getDiff(int16_t &diff, int16_t &degree) {
-    diff =
-        leftMotor.getStepsInMillimeters() - rightMotor.getStepsInMillimeters();
-    degree = diff / 2.16;
 }
 
 int16_t last_av_steps = 0;
@@ -87,9 +109,6 @@ void loop() {
 
     int32_t diff = leftSteps - rightSteps;
 
-    // Serial.print("Dif ");
-    // Serial.print(diff);
-
     // doing one rotation of the robot involves a difference in steps of 780mm
     // between the two motors.
     // so the degree of rotation is the difference between the two motors
@@ -99,44 +118,67 @@ void loop() {
 
     int32_t average_steps = (leftSteps + rightSteps) / 2;
 
-    Serial.print(" degree: ");
-    Serial.print(degree);
-    Serial.print(" average steps: ");
-    Serial.print(average_steps);
-
     update_pos(average_steps, degree);
-
-    Serial.print(" X:");
-    Serial.print(running_x_pos);
-    Serial.print(" Y:");
-    Serial.println(running_y_pos);
 
     int16_t discreet_x_pos = (int16_t)running_x_pos;
     int16_t discreet_y_pos = (int16_t)running_y_pos;
 
-    Serial.print(" X:");
-    Serial.print(running_x_pos);
-    Serial.print(" Y:");
-    Serial.print(running_y_pos);
-
-    Serial.print(" XD:");
-    Serial.print(discreet_x_pos);
-    Serial.print(" YD:");
-    Serial.println(discreet_y_pos);
-
     uint16_t leftSensor = leftInfrared.read();
     uint16_t frontSensor = ultrasonic.read();
     uint16_t rightSensor = rightInfrared.read();
-
-    // Serial.print("Left:");
-    // Serial.print(leftSensor);
-    // Serial.print(" Front:");
-    // Serial.print(frontSensor);
-    // Serial.print(" Right:");
-    // Serial.println(rightSensor);
+    uint16_t alignmentLeftSensor = alignmentLeftInfrared.read();
+    uint16_t alignmentRightSensor = alignmentRightInfrared.read();
 
     harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
     harrysBle.updateBumper(bumper.read());
     harrysBle.updatePosition(discreet_x_pos, discreet_y_pos, degree);
     harrysBle.poll();
+
+    // Position Printing
+    // Serial.print(" leftSteps:");
+    // Serial.print(leftSteps);
+    // Serial.print(" rightSteps:");
+    // Serial.print(rightSteps);
+    // Serial.print("Dif ");
+    // Serial.print(diff);
+    // Serial.print(" degree: ");
+    // Serial.print(degree);
+    // Serial.print(" average steps: ");
+    // Serial.print(average_steps);
+    // Serial.print(" XD:");
+    // Serial.print(discreet_x_pos);
+    // Serial.print(" YD:");
+    // Serial.println(discreet_y_pos);
+
+    // Sensor Printing
+    // Serial.print("Left:");
+    // Serial.print(leftSensor);
+    // Serial.print(" Front:");
+    // Serial.print(frontSensor);
+    // Serial.print(" Right:");
+    // Serial.print(rightSensor);
+    //     Serial.print(" AlignLeft: ");
+    //     Serial.print(alignmentLeftSensor);
+    //     Serial.print(" AlignRight: ");
+    //     Serial.print(alignmentRightSensor);
+    //
+    //     int16_t alignmentDifference = alignmentLeftSensor -
+    //     alignmentRightSensor;
+    //
+    //     Serial.print(" AlignDiff: ");
+    //     Serial.print(alignmentDifference);
+    //
+    //     const uint16_t alignmentOffset = 60;
+    //
+    //     int16_t angleToWall = degrees(atan2(alignmentDifference,
+    //     alignmentOffset));
+    //
+    //     Serial.print(" AngleToWall: ");
+    //     Serial.println(angleToWall);
+
+    int x = 0;
+
+    int y = 1;
+
+    delay(10);
 }
