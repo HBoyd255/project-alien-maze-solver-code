@@ -18,9 +18,9 @@
 // increases in the clockwise direction.
 
 // angle can be calculated using the formula degrees(atan2(y,x))
+// also the angle should be locked between -179 and 180 degrees
 
 #define INITIAL_ANGLE 90
-
 
 #include <Arduino.h>
 
@@ -103,22 +103,63 @@ void update_pos(int32_t av, uint16_t degree) {
     last_av_steps = av;
 }
 
-void loop() {
-    int32_t leftSteps = leftMotor.getStepsInMillimeters();
-    int32_t rightSteps = rightMotor.getStepsInMillimeters();
+void normalizeAngle(int16_t* anglePrt) {
+    // normalize the angle to be between -179 and 180
 
+    int16_t angle = *anglePrt;
+
+    Serial.print("got angle ");
+    Serial.print(angle);
+
+    angle += 179;
+
+    Serial.print(" Stepped to ");
+    Serial.print(angle);
+
+    angle %= 360;
+
+    Serial.print(" Stepped to ");
+    Serial.print(angle);
+
+    if (angle < 0) {
+        angle += 360;
+    }
+
+    Serial.print(" Wrapped to ");
+    Serial.print(angle);
+
+    angle += -179;
+
+    Serial.print(" which was transformed to ");
+    Serial.print(angle);
+    Serial.println(".");
+
+    *anglePrt = angle;
+}
+
+int16_t angleFromSteps(int32_t leftSteps, int32_t rightSteps) {
     int32_t diff = leftSteps - rightSteps;
 
     // doing one rotation of the robot involves a difference in steps of 780mm
     // between the two motors.
     // so the degree of rotation is the difference between the two motors
-    // divided by 2.16 (with 2.16 being approximately 780/360)
+    // divided by 2.28 (with 2.28 being approximately 820/360)
+    int16_t angle = diff / 2.28;
 
-    int16_t degree = diff / 2.28;
+    normalizeAngle(&angle);
+
+    return angle;
+}
+
+void loop() {
+    int32_t leftSteps = leftMotor.getStepsInMillimeters();
+    int32_t rightSteps = rightMotor.getStepsInMillimeters();
+
+    int16_t rawStepsAngle = angleFromSteps(leftSteps, rightSteps);
 
     int32_t average_steps = (leftSteps + rightSteps) / 2;
 
-    update_pos(average_steps, degree);
+    update_pos(average_steps, rawStepsAngle);
 
     int16_t discreet_x_pos = (int16_t)running_x_pos;
     int16_t discreet_y_pos = (int16_t)running_y_pos;
@@ -131,7 +172,7 @@ void loop() {
 
     harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
     harrysBle.updateBumper(bumper.read());
-    harrysBle.updatePosition(discreet_x_pos, discreet_y_pos, degree);
+    harrysBle.updatePosition(discreet_x_pos, discreet_y_pos, rawStepsAngle);
     harrysBle.poll();
 
     // Position Printing
@@ -175,6 +216,67 @@ void loop() {
     //
     //     Serial.print(" AngleToWall: ");
     //     Serial.println(angleToWall);
+
+    int16_t testAngle = 0;
+    normalizeAngle(&testAngle);
+    testAngle = -1;
+    normalizeAngle(&testAngle);
+    testAngle = 1;
+    normalizeAngle(&testAngle);
+
+    testAngle = -170;
+    normalizeAngle(&testAngle);
+    testAngle = -179;
+    normalizeAngle(&testAngle);
+    testAngle = -180;
+    normalizeAngle(&testAngle);
+    testAngle = -181;
+    normalizeAngle(&testAngle);
+    testAngle = -190;
+    normalizeAngle(&testAngle);
+
+    testAngle = 170;
+    normalizeAngle(&testAngle);
+    testAngle = 179;
+    normalizeAngle(&testAngle);
+    testAngle = 180;
+    normalizeAngle(&testAngle);
+    testAngle = 181;
+    normalizeAngle(&testAngle);
+    testAngle = 190;
+    normalizeAngle(&testAngle);
+
+    testAngle = 539;
+    normalizeAngle(&testAngle);
+    testAngle = 540;
+    normalizeAngle(&testAngle);
+    testAngle = 541;
+    normalizeAngle(&testAngle);
+
+    testAngle = -539;
+    normalizeAngle(&testAngle);
+    testAngle = -540;
+    normalizeAngle(&testAngle);
+    testAngle = -541;
+    normalizeAngle(&testAngle);
+
+    testAngle = -3599;
+    normalizeAngle(&testAngle);
+    testAngle = -3600;
+    normalizeAngle(&testAngle);
+    testAngle = -3601;
+    normalizeAngle(&testAngle);
+
+    testAngle = 3599;
+    normalizeAngle(&testAngle);
+    testAngle = 3600;
+    normalizeAngle(&testAngle);
+    testAngle = 3601;
+    normalizeAngle(&testAngle);
+
+    Serial.println(" ");
+    Serial.println(" ");
+    Serial.println(" ");
 
     int x = 0;
 
