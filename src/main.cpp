@@ -108,36 +108,20 @@ void normalizeAngle(int16_t* anglePrt) {
 
     int16_t angle = *anglePrt;
 
-    Serial.print("got angle ");
-    Serial.print(angle);
-
     angle += 179;
 
-    Serial.print(" Stepped to ");
-    Serial.print(angle);
-
     angle %= 360;
-
-    Serial.print(" Stepped to ");
-    Serial.print(angle);
 
     if (angle < 0) {
         angle += 360;
     }
 
-    Serial.print(" Wrapped to ");
-    Serial.print(angle);
-
     angle += -179;
-
-    Serial.print(" which was transformed to ");
-    Serial.print(angle);
-    Serial.println(".");
 
     *anglePrt = angle;
 }
 
-int16_t angleFromSteps(int32_t leftSteps, int32_t rightSteps) {
+int16_t getAngleFromSteps(int32_t leftSteps, int32_t rightSteps) {
     int32_t diff = leftSteps - rightSteps;
 
     // doing one rotation of the robot involves a difference in steps of 780mm
@@ -155,24 +139,26 @@ void loop() {
     int32_t leftSteps = leftMotor.getStepsInMillimeters();
     int32_t rightSteps = rightMotor.getStepsInMillimeters();
 
-    int16_t rawStepsAngle = angleFromSteps(leftSteps, rightSteps);
+
+
+    int16_t angleFromSteps = getAngleFromSteps(leftSteps, rightSteps);
 
     int32_t average_steps = (leftSteps + rightSteps) / 2;
 
-    update_pos(average_steps, rawStepsAngle);
+    update_pos(average_steps, angleFromSteps);
 
     int16_t discreet_x_pos = (int16_t)running_x_pos;
     int16_t discreet_y_pos = (int16_t)running_y_pos;
 
-    uint16_t leftSensor = leftInfrared.read();
-    uint16_t frontSensor = ultrasonic.read();
-    uint16_t rightSensor = rightInfrared.read();
-    uint16_t alignmentLeftSensor = alignmentLeftInfrared.read();
-    uint16_t alignmentRightSensor = alignmentRightInfrared.read();
+    // uint16_t leftSensor = leftInfrared.read();
+    // uint16_t frontSensor = ultrasonic.read();
+    // uint16_t rightSensor = rightInfrared.read();
+    // uint16_t alignmentLeftSensor = alignmentLeftInfrared.read();
+    // uint16_t alignmentRightSensor = alignmentRightInfrared.read();
 
-    harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
+    // harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
     harrysBle.updateBumper(bumper.read());
-    harrysBle.updatePosition(discreet_x_pos, discreet_y_pos, rawStepsAngle);
+    harrysBle.updatePosition(discreet_x_pos, discreet_y_pos, angleFromSteps);
     harrysBle.poll();
 
     // Position Printing
@@ -180,10 +166,12 @@ void loop() {
     // Serial.print(leftSteps);
     // Serial.print(" rightSteps:");
     // Serial.print(rightSteps);
-    // Serial.print("Dif ");
-    // Serial.print(diff);
-    // Serial.print(" degree: ");
-    // Serial.print(degree);
+    Serial.print(" Dif ");
+    Serial.print(leftSteps - rightSteps);
+
+    Serial.print(" angleFromSteps: ");
+    Serial.print(angleFromSteps);
+    
     // Serial.print(" average steps: ");
     // Serial.print(average_steps);
     // Serial.print(" XD:");
@@ -217,70 +205,7 @@ void loop() {
     //     Serial.print(" AngleToWall: ");
     //     Serial.println(angleToWall);
 
-    int16_t testAngle = 0;
-    normalizeAngle(&testAngle);
-    testAngle = -1;
-    normalizeAngle(&testAngle);
-    testAngle = 1;
-    normalizeAngle(&testAngle);
 
-    testAngle = -170;
-    normalizeAngle(&testAngle);
-    testAngle = -179;
-    normalizeAngle(&testAngle);
-    testAngle = -180;
-    normalizeAngle(&testAngle);
-    testAngle = -181;
-    normalizeAngle(&testAngle);
-    testAngle = -190;
-    normalizeAngle(&testAngle);
-
-    testAngle = 170;
-    normalizeAngle(&testAngle);
-    testAngle = 179;
-    normalizeAngle(&testAngle);
-    testAngle = 180;
-    normalizeAngle(&testAngle);
-    testAngle = 181;
-    normalizeAngle(&testAngle);
-    testAngle = 190;
-    normalizeAngle(&testAngle);
-
-    testAngle = 539;
-    normalizeAngle(&testAngle);
-    testAngle = 540;
-    normalizeAngle(&testAngle);
-    testAngle = 541;
-    normalizeAngle(&testAngle);
-
-    testAngle = -539;
-    normalizeAngle(&testAngle);
-    testAngle = -540;
-    normalizeAngle(&testAngle);
-    testAngle = -541;
-    normalizeAngle(&testAngle);
-
-    testAngle = -3599;
-    normalizeAngle(&testAngle);
-    testAngle = -3600;
-    normalizeAngle(&testAngle);
-    testAngle = -3601;
-    normalizeAngle(&testAngle);
-
-    testAngle = 3599;
-    normalizeAngle(&testAngle);
-    testAngle = 3600;
-    normalizeAngle(&testAngle);
-    testAngle = 3601;
-    normalizeAngle(&testAngle);
-
-    Serial.println(" ");
-    Serial.println(" ");
-    Serial.println(" ");
-
-    int x = 0;
-
-    int y = 1;
-
+    Serial.println();
     delay(10);
 }
