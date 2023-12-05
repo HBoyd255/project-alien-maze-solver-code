@@ -1,0 +1,12 @@
+TODO move the contents of this file
+
+
+From the cad model
+
+front IR sensors are 73 millimetres apart and 64 mm forwards
+
+Side IR are 85 mm out and on the centre line
+
+US sensor is 66 mm forwards, 
+
+these values will need calibrating
