@@ -18,7 +18,10 @@ class Motor {
 
     void isr();
 
-    int32_t getStepsInMillimeters();
+    /// @brief getter that returns the linear travel distance of the motor in
+    // In millimetres.
+    /// @return the steps taken
+    int32_t getDistanceTraveled();
 
    private:
     uint8_t directionPin;

@@ -30,6 +30,7 @@
 #include "harrysBle.h"
 #include "infrared.h"
 #include "motor.h"
+#include "pedometer.h"
 #include "pixels.h"
 #include "systemInfo.h"
 #include "ultrasonic.h"
@@ -56,6 +57,8 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN);
 
 BluetoothLowEnergy harrysBle(&errorIndicator);
+
+Pedometer pedometer(&leftMotor, &rightMotor);
 
 volatile bool bumperUpdate = 0;
 
@@ -103,109 +106,64 @@ void update_pos(int32_t av, uint16_t degree) {
     last_av_steps = av;
 }
 
-void normalizeAngle(int16_t* anglePrt) {
-    // normalize the angle to be between -179 and 180
-
-    int16_t angle = *anglePrt;
+void spinTest() {
+    int16_t angle = pedometer.calculateAngle();
 
     angle += 179;
 
-    angle %= 360;
+    uint8_t led = angle / 22.5;
 
-    if (angle < 0) {
-        angle += 360;
-    }
-
-    angle += -179;
-
-    *anglePrt = angle;
-}
-
-int16_t getAngleFromSteps(int32_t leftSteps, int32_t rightSteps) {
-    int32_t diff = leftSteps - rightSteps;
-
-    // doing one rotation of the robot involves a difference in steps of 780mm
-    // between the two motors.
-    // so the degree of rotation is the difference between the two motors
-    // divided by 2.28 (with 2.28 being approximately 820/360)
-    int16_t angle = diff / 2.28;
-
-    normalizeAngle(&angle);
-
-    return angle;
+    pixels.clear();
+    pixels.setPixel(led, 255, 0, 0, true);
+    // Serial.println(led);
 }
 
 void loop() {
-    int32_t leftSteps = leftMotor.getStepsInMillimeters();
-    int32_t rightSteps = rightMotor.getStepsInMillimeters();
+    spinTest();
 
+    uint32_t bit = millis() / 3000;
 
+    bit = bit % 5;
 
-    int16_t angleFromSteps = getAngleFromSteps(leftSteps, rightSteps);
+    switch (bit) {
+        case 0:
+            leftMotor.setVelocity(-100);
+            rightMotor.setVelocity(100);
+            break;
+        case 1:
+            leftMotor.setVelocity(100);
+            rightMotor.setVelocity(-100);
+            break;
+        case 2:
+            leftMotor.setVelocity(-50);
+            rightMotor.setVelocity(100);
+            break;
+        case 3:
+            leftMotor.setVelocity(-50);
+            rightMotor.setVelocity(50);
+            break;
+        case 4:
+            leftMotor.setVelocity(0);
+            rightMotor.setVelocity(-0);
+            break;
+        default:
+            break;
+    }
 
-    int32_t average_steps = (leftSteps + rightSteps) / 2;
-
-    update_pos(average_steps, angleFromSteps);
-
-    int16_t discreet_x_pos = (int16_t)running_x_pos;
-    int16_t discreet_y_pos = (int16_t)running_y_pos;
-
-    // uint16_t leftSensor = leftInfrared.read();
-    // uint16_t frontSensor = ultrasonic.read();
-    // uint16_t rightSensor = rightInfrared.read();
-    // uint16_t alignmentLeftSensor = alignmentLeftInfrared.read();
-    // uint16_t alignmentRightSensor = alignmentRightInfrared.read();
-
-    // harrysBle.updateRangeSensors(leftSensor, frontSensor, rightSensor);
-    harrysBle.updateBumper(bumper.read());
-    harrysBle.updatePosition(discreet_x_pos, discreet_y_pos, angleFromSteps);
-    harrysBle.poll();
-
-    // Position Printing
-    // Serial.print(" leftSteps:");
-    // Serial.print(leftSteps);
-    // Serial.print(" rightSteps:");
-    // Serial.print(rightSteps);
-    Serial.print(" Dif ");
-    Serial.print(leftSteps - rightSteps);
-
-    Serial.print(" angleFromSteps: ");
-    Serial.print(angleFromSteps);
-    
-    // Serial.print(" average steps: ");
-    // Serial.print(average_steps);
-    // Serial.print(" XD:");
-    // Serial.print(discreet_x_pos);
-    // Serial.print(" YD:");
-    // Serial.println(discreet_y_pos);
-
-    // Sensor Printing
-    // Serial.print("Left:");
-    // Serial.print(leftSensor);
-    // Serial.print(" Front:");
-    // Serial.print(frontSensor);
-    // Serial.print(" Right:");
-    // Serial.print(rightSensor);
-    //     Serial.print(" AlignLeft: ");
-    //     Serial.print(alignmentLeftSensor);
-    //     Serial.print(" AlignRight: ");
-    //     Serial.print(alignmentRightSensor);
     //
-    //     int16_t alignmentDifference = alignmentLeftSensor -
-    //     alignmentRightSensor;
+    //     Serial.print(" Diff:");
+    //     Serial.print(pedometer.getDifference());
+    //     Serial.print(" Angle:");
+    //     Serial.print(pedometer.calculateAngle());
     //
-    //     Serial.print(" AlignDiff: ");
-    //     Serial.print(alignmentDifference);
-    //
-    //     const uint16_t alignmentOffset = 60;
-    //
-    //     int16_t angleToWall = degrees(atan2(alignmentDifference,
-    //     alignmentOffset));
-    //
-    //     Serial.print(" AngleToWall: ");
-    //     Serial.println(angleToWall);
-
-
-    Serial.println();
-    delay(10);
+    //     Serial.print(" US:");
+    //     Serial.print(ultrasonic.read());
+    //     Serial.print(" L:");
+    //     Serial.print(leftInfrared.read());
+    //     Serial.print(" R:");
+    //     Serial.print(rightInfrared.read());
+    //     Serial.print(" FL:");
+    //     Serial.print(alignmentLeftInfrared.read());
+    //     Serial.print(" FR:");
+    //     Serial.print(alignmentRightInfrared.read());
 }

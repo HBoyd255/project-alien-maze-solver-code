@@ -17,26 +17,10 @@ void Ultrasonic::setup(voidFuncPtr isr) {
     pinMode(this->echoPin, INPUT);
 
     attachInterrupt(digitalPinToInterrupt(this->echoPin), isr, CHANGE);
-
 }
 
 uint16_t Ultrasonic::myPulseFunction(uint32_t timeout) {
     uint32_t functionStartTime = micros();
-
-    //     while (digitalRead(pin) != HIGH) {
-    //         if (micros() - functionStartTime > timeout) {
-    //             return 0;
-    //             // TODO throw an error, or return "MAX distance" or something
-    //         }
-    //     }
-    //     uint32_t highStartTime = micros();
-    //
-    //     while (digitalRead(pin) != LOW) {
-    //         if (micros() - functionStartTime > timeout) {
-    //             return 0;
-    //             // TODO throw an error, or return "MAX distance" or something
-    //         }
-    //     }
 
     while (this->pinUpTime < functionStartTime ||
            this->pinDownTime < functionStartTime) {
@@ -45,16 +29,7 @@ uint16_t Ultrasonic::myPulseFunction(uint32_t timeout) {
             // TODO throw an error, or return "MAX distance" or something
         }
     }
-    uint32_t pulseWidth = pinDownTime - pinUpTime;
-
-    // Serial.print("started at: ");
-    // Serial.print(functionStartTime);
-    // Serial.print(" up: ");
-    // Serial.print(pinUpTime);
-    // Serial.print(" down: ");
-    // Serial.print(pinDownTime);
-    // Serial.print(" duration: ");
-    // Serial.println(pulseWidth);
+    uint32_t pulseWidth = this->pinDownTime - this->pinUpTime;
 
     return pulseWidth;
 }
@@ -71,7 +46,7 @@ uint16_t Ultrasonic::read() {
     delayMicroseconds(TRIGGER_PULSE_DURATION);
     digitalWrite(this->triggerPin, LOW);
 
-    uint16_t reflectionDuration = this->myPulseFunction(10000);
+    uint16_t reflectionDuration = this->myPulseFunction(ULTRASONIC_TIMEOUT);
 
     uint16_t duration = reflectionDuration >> 1;
 

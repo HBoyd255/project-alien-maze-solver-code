@@ -64,8 +64,6 @@ void Motor::setVelocity(int8_t formattedVelocity) {
     // Direction represents the drive direction, not the rotation direction
     bool direction = formattedVelocity > 0;
 
-    Serial.println(formattedVelocity);
-
     this->setSpeedAndDir(abs(formattedVelocity), direction);
 }
 
@@ -83,7 +81,7 @@ void Motor::isr() {
     }
 }
 
-int32_t Motor::getStepsInMillimeters() {
+int32_t Motor::getDistanceTraveled() {
     // One rotation is 300 steps
     // and the wheel circumference is 147.65mm
     // so 1 step is like 0.5mm
