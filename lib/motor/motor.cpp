@@ -1,4 +1,3 @@
-
 #include "motor.h"
 
 Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,
@@ -12,7 +11,13 @@ Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,
     this->steps = 0;
 }
 
+/**
+ * @brief Sets up the motor class by 
+ * 
+ * @param isrPtr Pointer to the 
+ */
 void Motor::setup(voidFuncPtr isrPtr) {
+
     attachInterrupt(digitalPinToInterrupt(this->encoderAPin), isrPtr, CHANGE);
 
     pinMode(this->directionPin, OUTPUT);
@@ -69,7 +74,6 @@ void Motor::setVelocity(int8_t formattedVelocity) {
 
 void Motor::stop() {
     this->setSpeedAndDir(0, 0);
-    this->steps = 0;
 }
 
 void Motor::isr() {

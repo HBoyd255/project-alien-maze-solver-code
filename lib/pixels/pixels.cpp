@@ -1,11 +1,14 @@
 #include "pixels.h"
 
+#define TOTAL_LED_COUNT LED_GROUP_COUNT* LEDS_PER_GROUP
+
 // TODO change the set all to use the pixel function, not the group function
 const uint8_t ledGroups[LED_GROUP_COUNT][LEDS_PER_GROUP] = {
     {7, 8}, {9, 10}, {11, 12}, {13, 14}, {15, 0}, {1, 2}, {3, 4}, {5, 6}};
 
-Pixels::Pixels(uint8_t dataPin)
-    : led_strip(LED_GROUP_COUNT * LEDS_PER_GROUP, PIXELS_DATA_PIN) {
+
+//TODO come back and test this
+Pixels::Pixels(uint8_t dataPin) : led_strip(TOTAL_LED_COUNT, dataPin) {
     this->dataPin = dataPin;
 }
 

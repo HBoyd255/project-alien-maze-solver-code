@@ -20,14 +20,16 @@
 // angle can be calculated using the formula degrees(atan2(y,x))
 // also the angle should be locked between -179 and 180 degrees
 
+
 #define INITIAL_ANGLE 90
 
 #include <Arduino.h>
 
+#include "binary.h"
+#include "bluetoothLowEnergy.h"
 #include "bumper.h"
 #include "drive.h"
 #include "errorIndicator.h"
-#include "harrysBle.h"
 #include "infrared.h"
 #include "motor.h"
 #include "pedometer.h"
@@ -119,36 +121,43 @@ void spinTest() {
 }
 
 void loop() {
-    spinTest();
-
-    uint32_t bit = millis() / 3000;
-
-    bit = bit % 5;
-
-    switch (bit) {
-        case 0:
-            leftMotor.setVelocity(-100);
-            rightMotor.setVelocity(100);
-            break;
-        case 1:
-            leftMotor.setVelocity(100);
-            rightMotor.setVelocity(-100);
-            break;
-        case 2:
-            leftMotor.setVelocity(-50);
-            rightMotor.setVelocity(100);
-            break;
-        case 3:
-            leftMotor.setVelocity(-50);
-            rightMotor.setVelocity(50);
-            break;
-        case 4:
-            leftMotor.setVelocity(0);
-            rightMotor.setVelocity(-0);
-            break;
-        default:
-            break;
+    for (uint16_t x = 0; x < 256; x++) {
+        Serial.println();
+        Serial.println(x);
+        printByte(x);
     }
+    Serial.println("==================================");
+
+    //     spinTest();
+    //
+    //     uint32_t bit = millis() / 3000;
+    //
+    //     bit = bit % 5;
+    //
+    //     switch (bit) {
+    //         case 0:
+    //             leftMotor.setVelocity(-100);
+    //             rightMotor.setVelocity(100);
+    //             break;
+    //         case 1:
+    //             leftMotor.setVelocity(100);
+    //             rightMotor.setVelocity(-100);
+    //             break;
+    //         case 2:
+    //             leftMotor.setVelocity(-50);
+    //             rightMotor.setVelocity(100);
+    //             break;
+    //         case 3:
+    //             leftMotor.setVelocity(-50);
+    //             rightMotor.setVelocity(50);
+    //             break;
+    //         case 4:
+    //             leftMotor.setVelocity(0);
+    //             rightMotor.setVelocity(-0);
+    //             break;
+    //         default:
+    //             break;
+    //     }
 
     //
     //     Serial.print(" Diff:");

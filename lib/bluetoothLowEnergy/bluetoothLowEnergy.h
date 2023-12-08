@@ -1,7 +1,7 @@
 
 
-#ifndef HARRYS_BLE_H
-#define HARRYS_BLE_H
+#ifndef BLUETOOTH_LOW_ENERGY_H
+#define BLUETOOTH_LOW_ENERGY_H
 
 // https://www.arduino.cc/reference/en/
 #include <Arduino.h>
@@ -26,7 +26,4 @@ class BluetoothLowEnergy {
     ErrorIndicator* errorIndicator;
 };
 
-// TODO rename this file, it cant be called ble.h because that is the name of
-// the library
-
-#endif  // HARRYS_BLE_H
+#endif  // BLUETOOTH_LOW_ENERGY_H
