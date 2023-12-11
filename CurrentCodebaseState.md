@@ -1,8 +1,8 @@
 # Current State
 
 Im introducing a feature lock, until my current code it up to an acceptable
-Standard, that means that every file should be refactored (If required), tested
-and documented(By a Human).
+Standard, that means that every file should be refactored (If required) and
+documented(By a Human).
 
 Until this standard is met, no additional features will be added to this
 project.
@@ -36,24 +36,5 @@ Schlosser to generate template comment block and then write the content myself.
 - drive
 - motor
 - pedometer
-- systemInfo
-- ultrasonic
-
-## Testing
-
-### Tested Files
-
-### Untested Files
-
-- main
-- binary
-- bluetoothLowEnergy
-- bumper
-- drive
-- errorIndicator
-- infrared
-- motor
-- pedometer
-- pixels
 - systemInfo
 - ultrasonic
