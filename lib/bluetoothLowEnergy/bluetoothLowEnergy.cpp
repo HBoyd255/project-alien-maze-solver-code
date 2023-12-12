@@ -2,6 +2,17 @@
 
 #include "bluetoothLowEnergy.h"
 
+// This is the only module to directly import systemInfo.h. All the other
+// modules have their constant values passed by reference upon construction.
+// This module, however, imports the entire contents of systemInfo.h, due to
+// quantity of variables that are needed. This decision was also inspired by the
+// fact that the first and most important function of the systemInfo.h was just
+// to enforce consistency between the UUIDs uploaded to the robot and the ones
+// accessed by the central program.
+#include "systemInfo.h"  // TODO actually
+
+// Two structs created for the purpose of bundling integers together so
+// that the can be sent as one object over bluetooth.
 struct {
     uint16_t leftInfrared;
     uint16_t ultrasonic;
@@ -15,13 +26,11 @@ struct {
 } typedef PositionStruct;
 
 BLEService mainService(MAIN_SERVICE_UUID);
-
 BLEByteCharacteristic bumperCharacteristic(BUMPER_CHARACTERISTIC_UUID,
                                            BLERead | BLENotify);
 BLECharacteristic rangeSensorsCharacteristic(RANGE_SENSORS_CHARACTERISTIC_UUID,
                                              BLERead | BLENotify,
                                              sizeof(RangeSensorData));
-
 BLECharacteristic positionCharacteristic(POSITION_CHARACTERISTIC_UUID,
                                          BLERead | BLENotify,
                                          sizeof(PositionStruct));
@@ -30,14 +39,15 @@ BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr) {
     this->errorIndicator = errorIndicatorPtr;
 }
 
-void BluetoothLowEnergy::setup() {
+void BluetoothLowEnergy::setup(const char* deviceName) {
     // Set a boolean indicating if the error indicator object is available
     bool errorIndicatorAvailable = (this->errorIndicator != NULL);
 
     if (!BLE.begin()) {
-        Serial.println("Starting BLE failed!");
-        while (1)
-            ;
+        if (errorIndicatorAvailable) {
+            String errorMessage = "BLE initialisation has failed.";
+            errorIndicator->errorOccurred(errorMessage);
+        }
     }
 
     if (BLE.address() != BLE_MAC_ADDRESS) {
@@ -53,8 +63,10 @@ void BluetoothLowEnergy::setup() {
     }
 
     // Name the device
-    BLE.setDeviceName(BLE_DEVICE_NAME);
-    BLE.setLocalName(BLE_DEVICE_NAME);
+    BLE.setDeviceName(deviceName);
+    BLE.setLocalName(deviceName);
+
+    
 
     mainService.addCharacteristic(rangeSensorsCharacteristic);
     mainService.addCharacteristic(bumperCharacteristic);

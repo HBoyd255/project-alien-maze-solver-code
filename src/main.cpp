@@ -20,7 +20,6 @@
 // angle can be calculated using the formula degrees(atan2(y,x))
 // also the angle should be locked between -179 and 180 degrees
 
-
 #define INITIAL_ANGLE 90
 
 #include <Arduino.h>
@@ -37,6 +36,7 @@
 #include "systemInfo.h"
 #include "ultrasonic.h"
 
+// TODO pass in the on board led
 ErrorIndicator errorIndicator;
 
 Motor leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
@@ -58,7 +58,7 @@ Infrared alignmentRightInfrared(ALIGNMENT_RIGHT_INFRARED_INDEX);
 Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN);
 
-BluetoothLowEnergy harrysBle(&errorIndicator);
+BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator);
 
 Pedometer pedometer(&leftMotor, &rightMotor);
 
@@ -91,7 +91,10 @@ void setup() {
     // pressed or released.
     bumper.assignCallback([]() { bumperUpdate = true; });
 
-    harrysBle.setup();
+    bluetoothLowEnergy.setup(BLE_DEVICE_NAME);
+
+    pixels.setPixel(0,255,100,0,true);
+
 }
 
 int16_t last_av_steps = 0;
@@ -121,19 +124,24 @@ void spinTest() {
 }
 
 void loop() {
-    for (uint16_t x = 0; x < 256; x++) {
-        Serial.println();
-        Serial.println(x);
-        printByte(x);
-    }
-    Serial.println("==================================");
+
+
+
+
+
+    // for (uint16_t x = 0; x < 256; x++) {
+    //     Serial.println();
+    //     Serial.println(x);
+    //     printByte(x);
+    // }
+    // Serial.println("==================================");
 
     //     spinTest();
-    //
+    // 
     //     uint32_t bit = millis() / 3000;
-    //
+    // 
     //     bit = bit % 5;
-    //
+    // 
     //     switch (bit) {
     //         case 0:
     //             leftMotor.setVelocity(-100);
@@ -159,20 +167,21 @@ void loop() {
     //             break;
     //     }
 
-    //
-    //     Serial.print(" Diff:");
-    //     Serial.print(pedometer.getDifference());
-    //     Serial.print(" Angle:");
-    //     Serial.print(pedometer.calculateAngle());
-    //
-    //     Serial.print(" US:");
-    //     Serial.print(ultrasonic.read());
-    //     Serial.print(" L:");
-    //     Serial.print(leftInfrared.read());
-    //     Serial.print(" R:");
-    //     Serial.print(rightInfrared.read());
-    //     Serial.print(" FL:");
-    //     Serial.print(alignmentLeftInfrared.read());
-    //     Serial.print(" FR:");
-    //     Serial.print(alignmentRightInfrared.read());
+//     Serial.print(" Diff:");
+//     Serial.print(pedometer.getDifference());
+//     Serial.print(" Angle:");
+//     Serial.print(pedometer.calculateAngle());
+// 
+//     Serial.print(" US:");
+//     Serial.print(ultrasonic.read());
+//     Serial.print(" L:");
+//     Serial.print(leftInfrared.read());
+//     Serial.print(" R:");
+//     Serial.print(rightInfrared.read());
+//     Serial.print(" FL:");
+//     Serial.print(alignmentLeftInfrared.read());
+//     Serial.print(" FR:");
+//     Serial.print(alignmentRightInfrared.read());
+
+    bluetoothLowEnergy.updateBumper(bumper.read());
 }

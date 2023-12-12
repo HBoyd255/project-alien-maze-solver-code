@@ -11,6 +11,7 @@
  * @copyright Copyright (c) 2023
  */
 
+// https://www.arduino.cc/reference/en/
 #include <Arduino.h>
 
 /**
