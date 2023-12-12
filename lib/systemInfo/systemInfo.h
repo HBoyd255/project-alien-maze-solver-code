@@ -23,14 +23,14 @@
 
 // LEDs
 // The pin that D1 of the LED strip is connected to.
-#define PIXELS_DATA_PIN D4  // USONIC 4 
+#define PIXELS_DATA_PIN D5  // USONIC 3
 
 // Motors
 // Left
 #define LEFT_MOTOR_DIRECTION_PIN A0 //TODO name this
 #define LEFT_MOTOR_SPEED_PIN D9
 #define LEFT_MOTOR_ENCODER_A_PIN D2
-#define LEFT_MOTOR_ENCODER_B_PIN D5  // USONIC 3
+#define LEFT_MOTOR_ENCODER_B_PIN D4  // USONIC 4
 #define LEFT_MOTOR_ROTATION_INVERTED true
 
 
