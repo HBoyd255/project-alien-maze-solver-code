@@ -102,8 +102,6 @@ void BluetoothLowEnergy::updateRangeSensors(uint16_t leftSensor,
     sensorData.frontUltrasonic = frontSensor;
     sensorData.rightInfrared = rightSensor;
 
-    RangeSensorData* ptr = &sensorData;
-
     uint8_t* dataToSend = (uint8_t*)&sensorData;
 
     this->_rangeSensorsCharacteristic.writeValue(dataToSend, RANGE_SIZE);

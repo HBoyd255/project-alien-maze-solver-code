@@ -22,31 +22,38 @@
 // Hardware definitions
 
 // LEDs
+
+
 // The pin that D1 of the LED strip is connected to.
 #define PIXELS_DATA_PIN D5  // USONIC 3
 
+
+#define LED_GROUPS                                                                 \
+    {                                                                          \
+        {7, 8}, {9, 10}, {11, 12}, {13, 14}, {15, 0}, {1, 2}, {3, 4}, { 5, 6 } \
+    }
+
+
 // Motors
 // Left
-#define LEFT_MOTOR_DIRECTION_PIN A0 //TODO name this
+#define LEFT_MOTOR_DIRECTION_PIN A0  // TODO name this
 #define LEFT_MOTOR_SPEED_PIN D9
 #define LEFT_MOTOR_ENCODER_A_PIN D2
 #define LEFT_MOTOR_ENCODER_B_PIN D4  // USONIC 4
 #define LEFT_MOTOR_ROTATION_INVERTED true
 
-
 // Right
 #define RIGHT_MOTOR_DIRECTION_PIN A1
 #define RIGHT_MOTOR_SPEED_PIN D10
 #define RIGHT_MOTOR_ENCODER_A_PIN D3
-#define RIGHT_MOTOR_ENCODER_B_PIN A7   // GPIO 1
+#define RIGHT_MOTOR_ENCODER_B_PIN A7  // GPIO 1
 #define RIGHT_MOTOR_ROTATION_INVERTED false
-
 
 // Bumper
 // Shift register
 #define BUMPER_SHIFT_REG_DATA A6   // GPIO 2
-#define BUMPER_SHIFT_REG_LOAD A3  // GPIO 3
-#define BUMPER_SHIFT_REG_CLOCK A2 // GPIO 4
+#define BUMPER_SHIFT_REG_LOAD A3   // GPIO 3
+#define BUMPER_SHIFT_REG_CLOCK A2  // GPIO 4
 // Interrupt pin
 #define BUMPER_INTERRUPT_PIN D8
 

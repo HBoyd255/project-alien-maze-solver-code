@@ -49,7 +49,8 @@ Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
                  RIGHT_MOTOR_ROTATION_INVERTED);
 
 Drive drive(&leftMotor, &rightMotor);
-Pixels pixels(PIXELS_DATA_PIN);
+
+Pixels pixels(LED_GROUPS, PIXELS_DATA_PIN);
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, ULTRASONIC_TIMEOUT);
 Infrared leftInfrared(&errorIndicator, LEFT_INFRARED_INDEX);
 Infrared rightInfrared(&errorIndicator, RIGHT_INFRARED_INDEX);
@@ -128,24 +129,16 @@ void setup() {
     //     leftMotor.setVelocity(-100);
     //     rightMotor.setVelocity(100);
 }
+// TODO change the set all to use the pixel function, not the group function
+
+// std::vector<std::vector<uint8_t>> groups =
+
 void loop() {
-    //     bluetoothLowEnergy.poll();
-    //
-    //     bluetoothLowEnergy.updateBumper(bumper.read());
+    pixels.stupidTest();
 
-    Angle fromEncoders = motionTracker.angleFromOdometry();
-    Angle fromFrontIR = motionTracker.angleFromFrontIR();
-
-    if (fromFrontIR == 0) {
-        pixels.setAll(255, 0, 0);
-    } else {
-        pixels.setAll(0, 0, 0);
+    for (uint8_t i = 0; i < pixels.getGroupCount(); i++) {
+        pixels.clear();
+        pixels.setGroup(i, 255, 0, 255, true);
+        delay(1000);
     }
-
-    pixels.show();
-
-    Serial.print(" fromEncoders:");
-    Serial.print(fromEncoders);
-    Serial.print(" fromFrontIR:");
-    Serial.println(fromFrontIR);
 }
