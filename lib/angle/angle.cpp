@@ -78,6 +78,19 @@ Angle Angle::operator-=(int16_t valueToSub) {
 }
 
 /**
+ * @brief returns the angle but within the range 0-359
+ *
+ * @return uint8_t angle wrapped to 0-359.
+ */
+uint16_t Angle::get360() {
+    if (_value < 0) {
+        return _value += DEGREES_PER_ROTATION;
+    } else {
+        return _value;
+    }
+}
+
+/**
  * @brief wraps a provided int16_t between -179 and 180.
  *
  * @param valueToNormalize the value to wrap between -179 and 180.

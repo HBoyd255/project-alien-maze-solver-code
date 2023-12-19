@@ -73,6 +73,14 @@ class Angle {
      */
     Angle operator-=(int16_t valueToSub);
 
+    /**
+     * @brief returns the angle but within the range 0-359
+     *
+     * @return uint8_t angle wrapped to 0-359.
+     */
+    uint16_t get360();
+    
+
    private:
     /**
      * @brief the value of the angle, a int16_t wrapped between -179 and 180.
