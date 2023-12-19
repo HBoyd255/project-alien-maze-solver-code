@@ -25,6 +25,9 @@
 // (Register 0x35)
 #define IR_DISTANCE_REG_ADDRESS 0x5E
 
+
+//TODO make IR sensors return -1 if mad range is reached
+
 void setMultiplexer(uint8_t channel) {
     if (channel >= MULTIPLEXER_CHANNEL_COUNT) {
         Serial.println("Invalid, there are only");

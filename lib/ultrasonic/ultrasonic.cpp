@@ -19,6 +19,8 @@ void Ultrasonic::setup(voidFuncPtr isr) {
     attachInterrupt(digitalPinToInterrupt(this->echoPin), isr, CHANGE);
 }
 
+// TODO make IR sensors return -1 if mad range is reached
+
 uint16_t Ultrasonic::myPulseFunction(uint32_t timeout) {
     uint32_t functionStartTime = micros();
 
