@@ -13,17 +13,24 @@
 
 class BluetoothLowEnergy {
    public:
-    BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr);
-    void setup(const char* deviceName);
+    BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
+                       const char* mainServiceUUID, const char* bumperUUID,
+                       const char* rangeUUID, const char* positionUUID
 
-    void updateRangeSensors(uint16_t left, uint16_t front, uint16_t right);
+    );
+    void setup(const char* deviceName, const char* macAddress);
+
     void updateBumper(uint8_t value);
-    void updatePosition(uint16_t x, uint16_t y, uint16_t angle);
+    void updateRangeSensors(uint16_t left, uint16_t front, uint16_t right);
+    void updatePosition(int16_t x, int16_t y, int16_t angle);
     void poll();
 
    private:
-    const char* deviceName;
-    ErrorIndicator* errorIndicator;
+    ErrorIndicator* _errorIndicatorPtr;
+    BLEService _mainService;
+    BLEByteCharacteristic _bumperCharacteristic;
+    BLECharacteristic _rangeSensorsCharacteristic;
+    BLECharacteristic _positionCharacteristic;
 };
 
 #endif  // BLUETOOTH_LOW_ENERGY_H

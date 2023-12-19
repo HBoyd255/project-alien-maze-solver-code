@@ -2,55 +2,67 @@
 
 #include "bluetoothLowEnergy.h"
 
-// This is the only module to directly import systemInfo.h. All the other
-// modules have their constant values passed by reference upon construction.
-// This module, however, imports the entire contents of systemInfo.h, due to
-// quantity of variables that are needed. This decision was also inspired by the
-// fact that the first and most important function of the systemInfo.h was just
-// to enforce consistency between the UUIDs uploaded to the robot and the ones
-// accessed by the central program.
-#include "systemInfo.h"  // TODO actually
-
 // Two structs created for the purpose of bundling integers together so
 // that the can be sent as one object over bluetooth.
+
+/**
+ * @brief Struct for bundling the distances obtained from the various range
+ * sensors, all measured in millimetres.
+ *
+ */
 struct {
     uint16_t leftInfrared;
-    uint16_t ultrasonic;
+    uint16_t frontUltrasonic;
     uint16_t rightInfrared;
 } typedef RangeSensorData;
 
-struct {
-    int16_t x;
-    int16_t y;
-    int16_t angle;
+// The size of the RangeSensorData struct. Three uint16_ts should be 6 bytes.
+#define RANGE_SIZE sizeof(RangeSensorData)
+
+/**
+ * @brief Struct for bundling the position and
+ *
+ */
+struct {            // TODO turn this into the Pose.
+    int16_t x;      // X position in millimeters.
+    int16_t y;      // Y position in millimeters.
+    int16_t angle;  // The angle in degrees()
 } typedef PositionStruct;
 
-BLEService mainService(MAIN_SERVICE_UUID);
-BLEByteCharacteristic bumperCharacteristic(BUMPER_CHARACTERISTIC_UUID,
-                                           BLERead | BLENotify);
-BLECharacteristic rangeSensorsCharacteristic(RANGE_SENSORS_CHARACTERISTIC_UUID,
-                                             BLERead | BLENotify,
-                                             sizeof(RangeSensorData));
-BLECharacteristic positionCharacteristic(POSITION_CHARACTERISTIC_UUID,
-                                         BLERead | BLENotify,
-                                         sizeof(PositionStruct));
+// The size of the PositionStruct struct. Three int16_ts should be 6 bytes.
+#define POSITION_SIZE sizeof(PositionStruct)
 
-BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr) {
-    this->errorIndicator = errorIndicatorPtr;
+// BLERead and BLENotify are bitmask flags, the logical or combines them into
+// one flag, for conciseness.
+#define BLE_READ_NOTIFY BLERead | BLENotify
+
+
+BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
+                                       const char* mainServiceUUID,
+                                       const char* bumperUUID,
+                                       const char* rangeUUID,
+                                       const char* positionUUID)
+    : _mainService(mainServiceUUID),
+      _bumperCharacteristic(bumperUUID, BLE_READ_NOTIFY),
+      _rangeSensorsCharacteristic(rangeUUID, BLE_READ_NOTIFY, RANGE_SIZE),
+      _positionCharacteristic(positionUUID, BLE_READ_NOTIFY, POSITION_SIZE)
+
+{
+    this->_errorIndicatorPtr = errorIndicatorPtr;
 }
 
-void BluetoothLowEnergy::setup(const char* deviceName) {
+void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     // Set a boolean indicating if the error indicator object is available
-    bool errorIndicatorAvailable = (this->errorIndicator != NULL);
+    bool errorIndicatorAvailable = (this->_errorIndicatorPtr != NULL);
 
     if (!BLE.begin()) {
         if (errorIndicatorAvailable) {
             String errorMessage = "BLE initialisation has failed.";
-            errorIndicator->errorOccurred(errorMessage);
+            _errorIndicatorPtr->errorOccurred(errorMessage);
         }
     }
 
-    if (BLE.address() != BLE_MAC_ADDRESS) {
+    if (BLE.address() != macAddress) {
         if (errorIndicatorAvailable) {
             String errorMessage =
                 "The BLE MAC address read from the device is not the same as "
@@ -58,7 +70,7 @@ void BluetoothLowEnergy::setup(const char* deviceName) {
                 "BLE_MAC_ADDRESS in systemInfo.h to " +
                 String(BLE.address()) + ".";
 
-            errorIndicator->errorOccurred(errorMessage);
+            _errorIndicatorPtr->errorOccurred(errorMessage);
         }
     }
 
@@ -66,16 +78,19 @@ void BluetoothLowEnergy::setup(const char* deviceName) {
     BLE.setDeviceName(deviceName);
     BLE.setLocalName(deviceName);
 
-    
+    this->_mainService.addCharacteristic(this->_bumperCharacteristic);
+    this->_mainService.addCharacteristic(this->_rangeSensorsCharacteristic);
+    this->_mainService.addCharacteristic(this->_positionCharacteristic);
 
-    mainService.addCharacteristic(rangeSensorsCharacteristic);
-    mainService.addCharacteristic(bumperCharacteristic);
-    mainService.addCharacteristic(positionCharacteristic);
-    BLE.addService(mainService);
-    BLE.setAdvertisedService(mainService);
+    BLE.addService(this->_mainService);
+    BLE.setAdvertisedService(this->_mainService);
 
     // Start advertising
     BLE.advertise();
+}
+
+void BluetoothLowEnergy::updateBumper(uint8_t value) {
+    this->_bumperCharacteristic.writeValue(value);
 }
 
 void BluetoothLowEnergy::updateRangeSensors(uint16_t leftSensor,
@@ -84,35 +99,26 @@ void BluetoothLowEnergy::updateRangeSensors(uint16_t leftSensor,
     RangeSensorData sensorData;
 
     sensorData.leftInfrared = leftSensor;
-    sensorData.ultrasonic = frontSensor;
+    sensorData.frontUltrasonic = frontSensor;
     sensorData.rightInfrared = rightSensor;
 
-    // Write the sensor data to the characteristic
+    RangeSensorData* ptr = &sensorData;
 
-    // TODO fix this so it casts to three uint16_t
-    rangeSensorsCharacteristic.writeValue((uint8_t*)&sensorData,
-                                          sizeof(RangeSensorData));
+    uint8_t* dataToSend = (uint8_t*)&sensorData;
+
+    this->_rangeSensorsCharacteristic.writeValue(dataToSend, RANGE_SIZE);
 }
 
-void BluetoothLowEnergy::updateBumper(uint8_t value) {
-    static uint8_t lastValue = 0;
-
-    if (value != lastValue) {
-        bumperCharacteristic.writeValue(value);
-        lastValue = value;
-    }
-}
-
-void BluetoothLowEnergy::updatePosition(uint16_t x, uint16_t y,
-                                        uint16_t angle) {
-    static PositionStruct PositionData;
+void BluetoothLowEnergy::updatePosition(int16_t x, int16_t y, int16_t angle) {
+    PositionStruct PositionData;
 
     PositionData.x = x;
     PositionData.y = y;
     PositionData.angle = angle;
 
-    positionCharacteristic.writeValue((uint8_t*)&PositionData,
-                                      sizeof(RangeSensorData));
+    uint8_t* dataToSend = (uint8_t*)&PositionData;
+
+    this->_positionCharacteristic.writeValue(dataToSend, RANGE_SIZE);
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }
