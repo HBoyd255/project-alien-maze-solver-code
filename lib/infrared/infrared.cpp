@@ -25,11 +25,6 @@
 // (Register 0x35)
 #define IR_DISTANCE_REG_ADDRESS 0x5E
 
-/**
- * Sets the multiplexer channel to connect a given sensor to the I2C bus.
- *
- * @param channel The channel number to set.
- */
 void setMultiplexer(uint8_t channel) {
     if (channel >= MULTIPLEXER_CHANNEL_COUNT) {
         Serial.println("Invalid, there are only");
@@ -43,54 +38,30 @@ void setMultiplexer(uint8_t channel) {
     Wire.endTransmission();
 }
 
-/**
- * @brief Constructs an Infrared object with the specified index.
- *
- * @param index The index of the infrared sensor.
- */
-Infrared::Infrared(uint8_t index) { this->index = index; }
+Infrared::Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index) {
+    this->_errorIndicatorPtr = errorIndicatorPtr;
+    this->index = index;
+}
 
-/**
- * @brief Initializes the infrared sensor.
- *
- * This function sets up the necessary configurations and parameters for the
- * infrared sensor. It should be called once during the setup phase of the
- * program.
- */
 void Infrared::setup() {
-    // Initialize the I2C bus
     Wire.begin();
 
-    // Set the I2C bus multiplexer to the channel of this infrared sensor
     grabMultiplexer();
 
-    // Read the shift value from the sensor
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
     Wire.write(IR_SHIFT_REG_ADDRESS);
     Wire.endTransmission();
 
     Wire.requestFrom(IR_SLAVE_ADDRESS, 1);
 
-    // TODO add a timeout, and connect it to the error indicator
-    // Wait until the data is available, then read it
-    while (!Wire.available()) {
-        Serial.print("value not received for sensor ");
-        Serial.print(this->index);
-        Serial.println(".");
+    if (!Wire.available()) {
+        String errorMessage =
+            "Cannot read sensor at index " + String(this->index) + ".";
+        this->_errorIndicatorPtr->errorOccurred(errorMessage);
     }
     this->shiftValue = Wire.read();
 }
 
-/**
- * @brief Reads the distance from the infrared sensor.
- *
- * This function reads the distance from the infrared sensor by communicating
- * with the sensor via I2C.
- * It calculates the distance using the given formula and returns the distance
- * in millimeters.
- *
- * @return The distance in millimeters.
- */
 uint16_t Infrared::read() {
     grabMultiplexer();
 
@@ -100,6 +71,7 @@ uint16_t Infrared::read() {
 
     Wire.requestFrom(IR_SLAVE_ADDRESS, 2);
 
+    // TODO add a timeout and a call to the errorIndicator.
     while (Wire.available() < 2) {
         Serial.print("Cannot read from sensor ");
         Serial.print(this->index);
@@ -116,15 +88,7 @@ uint16_t Infrared::read() {
 
     uint16_t distance = (((high << 4) | low) * 10) >> (4 + this->shiftValue);
 
-    // int distance = high >> this->shiftValue;
     return distance;
 }
 
-/**
- * @brief Sets the multiplexer to the channel of the infrared sensor.
- *
- * This function sets the multiplexer to the channel of the infrared sensor.
- * This is necessary because the multiplexer is shared between all infrared
- * sensors.
- */
 void Infrared::grabMultiplexer() { setMultiplexer(this->index); }

@@ -24,12 +24,12 @@ Schlosser to generate template comment block and then write the content myself.
 
 ### AI Documented Files
 
-- errorIndicator
-- infrared
 - pixels
 
 ### Undocumented Files
 
+- infrared
+- errorIndicator
 - main
 - bluetoothLowEnergy
 - bumper
