@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+// TODO the bumper is now rotated by 180, fix this in code, make it more modular
+
 Bumper::Bumper(uint8_t dataPin, uint8_t loadPin, uint8_t clockPin,
                uint8_t interruptPin) {
     this->dataPin = dataPin;
