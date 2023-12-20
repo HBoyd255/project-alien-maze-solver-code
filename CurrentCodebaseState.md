@@ -20,21 +20,22 @@ Schlosser to generate template comment block and then write the content myself.
 
 ### Human Documented Files
 
+- angle
 - binary
-
-### AI Documented Files
-
-- pixels
+- errorIndicator
+- history
+- schedule
+- systemInfo
 
 ### Undocumented Files
 
+- pixels
 - infrared
-- errorIndicator
 - main
 - bluetoothLowEnergy
 - bumper
 - drive
 - motor
-- pedometer
-- systemInfo
+- MotionTracker
 - ultrasonic
+- main
