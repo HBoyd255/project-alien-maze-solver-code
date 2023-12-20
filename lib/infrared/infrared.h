@@ -9,18 +9,24 @@
 
 class Infrared {
    public:
-    Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index);
+    Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index,
+             uint16_t maxRange);
 
     void setup();
 
-    uint16_t read();
+    int16_t read();
+    int16_t sample();
+    void poll();
 
-   private:  // TODO add Leading _ to variable names
+   private:
     ErrorIndicator* _errorIndicatorPtr;
-    uint8_t index;       // The index of the infrared sensor
-    uint8_t shiftValue;  // The shift value of the infrared sensor
+    uint8_t _index;       // The index of the infrared sensor
+    uint8_t _shiftValue;  // The shift value of the infrared sensor
+    uint16_t _maxRange;
 
-    void grabMultiplexer();
+    
+
+    void _grabMultiplexer();
 };
 
 #endif  // INFRARED_H

@@ -25,8 +25,7 @@
 // (Register 0x35)
 #define IR_DISTANCE_REG_ADDRESS 0x5E
 
-
-//TODO make IR sensors return -1 if mad range is reached
+// TODO make IR sensors return -1 if mad range is reached
 
 void setMultiplexer(uint8_t channel) {
     if (channel >= MULTIPLEXER_CHANNEL_COUNT) {
@@ -41,15 +40,16 @@ void setMultiplexer(uint8_t channel) {
     Wire.endTransmission();
 }
 
-Infrared::Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index) {
-    this->_errorIndicatorPtr = errorIndicatorPtr;
-    this->index = index;
-}
+Infrared::Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index,
+                   uint16_t maxRange)
+    : _errorIndicatorPtr(errorIndicatorPtr),
+      _index(index),
+      _maxRange(maxRange) {}
 
 void Infrared::setup() {
     Wire.begin();
 
-    grabMultiplexer();
+    this->_grabMultiplexer();
 
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
     Wire.write(IR_SHIFT_REG_ADDRESS);
@@ -59,14 +59,14 @@ void Infrared::setup() {
 
     if (!Wire.available()) {
         String errorMessage =
-            "Cannot read sensor at index " + String(this->index) + ".";
+            "Cannot read sensor at index " + String(this->_index) + ".";
         this->_errorIndicatorPtr->errorOccurred(errorMessage);
     }
-    this->shiftValue = Wire.read();
+    this->_shiftValue = Wire.read();
 }
 
-uint16_t Infrared::read() {
-    grabMultiplexer();
+int16_t Infrared::read() {
+    this->_grabMultiplexer();
 
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
     Wire.write(IR_DISTANCE_REG_ADDRESS);
@@ -77,7 +77,7 @@ uint16_t Infrared::read() {
     // TODO add a timeout and a call to the errorIndicator.
     while (Wire.available() < 2) {
         Serial.print("Cannot read from sensor ");
-        Serial.print(this->index);
+        Serial.print(this->_index);
         Serial.println(".");
     }
 
@@ -89,9 +89,58 @@ uint16_t Infrared::read() {
     // Which can be simplified to:
     // distance(mm) = (((high << 4) | low) * 10) >> (4 + shiftValue);
 
-    uint16_t distance = (((high << 4) | low) * 10) >> (4 + this->shiftValue);
+    uint16_t distance = (((high << 4) | low) * 10) >> (4 + this->_shiftValue);
 
-    return distance;
+    return (distance < this->_maxRange) ? distance : -1;
 }
 
-void Infrared::grabMultiplexer() { setMultiplexer(this->index); }
+#include <algorithm>
+#include <numeric>
+#include <vector>
+
+using namespace std;
+
+int16_t Infrared::sample() {
+    vector<int16_t> readings;
+
+    readings.push_back(this->read());
+    delay(10);
+    readings.push_back(this->read());
+    delay(10);
+    readings.push_back(this->read());
+    delay(10);
+    readings.push_back(this->read());
+    delay(10);
+    readings.push_back(this->read());
+
+    for (const auto& item : readings) {
+        Serial.print(item);
+        Serial.print(",");
+    }
+    Serial.println();
+
+    sort(readings.begin(), readings.end());
+
+    for (const auto& item : readings) {
+        Serial.print(item);
+        Serial.print(",");
+    }
+    Serial.println();
+
+    int16_t median = readings[2];
+
+    Serial.print(" median:");
+    Serial.println(median);
+
+    return -1;
+}
+
+void Infrared::poll() { Serial.println("polling"); 
+
+
+
+
+
+}
+
+void Infrared::_grabMultiplexer() { setMultiplexer(this->_index); }
