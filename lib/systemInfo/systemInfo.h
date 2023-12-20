@@ -23,16 +23,15 @@
 
 // LEDs
 
-
 // The pin that D1 of the LED strip is connected to.
 #define PIXELS_DATA_PIN D5  // USONIC 3
 
+// The number of Ws2812 LEDs on the robot.
+#define LED_COUNT 16
 
-#define LED_GROUPS                                                                 \
-    {                                                                          \
-        {7, 8}, {9, 10}, {11, 12}, {13, 14}, {15, 0}, {1, 2}, {3, 4}, { 5, 6 } \
-    }
-
+// The offset in degrees that the LEDs have been rotated around from the
+// position where LED 0 would be at 0 degrees.
+#define LED_ROTATION_OFFSET 180
 
 // Motors
 // Left

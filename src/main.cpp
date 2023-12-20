@@ -20,8 +20,6 @@
 // angle can be calculated using the formula degrees(atan2(y,x))
 // also the angle should be locked between -179 and 180 degrees
 
-#define INITIAL_ANGLE 90
-
 #include <Arduino.h>
 
 #include "angle.h"
@@ -50,7 +48,7 @@ Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
 
 Drive drive(&leftMotor, &rightMotor);
 
-Pixels pixels(LED_GROUPS, PIXELS_DATA_PIN);
+Pixels pixels(PIXELS_DATA_PIN, LED_COUNT, LED_ROTATION_OFFSET);
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, ULTRASONIC_TIMEOUT);
 Infrared leftInfrared(&errorIndicator, LEFT_INFRARED_INDEX);
 Infrared rightInfrared(&errorIndicator, RIGHT_INFRARED_INDEX);
@@ -69,32 +67,6 @@ MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
                             &frontRightInfrared);
 
 volatile bool bumperUpdate = false;
-
-#include <list>
-
-struct {
-    int16_t x;
-    int16_t y;
-    int16_t angle;
-} typedef Pose;
-
-using Path = std::list<Pose>;
-
-Path pathList;
-
-void printPose(const Pose& poseToPrintPtr) {
-    Serial.print("X :");
-    Serial.print(poseToPrintPtr.x);
-    Serial.print(" Y :");
-    Serial.print(poseToPrintPtr.y);
-    Serial.print(" angle :");
-    Serial.println(poseToPrintPtr.angle);
-}
-void printPath(const Path& listToPrint) {
-    for (const Pose& elementPtr : listToPrint) {
-        printPose(elementPtr);
-    }
-}
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -122,23 +94,17 @@ void setup() {
     bumper.assignCallback([]() { bumperUpdate = true; });
 
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
-
-    pathList.push_back({1, 1, 1});
-    pathList.push_back({1700, 7856, -89});
-
-    //     leftMotor.setVelocity(-100);
-    //     rightMotor.setVelocity(100);
 }
-// TODO change the set all to use the pixel function, not the group function
-
-// std::vector<std::vector<uint8_t>> groups =
 
 void loop() {
-    pixels.stupidTest();
+    Angle a = motionTracker.angleFromOdometry();
 
-    for (uint8_t i = 0; i < pixels.getGroupCount(); i++) {
-        pixels.clear();
-        pixels.setGroup(i, 255, 0, 255, true);
-        delay(1000);
-    }
+    pixels.point(a);
+
+    int16_t front = ultrasonic.read();
+
+    Serial.print(" front:");
+    Serial.println(front);
+
+    delay(10);
 }

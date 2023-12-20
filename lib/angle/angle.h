@@ -11,6 +11,11 @@
  */
 #include <Arduino.h>
 
+
+// The number of degrees in a full rotation.
+#define DEGREES_PER_ROTATION 360
+
+
 /**
  * @brief Angle class, a wrapper for the int16_t that automatically wraps the
  * value to between -179 and 180.

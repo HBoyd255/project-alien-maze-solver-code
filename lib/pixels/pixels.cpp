@@ -1,27 +1,13 @@
 #include "pixels.h"
 
-uint8_t getLargestValueInMatrix(const matrix& targetMatrix) {
-    uint8_t maxValue = 0;
-
-    for (const auto& row : targetMatrix) {
-        for (const auto& item : row) {
-            if (item > maxValue) {
-                maxValue = item;
-            }
-        }
-    }
-    return maxValue;
-}
-
-Pixels::Pixels(matrix matrix, uint8_t dataPin)
-    : _groupsMatrix(matrix),
-      _maxLEDCount(getLargestValueInMatrix(matrix) + 1),
-      _groupCount(matrix.size()),
-      _ledStrip(_maxLEDCount, dataPin) {}
+Pixels::Pixels(uint8_t dataPin, uint8_t ledCount, int16_t rotationOffset)
+    : _ledCount(ledCount),
+      _ledStrip(_ledCount, dataPin),
+      _rotationOffset(rotationOffset) {}
 
 void Pixels::setup() {
-    _ledStrip.Begin();
-    _ledStrip.Show();
+    this->_ledStrip.Begin();
+    this->_ledStrip.Show();
 }
 
 void Pixels::setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b) {
@@ -36,24 +22,12 @@ void Pixels::setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b,
     }
 }
 
-void Pixels::setGroup(uint8_t groupIndex, uint8_t r, uint8_t g, uint8_t b) {
-    this->setGroup(groupIndex, r, g, b, false);
-}
-
-void Pixels::setGroup(uint8_t groupIndex, uint8_t r, uint8_t g, uint8_t b,
-                      bool show) {
-    for (const uint8_t& ledNumber : _groupsMatrix[groupIndex]) {
-        this->_ledStrip.SetPixelColor(ledNumber, RgbColor(r, g, b));
-    }
-    if (show) this->show();
-}
-
 void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b) {
     this->setAll(r, g, b, false);
 }
 
 void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b, bool show) {
-    for (uint8_t i = 0; i < _maxLEDCount; i++) {
+    for (uint8_t i = 0; i < this->_ledCount; i++) {
         this->setPixel(i, r, g, b);
     }
 
@@ -61,23 +35,6 @@ void Pixels::setAll(uint8_t r, uint8_t g, uint8_t b, bool show) {
         this->show();
     }
 }
-
-// void Pixels::displayBumperSoft(u_int8_t bumperData) {
-//     for (int i = 0; i < 8; i++) {
-//         bool bit = (bumperData >> i) & 1;
-//         if (bit) {
-//             this->setGroup(i, 255, 0, 0);
-//         }
-//     }
-// }
-//
-// void Pixels::displayBumperHard(u_int8_t bumperData) {
-//     this->clear();
-//
-//     this->displayBumperSoft(bumperData);
-//
-//     this->show();
-// }
 
 void Pixels::clear(bool show) {
     this->setAll(0, 0, 0);
@@ -90,10 +47,10 @@ void Pixels::clear() { this->clear(false); }
 
 void Pixels::show() { this->_ledStrip.Show(); }
 
-void Pixels::stupidTest() {
-    Serial.println(_maxLEDCount);
-    Serial.println(_groupCount);
-    Serial.println();
-}
+void Pixels::point(Angle angle) {
+    angle += _rotationOffset;
+    uint8_t index = angle.get360() / 22.5;
 
-uint8_t Pixels::getGroupCount() { return _groupCount; }
+    this->clear();
+    this->setPixel(index, 255, 0, 0, true);
+}

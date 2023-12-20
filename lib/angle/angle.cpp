@@ -12,8 +12,6 @@
 // The lower bound of the angle wrap.
 #define ANGLE_OFFSET -179
 
-// The number of degrees in a full rotation.
-#define DEGREES_PER_ROTATION 360
 
 /**
  * @brief Angle Constructor.

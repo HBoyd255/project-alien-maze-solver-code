@@ -1,26 +1,19 @@
 
-/**
- * @file pixels.h
- * @brief Header file for the Pixels class.
- *
- * This file contains the declaration of the Pixels class, which is responsible
- * for controlling an LED strip.
- */
-
 #ifndef PIXELS_H
 #define PIXELS_H
 
-#include <Arduino.h>
+#include <Arduino.h>                                           
+
+// This Class builds off the NeoPixelBus library written by Michael C. Mille
+//  https://github.com/Makuna/NeoPixelBus
 #include <NeoPixelBus.h>
 
-#include <vector>
-typedef std::vector<std::vector<uint8_t>> matrix;
-
+#include "angle.h"
 #include "systemInfo.h"
 
 class Pixels {
    public:
-    Pixels(matrix matrix, uint8_t dataPin);
+    Pixels(uint8_t dataPin, uint8_t ledCount, int16_t angleOffset);
 
     void setup();
 
@@ -28,17 +21,9 @@ class Pixels {
 
     void setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b, bool show);
 
-    void setGroup(uint8_t index, uint8_t r, uint8_t g, uint8_t b);
-
-    void setGroup(uint8_t index, uint8_t r, uint8_t g, uint8_t b, bool show);
-
     void setAll(uint8_t r, uint8_t g, uint8_t b);
 
     void setAll(uint8_t r, uint8_t g, uint8_t b, bool show);
-
-    //     void displayBumperSoft(uint8_t bumperData);
-    //
-    //     void displayBumperHard(uint8_t bumperData);
 
     void clear();
 
@@ -46,15 +31,12 @@ class Pixels {
 
     void show();
 
-    void stupidTest();
-
-    uint8_t getGroupCount();
+    void point(Angle angle);
 
    private:
-    matrix _groupsMatrix;
-    uint8_t _maxLEDCount;
-    uint8_t _groupCount;
+    uint8_t _ledCount;
     NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> _ledStrip;
+    int16_t _rotationOffset;
 };
 
 #endif  // PIXELS_H
