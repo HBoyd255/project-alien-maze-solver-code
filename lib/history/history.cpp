@@ -83,6 +83,8 @@ int16_t History::getLast() { return this->_values.back(); }
 uint16_t History::countErrors() {
     uint16_t occurrences = 0;
 
+    // Iterate through each item in the queue, if the item item is equal to -1,
+    // increment the counter
     for (const auto& item : this->_values) {
         if (item == -1) {
             occurrences++;
