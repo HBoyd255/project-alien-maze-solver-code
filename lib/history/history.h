@@ -48,11 +48,18 @@ class History {
     void add(int32_t newValue);
 
     /**
-     * @brief Get the Median object
+     * @brief Get the median of the values in the queue.
      *
      * @return (int16_t) The median of the values in the queue.
      */
     int16_t getMedian();
+
+    /**
+     * @brief Get the last value added to the queue.
+     *
+     * @return (int16_t) The last value added to the queue.
+     */
+    int16_t getLast();
 
     /**
      * @brief Counts the number of times that the value -1 exists in the queue.

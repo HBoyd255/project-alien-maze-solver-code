@@ -68,6 +68,13 @@ int16_t History::getMedian() {
 }
 
 /**
+ * @brief Get the last value added to the queue.
+ *
+ * @return (int16_t) The last value added to the queue.
+ */
+int16_t History::getLast() { return this->_values.back(); }
+
+/**
  * @brief Counts the number of times that the value -1 exists in the queue.
  *
  * @return (uint16_t) The number of times that the value -1 exists in the
