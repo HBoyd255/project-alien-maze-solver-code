@@ -81,5 +81,12 @@ int16_t History::getLast() { return this->_values.back(); }
  * queue.
  */
 uint16_t History::countErrors() {
-    return std::count(this->_values.begin(), this->_values.begin(), -1);
+    uint16_t occurrences = 0;
+
+    for (const auto& item : this->_values) {
+        if (item == -1) {
+            occurrences++;
+        }
+    }
+    return occurrences;
 }
