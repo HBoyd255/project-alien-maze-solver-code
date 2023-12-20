@@ -1,10 +1,28 @@
-
+/**
+ * @file history.h
+ * @brief Definitions of the History class, a class responsible for storing a
+ * queue of values, and calculating their median.
+ *
+ * @author Harry Boyd - hboyd255@gmail.com
+ * @date 2023-12-20
+ * @copyright Copyright (c) 2023
+ */
 #include "history.h"
 
 #include <algorithm>
 
+/**
+ * @brief Construct a new History object.
+ *
+ * @param maxValues (uint16_t) The maximum amount of int16_ts that can be in
+ * the queue before items start getting removed from the front.
+ */
 History::History(uint16_t maxValues) : _maxValues(maxValues) {}
-
+/**
+ * @brief Implicitly converts the stored values into a string.
+ *
+ * @return (String) The values stores in _values as a comma separated list.
+ */
 History::operator String() const {
     String stringToReturn = "(";
 
@@ -22,6 +40,11 @@ History::operator String() const {
     return stringToReturn;
 }
 
+/**
+ * @brief Adds a new value to the queue.
+ *
+ * @param newValue (int32_t) the value to add.
+ */
 void History::add(int32_t newValue) {
     if (this->_values.size() == this->_maxValues) {
         this->_values.erase(this->_values.begin());
@@ -29,12 +52,27 @@ void History::add(int32_t newValue) {
     this->_values.push_back(newValue);
 }
 
+/**
+ * @brief Get the Median object
+ *
+ * @return (int16_t) The median of the values in the queue.
+ */
 int16_t History::getMedian() {
-    uint16_t medianIndex = this->_values.size() / 2;
+    uint16_t medianIndex = this->_values.size() >> 1;
 
     std::vector<int16_t> valuesCopy = this->_values;
 
     std::sort(valuesCopy.begin(), valuesCopy.end());
 
     return valuesCopy[medianIndex];
+}
+
+/**
+ * @brief Counts the number of times that the value -1 exists in the queue.
+ *
+ * @return (uint16_t) The number of times that the value -1 exists in the
+ * queue.
+ */
+uint16_t History::countErrors() {
+    return std::count(this->_values.begin(), this->_values.begin(), -1);
 }
