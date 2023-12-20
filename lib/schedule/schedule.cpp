@@ -11,14 +11,17 @@
 #include "schedule.h"
 
 /**
- * @brief Construct a new Schedule object
+ * @brief Sets up the object by assigning a function to call periodically,
+ * and the period that should be waited between function calls.
  *
- * @param functionPtr A pointer to the function to execute.
+ * @param periodicFunctionPtr A pointer to the function to execute.
  * @param period The number of milliseconds that should pass between the end
  * of the last execution, and the start of the next one.
  */
-Schedule::Schedule(voidFuncPtr functionPtr, uint32_t period)
-    : _functionPtr(functionPtr), _period(period) {}
+void Schedule::setup(voidFuncPtr functionPtr, uint32_t period) {
+    this->_periodicFunctionPtr = functionPtr;
+    this->_period = period;
+}
 
 /**
  * @brief The method that calls the functions and records the execution
@@ -26,7 +29,7 @@ Schedule::Schedule(voidFuncPtr functionPtr, uint32_t period)
  *
  */
 void Schedule::execute() {
-    this->_functionPtr();
+    this->_periodicFunctionPtr();
     this->_lastExecutionTime = millis();
 }
 

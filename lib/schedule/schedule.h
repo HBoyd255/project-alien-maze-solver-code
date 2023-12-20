@@ -24,11 +24,18 @@ class Schedule {
     /**
      * @brief Construct a new Schedule object
      *
-     * @param functionPtr A pointer to the function to execute.
+     */
+    Schedule(){};
+
+    /**
+     * @brief Sets up the object by assigning a function to call periodically,
+     * and the period that should be waited between function calls.
+     *
+     * @param periodicFunctionPtr A pointer to the function to execute.
      * @param period The number of milliseconds that should pass between the end
      * of the last execution, and the start of the next one.
      */
-    Schedule(voidFuncPtr functionPtr, uint32_t period);
+    void setup(voidFuncPtr periodicFunctionPtr, uint32_t period);
 
     /**
      * @brief The method that calls the functions and records the execution
@@ -49,7 +56,7 @@ class Schedule {
      * @brief A pointer to the function to execute.
      *
      */
-    voidFuncPtr _functionPtr;
+    voidFuncPtr _periodicFunctionPtr;
 
     /**
      * @brief The number of milliseconds to wait before calling teh function
