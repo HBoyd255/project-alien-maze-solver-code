@@ -32,6 +32,7 @@
 #include "motionTracker.h"
 #include "motor.h"
 #include "pixels.h"
+#include "schedule.h"
 #include "systemInfo.h"
 #include "ultrasonic.h"
 
@@ -49,11 +50,12 @@ Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
 Drive drive(&leftMotor, &rightMotor);
 
 Pixels pixels(PIXELS_DATA_PIN, LED_COUNT, LED_ROTATION_OFFSET);
-Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, ULTRASONIC_TIMEOUT);
-Infrared leftInfrared(&errorIndicator, LEFT_INFRARED_INDEX);
-Infrared rightInfrared(&errorIndicator, RIGHT_INFRARED_INDEX);
-Infrared frontLeftInfrared(&errorIndicator, FRONT_LEFT_INFRARED_INDEX);
-Infrared frontRightInfrared(&errorIndicator, FRONT_RIGHT_INFRARED_INDEX);
+Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, ULTRASONIC_TIMEOUT,
+                      1000);
+Infrared leftInfrared(&errorIndicator, LEFT_INFRARED_INDEX, 639);
+Infrared rightInfrared(&errorIndicator, RIGHT_INFRARED_INDEX, 639);
+Infrared frontLeftInfrared(&errorIndicator, FRONT_LEFT_INFRARED_INDEX, 639);
+Infrared frontRightInfrared(&errorIndicator, FRONT_RIGHT_INFRARED_INDEX, 639);
 
 Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN);
@@ -67,6 +69,15 @@ MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
                             &frontRightInfrared);
 
 volatile bool bumperUpdate = false;
+
+bool val = false;
+
+void toggleLED() {
+    val = !val;
+
+    digitalWrite(LED_BUILTIN, val);
+}
+
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -96,15 +107,6 @@ void setup() {
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 }
 
-void loop() {
-    Angle a = motionTracker.angleFromOdometry();
+Schedule lighty(toggleLED);
 
-    pixels.point(a);
-
-    int16_t front = ultrasonic.read();
-
-    Serial.print(" front:");
-    Serial.println(front);
-
-    delay(10);
-}
+void loop() { lighty.poll(); }
