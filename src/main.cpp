@@ -28,6 +28,7 @@
 #include "bumper.h"
 #include "drive.h"
 #include "errorIndicator.h"
+#include "history.h"
 #include "infrared.h"
 #include "motionTracker.h"
 #include "motor.h"
@@ -78,6 +79,7 @@ void toggleLED() {
     digitalWrite(LED_BUILTIN, val);
 }
 
+History testHist(5);
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -107,6 +109,22 @@ void setup() {
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 }
 
-Schedule lighty(toggleLED);
+Schedule lighty(toggleLED, 500);
 
-void loop() { lighty.poll(); }
+History flir(5);
+Schedule frontLeftInfraredSchedule([]() { flir.add(frontLeftInfrared.read()); },
+                                   20);
+
+void printFunc() {
+    Serial.print(" Left:");
+    Serial.print(flir.getMedian());
+    Serial.print(" Right:");
+    Serial.println(frontRightInfrared.read());
+}
+Schedule printSchedule(printFunc, 10);
+
+void loop() {
+    lighty.poll();
+    frontLeftInfraredSchedule.poll();
+    printSchedule.poll();
+}

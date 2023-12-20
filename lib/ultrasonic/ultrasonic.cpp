@@ -4,34 +4,36 @@
 
 #include "systemInfo.h"
 
+// this module is for the HC-SR04
+
+// The period(in microseconds) of the pulse sent to the trigger pin of the
+// ultrasonic.
 #define TRIGGER_PULSE_DURATION 10
 
-Ultrasonic::Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout) {
-    this->triggerPin = triggerPin;
-    this->echoPin = echoPin;
-    this->timeout = timeout;
-}
+Ultrasonic::Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout,
+                       uint16_t maxRange)
+    : _triggerPin(triggerPin),
+      _echoPin(echoPin),
+      _timeout(timeout),
+      _maxRange(maxRange) {}
 
 void Ultrasonic::setup(voidFuncPtr isr) {
-    pinMode(this->triggerPin, OUTPUT);
-    pinMode(this->echoPin, INPUT);
+    pinMode(this->_triggerPin, OUTPUT);
+    pinMode(this->_echoPin, INPUT);
 
-    attachInterrupt(digitalPinToInterrupt(this->echoPin), isr, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(this->_echoPin), isr, CHANGE);
 }
 
-// TODO make IR sensors return -1 if mad range is reached
-
-uint16_t Ultrasonic::myPulseFunction(uint32_t timeout) {
+int16_t Ultrasonic::_pulseDuration(uint32_t timeout) {
     uint32_t functionStartTime = micros();
 
-    while (this->pinUpTime < functionStartTime ||
-           this->pinDownTime < functionStartTime) {
+    while (this->_pinUpTime < functionStartTime ||
+           this->_pinDownTime < functionStartTime) {
         if (micros() - functionStartTime > timeout) {
-            return 0;
-            // TODO throw an error, or return "MAX distance" or something
+            return -1;
         }
     }
-    uint32_t pulseWidth = this->pinDownTime - this->pinUpTime;
+    uint32_t pulseWidth = this->_pinDownTime - this->_pinUpTime;
 
     return pulseWidth;
 }
@@ -41,14 +43,18 @@ uint16_t Ultrasonic::myPulseFunction(uint32_t timeout) {
  *
  * @return The distance measured in millimeters.
  */
-uint16_t Ultrasonic::read() {
-    digitalWrite(this->triggerPin, LOW);
+int16_t Ultrasonic::read() {
+    digitalWrite(this->_triggerPin, LOW);
     delayMicroseconds(TRIGGER_PULSE_DURATION);
-    digitalWrite(this->triggerPin, HIGH);
+    digitalWrite(this->_triggerPin, HIGH);
     delayMicroseconds(TRIGGER_PULSE_DURATION);
-    digitalWrite(this->triggerPin, LOW);
+    digitalWrite(this->_triggerPin, LOW);
 
-    uint16_t reflectionDuration = this->myPulseFunction(ULTRASONIC_TIMEOUT);
+    int16_t reflectionDuration = this->_pulseDuration(ULTRASONIC_TIMEOUT);
+
+    if (reflectionDuration == -1) {
+        return -1;
+    }
 
     uint16_t duration = reflectionDuration >> 1;
 
@@ -68,13 +74,13 @@ uint16_t Ultrasonic::read() {
     // so cap microseconds at 6000
     // call the timeout 10000 microseconds to add a bit
 
-    return distance;
+    return (distance < this->_maxRange) ? distance : -1;
 }
 
 void Ultrasonic::isr() {
-    if (digitalRead(this->echoPin) == HIGH) {
-        this->pinUpTime = micros();
+    if (digitalRead(this->_echoPin) == HIGH) {
+        this->_pinUpTime = micros();
     } else {
-        this->pinDownTime = micros();
+        this->_pinDownTime = micros();
     }
 }
