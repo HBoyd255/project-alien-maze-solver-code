@@ -1,4 +1,11 @@
-
+/**
+ * @file angleAndPosition.h
+ * @brief Declaration for the Angle class and the Position and Pose Structs.
+ *
+ * @author Harry Boyd - hboyd255@gmail.com
+ * @date 2023-12-21
+ * @copyright Copyright (c) 2023
+ */
 #ifndef ANGLE_AND_POSITION_H
 #define ANGLE_AND_POSITION_H
 
