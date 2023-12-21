@@ -8,7 +8,7 @@
 //  https://github.com/Makuna/NeoPixelBus
 #include <NeoPixelBus.h>
 
-#include "angle.h"
+#include "angleAndPosition.h"
 
 class Pixels {
    public:

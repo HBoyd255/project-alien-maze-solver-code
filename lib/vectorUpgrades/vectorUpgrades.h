@@ -3,9 +3,10 @@
 
 #include <vector>
 
-#include "angle.h"
+#include "angleAndPosition.h"
+
 using AngleVector = std::vector<Angle>;
 
 void printAngleVector(AngleVector& vectorToPrint);
 
-#endif //VECTOR_UPGRADES_H
+#endif  // VECTOR_UPGRADES_H
