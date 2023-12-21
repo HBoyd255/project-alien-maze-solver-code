@@ -32,6 +32,7 @@ class Infrared {
     uint16_t _maxRange;
 
     History _valueHistory;
+    // TODO update this to use a passive schedule.
     Schedule _historyUpdater;
 
     void _setMultiplexer();
