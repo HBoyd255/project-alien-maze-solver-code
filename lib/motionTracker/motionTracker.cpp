@@ -4,6 +4,9 @@
 // This value also changes depending on the surface for some reason.
 #define STEPS_PER_ROTATION 855
 
+// The period to wait between updating the angle and position.
+#define MOTION_TRACKER_POLL_RATE 10
+
 MotionTracker::MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
                              Infrared* frontLeftInfraredPtr,
                              Infrared* frontRightInfraredPtr) {
@@ -47,4 +50,53 @@ Angle MotionTracker::angleFromFrontIR() {
     }
 
     return angle;
+}
+
+void MotionTracker::updateAngle() {
+    // TODO update 90 to a constant
+    this->_currentAngle = this->angleFromOdometry() + 90;
+}
+
+void MotionTracker::updatePosition() {
+    static int32_t AverageDistance = 0;
+    static int32_t lastAverageDistance = 0;
+    static int32_t difference;
+
+    AverageDistance = this->_averageTravelDistance();
+    difference = AverageDistance - lastAverageDistance;
+    lastAverageDistance = AverageDistance;
+
+    if (difference != 0) {
+        float xDif = difference * cos(this->_currentAngle.toRadians());
+        float yDif = difference * sin(this->_currentAngle.toRadians());
+
+        this->_currentPosition.x += xDif;
+        this->_currentPosition.y += yDif;
+    }
+}
+
+void MotionTracker::poll() {
+    static PassiveSchedule motionTrackerSchedule(MOTION_TRACKER_POLL_RATE);
+
+    if (motionTrackerSchedule.isReadyToRun()) {
+        this->updateAngle();
+        this->updatePosition();
+    }
+}
+
+Pose MotionTracker::getPose() {
+    Pose poseToReturn;
+    poseToReturn.angle = this->_currentAngle;
+    poseToReturn.position = this->_currentPosition;
+    return poseToReturn;
+}
+
+int32_t MotionTracker::_averageTravelDistance() {
+    int32_t leftTravelDistance = this->_leftMotorPtr->getDistanceTraveled();
+    int32_t rightTravelDistance = this->_rightMotorPtr->getDistanceTraveled();
+
+    int32_t averageTravelDistance =
+        (leftTravelDistance + rightTravelDistance) / 2;
+
+    return averageTravelDistance;
 }
