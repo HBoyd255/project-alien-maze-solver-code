@@ -1,5 +1,5 @@
 /**
- * @file errorIndicator.h
+ * @file errorIndicator.cpp
  * @brief DDefinitions for the ErrorIndicator class, responsible for halting
  * operations upon an error, and drawing the users attention to the serial
  * monitor.

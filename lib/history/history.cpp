@@ -1,5 +1,5 @@
 /**
- * @file history.h
+ * @file history.cpp
  * @brief Definitions of the History class, a class responsible for storing a
  * queue of values, and calculating their median.
  *
