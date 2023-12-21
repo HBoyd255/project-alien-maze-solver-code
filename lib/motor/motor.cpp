@@ -12,12 +12,11 @@ Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,
 }
 
 /**
- * @brief Sets up the motor class by 
- * 
- * @param isrPtr Pointer to the 
+ * @brief Sets up the motor class by
+ *
+ * @param isrPtr Pointer to the
  */
 void Motor::setup(voidFuncPtr isrPtr) {
-
     attachInterrupt(digitalPinToInterrupt(this->encoderAPin), isrPtr, CHANGE);
 
     pinMode(this->directionPin, OUTPUT);
@@ -72,9 +71,7 @@ void Motor::setVelocity(int8_t formattedVelocity) {
     this->setSpeedAndDir(abs(formattedVelocity), direction);
 }
 
-void Motor::stop() {
-    this->setSpeedAndDir(0, 0);
-}
+void Motor::stop() { this->setSpeedAndDir(0, 0); }
 
 void Motor::isr() {
     if (digitalRead(this->encoderAPin) !=
@@ -89,8 +86,11 @@ int32_t Motor::getDistanceTraveled() {
     // One rotation is 300 steps
     // and the wheel circumference is 147.65mm
     // so 1 step is like 0.5mm
+    // meaning that the distance in millimeters can be approximated by dividing
+    // the steps by 2.
 
-    // so to get the steps in mm, multiply by 0.5
+    // further testing showed that 200 mm is 390 steps, so distance can be
+    // calculated by dividing the steps by 1.95.
 
-    return this->steps / 2;
+    return this->steps / 1.95;
 }
