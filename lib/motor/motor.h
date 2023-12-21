@@ -3,8 +3,6 @@
 
 #include <Arduino.h>
 
-#include "systemInfo.h"
-
 class Motor {
    public:
     Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,

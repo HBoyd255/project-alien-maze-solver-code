@@ -1,6 +1,3 @@
-#ifndef ERROR_INDICATOR_H
-#define ERROR_INDICATOR_H
-
 /**
  * @file errorIndicator.h
  * @brief Declaration for the ErrorIndicator class, responsible for halting
@@ -11,6 +8,9 @@
  * @date 2023-12-20
  * @copyright Copyright (c) 2023
  */
+
+#ifndef ERROR_INDICATOR_H
+#define ERROR_INDICATOR_H
 
 #include <Arduino.h>
 

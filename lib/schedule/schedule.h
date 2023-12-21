@@ -1,6 +1,3 @@
-#ifndef SCHEDULE_H
-#define SCHEDULE_H
-
 /**
  * @file schedule.h
  * @brief Declaration of the Schedule class, the class responsible for keeping
@@ -10,6 +7,9 @@
  * @date 2023-12-20
  * @copyright Copyright (c) 2023
  */
+
+#ifndef SCHEDULE_H
+#define SCHEDULE_H
 
 #include <Arduino.h>
 

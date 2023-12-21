@@ -1,6 +1,6 @@
 #include "pixels.h"
 
-Pixels::Pixels(uint8_t dataPin, uint8_t ledCount, int16_t rotationOffset)
+Pixels::Pixels(uint8_t dataPin, uint8_t ledCount, Angle rotationOffset)
     : _ledCount(ledCount),
       _ledStrip(_ledCount, dataPin),
       _rotationOffset(rotationOffset) {}
@@ -54,3 +54,5 @@ void Pixels::point(Angle angle) {
     this->clear();
     this->setPixel(index, 255, 0, 0, true);
 }
+
+uint16_t Pixels::getLedCount() { return this->_ledCount; }

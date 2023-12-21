@@ -2,8 +2,6 @@
 
 #include "ultrasonic.h"
 
-#include "systemInfo.h"
-
 // this module is for the HC-SR04
 
 // The period(in microseconds) of the pulse sent to the trigger pin of the
@@ -17,19 +15,19 @@ Ultrasonic::Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout,
       _timeout(timeout),
       _maxRange(maxRange) {}
 
-void Ultrasonic::setup(voidFuncPtr isr) {
+void Ultrasonic::setup(voidFuncPtr isrPtr) {
     pinMode(this->_triggerPin, OUTPUT);
     pinMode(this->_echoPin, INPUT);
 
-    attachInterrupt(digitalPinToInterrupt(this->_echoPin), isr, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(this->_echoPin), isrPtr, CHANGE);
 }
 
-int16_t Ultrasonic::_pulseDuration(uint32_t timeout) {
+int16_t Ultrasonic::_pulseDuration() {
     uint32_t functionStartTime = micros();
 
     while (this->_pinUpTime < functionStartTime ||
            this->_pinDownTime < functionStartTime) {
-        if (micros() - functionStartTime > timeout) {
+        if (micros() - functionStartTime > this->_timeout) {
             return -1;
         }
     }
@@ -50,7 +48,7 @@ int16_t Ultrasonic::read() {
     delayMicroseconds(TRIGGER_PULSE_DURATION);
     digitalWrite(this->_triggerPin, LOW);
 
-    int16_t reflectionDuration = this->_pulseDuration(ULTRASONIC_TIMEOUT);
+    int16_t reflectionDuration = this->_pulseDuration();
 
     if (reflectionDuration == -1) {
         return -1;

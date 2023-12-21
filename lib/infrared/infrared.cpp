@@ -25,31 +25,23 @@
 // (Register 0x35)
 #define IR_DISTANCE_REG_ADDRESS 0x5E
 
-// TODO make IR sensors return -1 if mad range is reached
+// The number of past values of the distance sensor to store.
+#define MAX_HISTORY 10
 
-void setMultiplexer(uint8_t channel) {
-    if (channel >= MULTIPLEXER_CHANNEL_COUNT) {
-        Serial.println("Invalid, there are only");
-        Serial.println(MULTIPLEXER_CHANNEL_COUNT);
-        Serial.println("Channels.");
-        return;
-    }
-
-    Wire.beginTransmission(MULTIPLEXER_SLAVE_ADDRESS);
-    Wire.write(1 << channel);
-    Wire.endTransmission();
-}
+// The period to wait between taking readings.
+#define POLL_PERIOD 10
 
 Infrared::Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index,
                    uint16_t maxRange)
     : _errorIndicatorPtr(errorIndicatorPtr),
       _index(index),
-      _maxRange(maxRange) {}
+      _maxRange(maxRange),
+      _valueHistory(MAX_HISTORY) {}
 
-void Infrared::setup() {
+void Infrared::setup(voidFuncPtr routineFunctionPtr) {
     Wire.begin();
 
-    this->_grabMultiplexer();
+    this->_setMultiplexer();
 
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
     Wire.write(IR_SHIFT_REG_ADDRESS);
@@ -63,10 +55,12 @@ void Infrared::setup() {
         this->_errorIndicatorPtr->errorOccurred(errorMessage);
     }
     this->_shiftValue = Wire.read();
+
+    this->_historyUpdater.setup(routineFunctionPtr, POLL_PERIOD);
 }
 
 int16_t Infrared::read() {
-    this->_grabMultiplexer();
+    this->_setMultiplexer();
 
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
     Wire.write(IR_DISTANCE_REG_ADDRESS);
@@ -75,10 +69,11 @@ int16_t Infrared::read() {
     Wire.requestFrom(IR_SLAVE_ADDRESS, 2);
 
     // TODO add a timeout and a call to the errorIndicator.
-    while (Wire.available() < 2) {
-        Serial.print("Cannot read from sensor ");
-        Serial.print(this->_index);
-        Serial.println(".");
+    if (Wire.available() < 2) {
+        this->_errorIndicatorPtr->errorOccurred("NO CAN READ");
+        // Serial.print("Cannot read from sensor ");
+        // Serial.print(this->_index);
+        // Serial.println(".");
     }
 
     uint8_t high = Wire.read();
@@ -94,4 +89,26 @@ int16_t Infrared::read() {
     return (distance < this->_maxRange) ? distance : -1;
 }
 
-void Infrared::_grabMultiplexer() { setMultiplexer(this->_index); }
+int16_t Infrared::readSafe() {
+    const uint8_t errorThreshold = 1;
+
+    uint8_t errorCount = this->_valueHistory.countErrors();
+
+    return (errorCount < errorThreshold) ? this->_valueHistory.getLast() : -1;
+}
+
+void Infrared::routineFunction() { this->_valueHistory.add(this->read()); }
+
+void Infrared::poll() { this->_historyUpdater.poll(); }
+
+int16_t Infrared::average() { return this->_valueHistory.getMedian(); }
+
+String Infrared::getValueHistoryAsString() {
+    return (String)this->_valueHistory;
+}
+
+void Infrared::_setMultiplexer() {
+    Wire.beginTransmission(MULTIPLEXER_SLAVE_ADDRESS);
+    Wire.write(1 << this->_index);
+    Wire.endTransmission();
+}

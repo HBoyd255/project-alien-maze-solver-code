@@ -20,6 +20,7 @@
 // angle can be calculated using the formula degrees(atan2(y,x))
 // also the angle should be locked between -179 and 180 degrees
 
+// https://www.arduino.cc/reference/en/
 #include <Arduino.h>
 
 #include "angle.h"
@@ -36,9 +37,9 @@
 #include "schedule.h"
 #include "systemInfo.h"
 #include "ultrasonic.h"
+#include "vectorUpgrades.h"
 
-// TODO pass in the on board led
-ErrorIndicator errorIndicator(LED_BUILTIN);
+ErrorIndicator errorIndicator(LED_BUILTIN, SERIAL_BAUD_RATE);
 
 Motor leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
                 LEFT_MOTOR_ENCODER_A_PIN, LEFT_MOTOR_ENCODER_B_PIN,
@@ -59,7 +60,8 @@ Infrared frontLeftInfrared(&errorIndicator, FRONT_LEFT_INFRARED_INDEX, 639);
 Infrared frontRightInfrared(&errorIndicator, FRONT_RIGHT_INFRARED_INDEX, 639);
 
 Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
-              BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN);
+              BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN,
+              BUMPER_ROTATION_OFFSET);
 
 BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
                                       BUMPER_CHARACTERISTIC_UUID,
@@ -70,16 +72,6 @@ MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
                             &frontRightInfrared);
 
 volatile bool bumperUpdate = false;
-
-bool val = false;
-
-void toggleLED() {
-    val = !val;
-
-    digitalWrite(LED_BUILTIN, val);
-}
-
-History testHist(5);
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -93,38 +85,28 @@ void setup() {
 
     pixels.setup();
 
-    leftInfrared.setup();
-    rightInfrared.setup();
-    frontLeftInfrared.setup();
-    frontRightInfrared.setup();
+    leftInfrared.setup([]() { leftInfrared.routineFunction(); });
+    rightInfrared.setup([]() { rightInfrared.routineFunction(); });
+    frontLeftInfrared.setup([]() { frontLeftInfrared.routineFunction(); });
+    frontRightInfrared.setup([]() { frontRightInfrared.routineFunction(); });
 
     ultrasonic.setup([]() { ultrasonic.isr(); });
 
-    bumper.setup();
-
-    // Use a lambda function to set the bumperUpdate flag when the bumper is
-    // pressed or released.
-    bumper.assignCallback([]() { bumperUpdate = true; });
+    bumper.setup([]() { bumper.isr(); });
 
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 }
-
-Schedule lighty(toggleLED, 500);
-
-History flir(5);
-Schedule frontLeftInfraredSchedule([]() { flir.add(frontLeftInfrared.read()); },
-                                   20);
-
-void printFunc() {
-    Serial.print(" Left:");
-    Serial.print(flir.getMedian());
-    Serial.print(" Right:");
-    Serial.println(frontRightInfrared.read());
+void polls() {
+    frontLeftInfrared.poll();
+    // frontRightInfrared.poll();
+    // leftInfrared.poll();
+    // rightInfrared.poll();
 }
-Schedule printSchedule(printFunc, 10);
 
 void loop() {
-    lighty.poll();
-    frontLeftInfraredSchedule.poll();
-    printSchedule.poll();
+    if (bumper.hasFlagBeenRaised()) {
+        Serial.println("Bonked");
+    }
+
+    // Main Loop
 }

@@ -5,18 +5,17 @@
 
 // https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
 
-#define uint16_t unsigned short
-
 class Ultrasonic {
    public:
     Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout,
                uint16_t maxRange);
-    void setup(voidFuncPtr isr);
+    void setup(voidFuncPtr isrPtr);
     int16_t read();
     void isr();
 
    private:
-    int16_t _pulseDuration(uint32_t timeout);
+    int16_t _pulseDuration();
+
     uint8_t _triggerPin;
     uint8_t _echoPin;
     uint32_t _timeout;

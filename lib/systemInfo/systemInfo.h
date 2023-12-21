@@ -1,3 +1,13 @@
+/**
+ * @file systemInfo.h
+ * @brief Definition for constant values related to the hardware setup of my
+ * project.
+ *
+ * @author Harry Boyd - hboyd255@gmail.com
+ * @date 2023-12-21
+ * @copyright Copyright (c) 2023
+ */
+
 #ifndef SYSTEM_INFO_H
 #define SYSTEM_INFO_H
 
@@ -22,13 +32,10 @@
 // Hardware definitions
 
 // LEDs
-
 // The pin that D1 of the LED strip is connected to.
 #define PIXELS_DATA_PIN D5  // USONIC 3
-
 // The number of Ws2812 LEDs on the robot.
 #define LED_COUNT 16
-
 // The offset in degrees that the LEDs have been rotated around from the
 // position where LED 0 would be at 0 degrees.
 #define LED_ROTATION_OFFSET 180
@@ -55,6 +62,10 @@
 #define BUMPER_SHIFT_REG_CLOCK A2  // GPIO 4
 // Interrupt pin
 #define BUMPER_INTERRUPT_PIN D8
+
+// The offset in degrees that the bumper buttons have been rotated around from
+// the position where the front button would be at 0 degrees.
+#define BUMPER_ROTATION_OFFSET 180
 
 // Ultrasonic
 #define ULTRASONIC_TRIGGER D7  // USONIC 1

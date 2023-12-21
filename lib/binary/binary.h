@@ -1,6 +1,3 @@
-#ifndef BINARY_H
-#define BINARY_H
-
 /**
  * @file binary.h
  * @brief Declares the functions responsible for formatting binary data into a
@@ -11,7 +8,9 @@
  * @copyright Copyright (c) 2023
  */
 
-// https://www.arduino.cc/reference/en/
+#ifndef BINARY_H
+#define BINARY_H
+
 #include <Arduino.h>
 
 /**

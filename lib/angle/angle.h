@@ -1,6 +1,3 @@
-#ifndef ANGLE_H
-#define ANGLE_H
-
 /**
  * @file angle.h
  * @brief Declaration of the Angle class.
@@ -9,6 +6,10 @@
  * @date 2023-12-12
  * @copyright Copyright (c) 2023
  */
+
+#ifndef ANGLE_H
+#define ANGLE_H
+
 #include <Arduino.h>
 
 // The number of degrees in a full rotation.

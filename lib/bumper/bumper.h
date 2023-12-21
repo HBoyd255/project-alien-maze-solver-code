@@ -1,6 +1,3 @@
-#ifndef BUMPER_H
-#define BUMPER_H
-
 /**
  * @file bumper.h
  * @brief Declaration of the Bumper class, responsible for reading the state of
@@ -10,6 +7,9 @@
  * @date 2023-12-21
  * @copyright Copyright (c) 2023
  */
+
+#ifndef BUMPER_H
+#define BUMPER_H
 
 #include <Arduino.h>
 

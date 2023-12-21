@@ -1,5 +1,3 @@
-#ifndef HISTORY_H
-#define HISTORY_H
 /**
  * @file history.h
  * @brief Declaration of the History class, a class responsible for storing a
@@ -9,6 +7,9 @@
  * @date 2023-12-20
  * @copyright Copyright (c) 2023
  */
+
+#ifndef HISTORY_H
+#define HISTORY_H
 
 #include <Arduino.h>
 

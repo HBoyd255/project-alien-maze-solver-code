@@ -2,18 +2,17 @@
 #ifndef PIXELS_H
 #define PIXELS_H
 
-#include <Arduino.h>                                           
+#include <Arduino.h>
 
 // This Class builds off the NeoPixelBus library written by Michael C. Mille
 //  https://github.com/Makuna/NeoPixelBus
 #include <NeoPixelBus.h>
 
 #include "angle.h"
-#include "systemInfo.h"
 
 class Pixels {
    public:
-    Pixels(uint8_t dataPin, uint8_t ledCount, int16_t angleOffset);
+    Pixels(uint8_t dataPin, uint8_t ledCount, Angle rotationOffset);
 
     void setup();
 
@@ -33,10 +32,12 @@ class Pixels {
 
     void point(Angle angle);
 
+    uint16_t getLedCount();
+
    private:
     uint8_t _ledCount;
     NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> _ledStrip;
-    int16_t _rotationOffset;
+    Angle _rotationOffset;
 };
 
 #endif  // PIXELS_H

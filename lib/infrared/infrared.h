@@ -5,19 +5,25 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-
-
 #include "errorIndicator.h"
+#include "history.h"
+#include "schedule.h"
 
 class Infrared {
    public:
     Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index,
              uint16_t maxRange);
 
-    void setup();
+    void setup(voidFuncPtr PTR);
 
     int16_t read();
-    int16_t sample();
+    int16_t readSafe();
+
+    int16_t average();
+    String getValueHistoryAsString();
+
+    void poll();
+    void routineFunction();
 
    private:
     ErrorIndicator* _errorIndicatorPtr;
@@ -25,7 +31,10 @@ class Infrared {
     uint8_t _shiftValue;  // The shift value of the infrared sensor
     uint16_t _maxRange;
 
-    void _grabMultiplexer();
+    History _valueHistory;
+    Schedule _historyUpdater;
+
+    void _setMultiplexer();
 };
 
 #endif  // INFRARED_H
