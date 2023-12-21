@@ -10,8 +10,7 @@
 #include "angle.h"
 
 // The lower bound of the angle wrap.
-#define ANGLE_OFFSET -179
-
+#define ANGLE_LOWER_BOUND -179
 
 /**
  * @brief Angle Constructor.
@@ -82,10 +81,31 @@ Angle Angle::operator-=(int16_t valueToSub) {
  */
 uint16_t Angle::get360() {
     if (_value < 0) {
-        return _value += DEGREES_PER_ROTATION;
+        return _value + DEGREES_PER_ROTATION;
     } else {
         return _value;
     }
+}
+
+/**
+ * @brief Returns the index of the segments at the current angle.
+ *
+ * for example for the angles 0 , 45, 90,
+ * segmentIndex(90) would return 0, 0, 1 respectively,
+ * segmentIndex(45) would return 0, 1, 2 respectively,
+ * and segmentIndex(10) would return 0, 4, 9
+ *
+ * @param segmentCount the number of segments the the hypothetical circle is
+ * being divided into.
+ * @return (uint16_t) The index of the hypothetical segment.
+ */
+uint16_t Angle::segmentIndex(uint16_t segmentCount) {
+    uint16_t unwrappedAngle = this->get360();
+
+    uint16_t segmentIndex =
+        unwrappedAngle * segmentCount / DEGREES_PER_ROTATION;
+
+    return segmentIndex;
 }
 
 /**
@@ -95,14 +115,14 @@ uint16_t Angle::get360() {
  * @return int16_t the value after being wrapped between -179 and 180.
  */
 int16_t Angle::_normalize(int16_t valueToNormalize) {
-    valueToNormalize -= ANGLE_OFFSET;
+    valueToNormalize -= ANGLE_LOWER_BOUND;
 
     valueToNormalize %= DEGREES_PER_ROTATION;
 
     if (valueToNormalize < 0) {
         valueToNormalize += DEGREES_PER_ROTATION;
     }
-    valueToNormalize += ANGLE_OFFSET;
+    valueToNormalize += ANGLE_LOWER_BOUND;
 
     return valueToNormalize;
 };

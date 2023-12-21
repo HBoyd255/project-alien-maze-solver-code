@@ -11,10 +11,8 @@
  */
 #include <Arduino.h>
 
-
 // The number of degrees in a full rotation.
 #define DEGREES_PER_ROTATION 360
-
 
 /**
  * @brief Angle class, a wrapper for the int16_t that automatically wraps the
@@ -84,7 +82,20 @@ class Angle {
      * @return uint8_t angle wrapped to 0-359.
      */
     uint16_t get360();
-    
+
+    /**
+     * @brief Returns the index of the segments at the current angle.
+     *
+     * for example for the angles 0 , 45, 90,
+     * segmentIndex(90) would return 0, 0, 1 respectively,
+     * segmentIndex(45) would return 0, 1, 2 respectively,
+     * and segmentIndex(10) would return 0, 4, 9
+     *
+     * @param segmentCount the number of segments the the hypothetical circle is
+     * being divided into.
+     * @return (uint16_t) The index of the hypothetical segment.
+     */
+    uint16_t segmentIndex(uint16_t segmentCount);
 
    private:
     /**
