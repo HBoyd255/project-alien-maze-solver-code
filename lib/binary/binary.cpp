@@ -22,16 +22,31 @@
  *
  * This function assumes that a serial connection has been initialised.
  *
- * @param byteOfData The unsigned 8 bits of data to print to the serial port.
+ * @param byteToPrint The unsigned 8 bits of data to print to the serial port.
  * @param separator (Optional) The string to be printed between each bit, by
  * default this is an empty string.
  */
-void printByte(uint8_t byteOfData, String separator) {
+void printByte(uint8_t byteToPrint, String separator) {
     // Print the 7 leading bits of the byte, followed by the optional separator.
     for (uint8_t b = 7; b != 0; b--) {
-        Serial.print((byteOfData >> b) & 1);
+        Serial.print((byteToPrint >> b) & 1);
         Serial.print(separator);
     }
     // Print the final bit, followed by a newline character.
-    Serial.println(byteOfData & 1);
+    Serial.println(byteToPrint & 1);
+}
+
+/**
+ * @brief Rotates a byte by shifting it left and adding the lost bits onto the
+ * right side.
+ *
+ * @param byteToRotate The byte to rotate.
+ * @param rotationAmount The number of bits to get shifted by.
+ * @return (uint8_t) The rotated byte.
+ */
+uint8_t rotateLeft(uint8_t byteToRotate, uint8_t rotationAmount) {
+    uint8_t topPart = byteToRotate << rotationAmount;
+    uint8_t bottomPart = byteToRotate >> (8 - rotationAmount);
+    uint8_t rotatedByte = topPart | bottomPart;
+    return rotatedByte;
 }

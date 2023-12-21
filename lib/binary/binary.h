@@ -27,10 +27,20 @@
  *
  * This function assumes that a serial connection has been initialised.
  *
- * @param byteOfData The unsigned 8 bits of data to print to the serial port.
+ * @param byteToPrint The unsigned 8 bits of data to print to the serial port.
  * @param separator (Optional) The string to be printed between each bit, by
  * default this is an empty string.
  */
-void printByte(uint8_t byteOfData, String separator = "");
+void printByte(uint8_t byteToPrint, String separator = "");
+
+/**
+ * @brief Rotates a byte by shifting it left and adding the lost bits onto the
+ * right side.
+ *
+ * @param byteToRotate The byte to rotate.
+ * @param rotationAmount The number of bits to get shifted by.
+ * @return (uint8_t) The rotated byte.
+ */
+uint8_t rotateLeft(uint8_t byteToRotate, uint8_t rotationAmount);
 
 #endif  // BINARY_H
