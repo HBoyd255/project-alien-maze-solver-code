@@ -114,11 +114,11 @@ typedef struct {
     /**
      * @brief The x position, measured in millimetres, set to 0 by default.
      */
-    float xPos = 0;
+    float x = 0;
     /**
      * @brief The y  position, measured in millimetres, set to 0 by default.
      */
-    float yPos = 0;
+    float y = 0;
 
     /**
      * @brief Converts the Position into a string, in the format (X,Y).

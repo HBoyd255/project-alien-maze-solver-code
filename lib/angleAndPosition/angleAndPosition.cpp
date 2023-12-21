@@ -127,9 +127,9 @@ int16_t Angle::_normalize(int16_t valueToNormalize) {
  */
 Position::operator String() const {
     String stringToReturn = "(";
-    stringToReturn += (int)this->xPos;
+    stringToReturn += (int)this->x;
     stringToReturn += ",";
-    stringToReturn += (int)this->yPos;
+    stringToReturn += (int)this->y;
     stringToReturn += ")";
     return stringToReturn;
 }
