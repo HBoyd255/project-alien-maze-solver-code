@@ -26,6 +26,7 @@ Schlosser to generate template comment block and then write the content myself.
 - history
 - schedule
 - systemInfo
+- bumper
 
 ### Undocumented Files
 
@@ -33,9 +34,7 @@ Schlosser to generate template comment block and then write the content myself.
 - infrared
 - main
 - bluetoothLowEnergy
-- bumper
 - drive
 - motor
 - MotionTracker
 - ultrasonic
-- main
