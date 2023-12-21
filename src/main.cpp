@@ -52,8 +52,10 @@ Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
 Drive drive(&leftMotor, &rightMotor);
 
 Pixels pixels(PIXELS_DATA_PIN, LED_COUNT, LED_ROTATION_OFFSET);
-Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO, ULTRASONIC_TIMEOUT,
-                      1000);
+Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO,
+                      ULTRASONIC_TIMEOUT_MICROSECONDS, ULTRASONIC_MAX_DISTANCE,
+                      ULTRASONIC_DATA_SHELF_LIFE);
+
 Infrared leftInfrared(&errorIndicator, LEFT_INFRARED_INDEX, 639);
 Infrared rightInfrared(&errorIndicator, RIGHT_INFRARED_INDEX, 639);
 Infrared frontLeftInfrared(&errorIndicator, FRONT_LEFT_INFRARED_INDEX, 639);
@@ -101,7 +103,8 @@ void polls() {
     // rightInfrared.poll();
 }
 
-PassiveSchedule passi(100);
+PassiveSchedule scheduler1(100);
+PassiveSchedule scheduler2(5000);
 
 uint32_t startTime;
 uint32_t endTime;
@@ -111,17 +114,21 @@ int16_t val;
 void loop() {
     ultrasonic.poll();
 
-    if (passi.isReadyToRun()) {
+    if (scheduler2.isReadyToRun()) {
+        delay(500);
+    }
+
+    if (scheduler1.isReadyToRun()) {
         startTime = micros();
-        val = ultrasonic.readBlocking();
+        val = ultrasonic.read();
         endTime = micros();
         duration = endTime - startTime;
 
-        Serial.print(" Got value ");
+        Serial.print("Got value ");
         Serial.print(val);
         Serial.print(" and it took ");
         Serial.print(duration);
-        Serial.println(" Microseconds. ");
+        Serial.println(" microseconds.");
     }
 }
 
