@@ -77,9 +77,9 @@ Angle Angle::operator-=(int16_t valueToSub) {
 /**
  * @brief Retuns the angles equivelent value in radians.
  *
- * @return (int16_t) The value of the angle in radians.
+ * @return (double) The value of the angle in radians.
  */
-int16_t Angle::toRadians() { return radians(this->_value); }
+double Angle::toRadians() { return radians(this->_value); }
 
 /**
  * @brief Returns the index of the segments at the current angle.
