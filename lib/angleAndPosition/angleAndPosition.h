@@ -1,14 +1,6 @@
-/**
- * @file angle.h
- * @brief Declaration of the Angle class.
- *
- * @author Harry Boyd - hboyd255@gmail.com
- * @date 2023-12-12
- * @copyright Copyright (c) 2023
- */
 
-#ifndef ANGLE_H
-#define ANGLE_H
+#ifndef ANGLE_AND_POSITION_H
+#define ANGLE_AND_POSITION_H
 
 #include <Arduino.h>
 
@@ -113,4 +105,50 @@ class Angle {
     int16_t _normalize(int16_t valueToNormalize);
 };
 
-#endif  // ANGLE_H
+/**
+ * @brief Struct for storing a position, where x and y represent millimetres, by
+ * default set to (0,0)
+ *
+ */
+typedef struct {
+    /**
+     * @brief The x position, measured in millimetres, set to 0 by default.
+     */
+    float xPos = 0;
+    /**
+     * @brief The y  position, measured in millimetres, set to 0 by default.
+     */
+    float yPos = 0;
+
+    /**
+     * @brief Converts the Position into a string, in the format (X,Y).
+     *
+     * @return (String) The Position as a string.
+     */
+    operator String() const;
+
+} Position;
+
+/**
+ * @brief Struct for storing a 2D pose, consisting of a position(x and y
+ * measured in millimetres) and an angle(measured in degrees);
+ */
+typedef struct {
+    /**
+     * @brief The position of the Pose,(x and y measured in millimetres), set to
+     * (0,0) by default.
+     */
+    Position position = {0, 0};
+    /**
+     * @brief The Angle of the Pose,(measured in degrees), set to 0 by default.
+     */
+    Angle angle = 0;
+    /**
+     * @brief Converts the Pose into a string, in the format (X,Y)@Angle°.
+     *
+     * @return (String) The Pose as a string.
+     */
+    operator String() const;
+} Pose;
+
+#endif  // ANGLE_AND_POSITION_H

@@ -1,13 +1,6 @@
-/**
- * @file angle.cpp
- * @brief Definition of the Angle class.
- *
- * @author Harry Boyd - hboyd255@gmail.com
- * @date 2023-12-12
- * @copyright Copyright (c) 2023
- */
 
-#include "angle.h"
+
+#include "angleAndPosition.h"
 
 // The lower bound of the angle wrap.
 #define ANGLE_LOWER_BOUND -179
@@ -126,3 +119,31 @@ int16_t Angle::_normalize(int16_t valueToNormalize) {
 
     return valueToNormalize;
 };
+
+/**
+ * @brief Converts the Position into a string, in the format (X,Y).
+ *
+ * @return (String) The Position as a string.
+ */
+Position::operator String() const {
+    String stringToReturn = "(";
+    stringToReturn += (int)this->xPos;
+    stringToReturn += ",";
+    stringToReturn += (int)this->yPos;
+    stringToReturn += ")";
+    return stringToReturn;
+}
+
+/**
+ * @brief Converts the Pose into a string.
+ *
+ * @return (String) The Pose as a string, in the format (X,Y)@Angle°
+ */
+Pose::operator String() const {
+    String stringToReturn;
+    stringToReturn += this->position;
+    stringToReturn += "@";
+    stringToReturn += this->angle;
+    stringToReturn += "°";
+    return stringToReturn;
+}
