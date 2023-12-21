@@ -1,5 +1,5 @@
 /**
- * @file angle.h
+ * @file angle.cpp
  * @brief Definition of the Angle class.
  *
  * @author Harry Boyd - hboyd255@gmail.com
