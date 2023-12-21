@@ -103,12 +103,26 @@ void polls() {
 
 PassiveSchedule passi(100);
 
-uint16_t angle = 0;
+uint32_t startTime;
+uint32_t endTime;
+uint32_t duration;
+int16_t val;
 
 void loop() {
-    motionTracker.poll();
+    ultrasonic.poll();
 
     if (passi.isReadyToRun()) {
-        Serial.println(motionTracker.getPose());
+        startTime = micros();
+        val = ultrasonic.readBlocking();
+        endTime = micros();
+        duration = endTime - startTime;
+
+        Serial.print(" Got value ");
+        Serial.print(val);
+        Serial.print(" and it took ");
+        Serial.print(duration);
+        Serial.println(" Microseconds. ");
     }
 }
+
+// reading non blocking takes like 15 micros, and is pretty aurate
