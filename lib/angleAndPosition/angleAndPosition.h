@@ -77,11 +77,11 @@ class Angle {
     Angle operator-=(int16_t valueToSub);
 
     /**
-     * @brief returns the angle but within the range 0-359
+     * @brief Retuns the angles equivelent value in radians.
      *
-     * @return uint8_t angle wrapped to 0-359.
+     * @return (int16_t) The value of the angle in radians.
      */
-    uint16_t get360();
+    int16_t toRadians();
 
     /**
      * @brief Returns the index of the segments at the current angle.
@@ -110,6 +110,13 @@ class Angle {
      * @return int16_t the value after being wrapped between -179 and 180.
      */
     int16_t _normalize(int16_t valueToNormalize);
+
+    /**
+     * @brief returns the angle but within the range 0-359
+     *
+     * @return uint8_t angle wrapped to 0-359.
+     */
+    uint16_t _get360();
 };
 
 /**

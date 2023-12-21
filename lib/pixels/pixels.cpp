@@ -49,7 +49,7 @@ void Pixels::show() { this->_ledStrip.Show(); }
 
 void Pixels::point(Angle angle) {
     angle += _rotationOffset;
-    uint8_t index = angle.get360() / 22.5;
+    uint8_t index = angle.segmentIndex(this->_ledCount);
 
     this->clear();
     this->setPixel(index, 255, 0, 0, true);

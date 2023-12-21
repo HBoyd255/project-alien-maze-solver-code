@@ -25,7 +25,7 @@ Angle::Angle(int16_t value) : _value(_normalize(value)) {}
  *
  * @return The value of the angle in the form of a int16_t.
  */
-Angle::operator int16_t() const { return _value; }
+Angle::operator int16_t() const { return this->_value; }
 
 /**
  * @brief Overloaded addition operator, used to add two angles together.
@@ -35,7 +35,7 @@ Angle::operator int16_t() const { return _value; }
  * @return The sum of the provided angles.
  */
 Angle Angle::operator+(Angle& otherAngle) const {
-    return Angle(_value + otherAngle._value);
+    return Angle(this->_value + otherAngle._value);
 }
 /**
  * @brief Overloaded compound addition operator, used to add an angle to the
@@ -45,7 +45,7 @@ Angle Angle::operator+(Angle& otherAngle) const {
  * @return reference to the modified angle.
  */
 Angle Angle ::operator+=(int16_t valueToAdd) {
-    _value = _normalize(_value + valueToAdd);
+    this->_value = _normalize(this->_value + valueToAdd);
     return *this;
 }
 
@@ -58,7 +58,7 @@ Angle Angle ::operator+=(int16_t valueToAdd) {
  * @return The sum of the provided angles.
  */
 Angle Angle::operator-(Angle& otherAngle) const {
-    return Angle(_value - otherAngle._value);
+    return Angle(this->_value - otherAngle._value);
 }
 
 /**
@@ -70,22 +70,16 @@ Angle Angle::operator-(Angle& otherAngle) const {
  * @return reference to the modified angle.
  */
 Angle Angle::operator-=(int16_t valueToSub) {
-    _value = _normalize(_value - valueToSub);
+    this->_value = _normalize(this->_value - valueToSub);
     return *this;
 }
 
 /**
- * @brief returns the angle but within the range 0-359
+ * @brief Retuns the angles equivelent value in radians.
  *
- * @return uint8_t angle wrapped to 0-359.
+ * @return (int16_t) The value of the angle in radians.
  */
-uint16_t Angle::get360() {
-    if (_value < 0) {
-        return _value + DEGREES_PER_ROTATION;
-    } else {
-        return _value;
-    }
-}
+int16_t Angle::toRadians() { return radians(this->_value); }
 
 /**
  * @brief Returns the index of the segments at the current angle.
@@ -100,7 +94,7 @@ uint16_t Angle::get360() {
  * @return (uint16_t) The index of the hypothetical segment.
  */
 uint16_t Angle::segmentIndex(uint16_t segmentCount) {
-    uint16_t unwrappedAngle = this->get360();
+    uint16_t unwrappedAngle = this->_get360();
 
     uint16_t segmentIndex =
         unwrappedAngle * segmentCount / DEGREES_PER_ROTATION;
@@ -126,6 +120,19 @@ int16_t Angle::_normalize(int16_t valueToNormalize) {
 
     return valueToNormalize;
 };
+
+/**
+ * @brief returns the angle but within the range 0-359
+ *
+ * @return uint8_t angle wrapped to 0-359.
+ */
+uint16_t Angle::_get360() {
+    if (_value < 0) {
+        return _value + DEGREES_PER_ROTATION;
+    } else {
+        return _value;
+    }
+}
 
 /**
  * @brief Converts the Position into a string, in the format (X,Y).
