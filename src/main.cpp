@@ -23,7 +23,7 @@
 // https://www.arduino.cc/reference/en/
 #include <Arduino.h>
 
-#include "angle.h"
+#include "angleAndPosition.h"
 #include "binary.h"
 #include "bluetoothLowEnergy.h"
 #include "bumper.h"
@@ -71,8 +71,6 @@ BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
 MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
                             &frontRightInfrared);
 
-volatile bool bumperUpdate = false;
-
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
@@ -103,10 +101,14 @@ void polls() {
     // rightInfrared.poll();
 }
 
-void loop() {
-    if (bumper.hasFlagBeenRaised()) {
-        Serial.println("Bonked");
-    }
+PassiveSchedule passi(100);
 
-    // Main Loop
+uint16_t angle = 0;
+
+void loop() {
+    motionTracker.poll();
+
+    if (passi.isReadyToRun()) {
+        Serial.println(motionTracker.getPose());
+    }
 }
