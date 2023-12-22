@@ -1,25 +1,4 @@
 
-// Im just going to put this here for now to keep track
-//  Im basing the positioning of the traditional polar coordinate system
-//  Not the flipped y system that graphical programs use,
-//  Like in this image
-//  https://en.wikipedia.org/wiki/Body_relative_direction#/media/File:XYZ_model.jpg
-//  On this wikipedia page
-//  https://en.wikipedia.org/wiki/Body_relative_direction
-// X and Y are measured in millimeters, and the angle is measured in degrees
-// 0 degrees is the positive x axis, and the angle increases in the clockwise
-// direction
-
-// For now im just going to add a Screenshot in this directory to show the
-// coordinate system.
-
-// This does mean that at the start of the program, the robot facing 90 degrees.
-// This is because the robot is facing the positive x axis, and the angle
-// increases in the clockwise direction.
-
-// angle can be calculated using the formula degrees(atan2(y,x))
-// also the angle should be locked between -179 and 180 degrees
-
 // https://www.arduino.cc/reference/en/
 #include <Arduino.h>
 
@@ -56,6 +35,8 @@ Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO,
                       ULTRASONIC_TIMEOUT_MICROSECONDS, ULTRASONIC_MAX_DISTANCE,
                       ULTRASONIC_DATA_SHELF_LIFE);
 
+// TODO Change this class so that 639 is not passed in, as 639mm is not a user
+// preference, it is a hardware limitation.
 Infrared leftInfrared(&errorIndicator, LEFT_INFRARED_INDEX, 639);
 Infrared rightInfrared(&errorIndicator, RIGHT_INFRARED_INDEX, 639);
 Infrared frontLeftInfrared(&errorIndicator, FRONT_LEFT_INFRARED_INDEX, 639);
@@ -96,40 +77,52 @@ void setup() {
 
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 }
-void polls() {
-    frontLeftInfrared.poll();
-    // frontRightInfrared.poll();
-    // leftInfrared.poll();
-    // rightInfrared.poll();
-}
 
 PassiveSchedule scheduler1(100);
-PassiveSchedule scheduler2(5000);
 
 uint32_t startTime;
 uint32_t endTime;
 uint32_t duration;
 int16_t val;
 
-void loop() {
+void polls() {
     ultrasonic.poll();
-
-    if (scheduler2.isReadyToRun()) {
-        delay(500);
-    }
-
-    if (scheduler1.isReadyToRun()) {
-        startTime = micros();
-        val = ultrasonic.read();
-        endTime = micros();
-        duration = endTime - startTime;
-
-        Serial.print("Got value ");
-        Serial.print(val);
-        Serial.print(" and it took ");
-        Serial.print(duration);
-        Serial.println(" microseconds.");
-    }
+    motionTracker.poll();
 }
 
-// reading non blocking takes like 15 micros, and is pretty aurate
+Position overlayPositionOntoPose(Position position, Pose pose) {
+    float sinAngle = sin(pose.angle.toRadians());
+    float cosAngle = cos(pose.angle.toRadians());
+
+    Position positionToReturn;
+
+    positionToReturn.x = position.x * cosAngle + position.y * sinAngle;
+    positionToReturn.y = position.y * cosAngle + position.x * sinAngle;
+
+    positionToReturn += pose.position;
+
+    return positionToReturn;
+}
+
+void loop() {
+    polls();
+
+    static Pose UsonicPose = {{0, 85}, 0};
+    Pose robotPose = motionTracker.getPose();
+
+    int16_t distance = ultrasonic.read();
+
+    if (distance > 0) {
+        Position posRelSensor;
+        posRelSensor.y = distance;
+
+        Position posRelRobot =
+            overlayPositionOntoPose(posRelSensor, UsonicPose);
+
+        Position posGlob = overlayPositionOntoPose(posRelRobot, robotPose);
+
+        Serial.println(posGlob);
+    }
+
+    delay(10);
+}
