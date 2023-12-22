@@ -2,54 +2,39 @@
 
 #include "bluetoothLowEnergy.h"
 
-// Two structs created for the purpose of bundling integers together so
-// that the can be sent as one object over bluetooth.
-
 /**
- * @brief Struct for bundling the distances obtained from the various range
- * sensors, all measured in millimetres.
+ * @brief CompressedPose struct, a slimmed down version of the Pose comprised
+ * of 3 16 bit integers.
  *
+ * This struct is designed to simplify sending data over bluetooth, as it is
+ * just 6 bytes that can be interpreted easily on the other end.
  */
-struct {
-    uint16_t leftInfrared;
-    uint16_t frontUltrasonic;
-    uint16_t rightInfrared;
-} typedef RangeSensorData;
-
-// The size of the RangeSensorData struct. Three uint16_ts should be 6 bytes.
-#define RANGE_SIZE sizeof(RangeSensorData)
-
-/**
- * @brief Struct for bundling the position and
- *
- */
-struct {            // TODO turn this into the Pose.
+struct CompressedPoseStruct {
     int16_t x;      // X position in millimeters.
     int16_t y;      // Y position in millimeters.
-    int16_t angle;  // The angle in degrees()
-} typedef PositionStruct;
+    int16_t angle;  // The angle in degrees.
+};
 
-// The size of the PositionStruct struct. Three int16_ts should be 6 bytes.
-#define POSITION_SIZE sizeof(PositionStruct)
+struct CompressedObstacleStruct {
+    int16_t x;  // X position in millimeters.
+    int16_t y;  // Y position in millimeters.
+    int16_t priority;
+};
 
 // BLERead and BLENotify are bitmask flags, the logical or combines them into
 // one flag, for conciseness.
 #define BLE_READ_NOTIFY BLERead | BLENotify
 
-
 BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                                        const char* mainServiceUUID,
-                                       const char* bumperUUID,
-                                       const char* rangeUUID,
-                                       const char* positionUUID)
-    : _mainService(mainServiceUUID),
-      _bumperCharacteristic(bumperUUID, BLE_READ_NOTIFY),
-      _rangeSensorsCharacteristic(rangeUUID, BLE_READ_NOTIFY, RANGE_SIZE),
-      _positionCharacteristic(positionUUID, BLE_READ_NOTIFY, POSITION_SIZE)
-
-{
-    this->_errorIndicatorPtr = errorIndicatorPtr;
-}
+                                       const char* obstacleUUID,
+                                       const char* robotPoseUUID)
+    : _errorIndicatorPtr(errorIndicatorPtr),
+      _mainService(mainServiceUUID),
+      _obstaclePositionCharacteristic(obstacleUUID, BLE_READ_NOTIFY,
+                                      sizeof(CompressedObstacleStruct)),
+      _robotPoseCharacteristic(robotPoseUUID, BLE_READ_NOTIFY,
+                               sizeof(CompressedPoseStruct)) {}
 
 void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     // Set a boolean indicating if the error indicator object is available
@@ -78,9 +63,8 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     BLE.setDeviceName(deviceName);
     BLE.setLocalName(deviceName);
 
-    this->_mainService.addCharacteristic(this->_bumperCharacteristic);
-    this->_mainService.addCharacteristic(this->_rangeSensorsCharacteristic);
-    this->_mainService.addCharacteristic(this->_positionCharacteristic);
+    this->_mainService.addCharacteristic(this->_obstaclePositionCharacteristic);
+    this->_mainService.addCharacteristic(this->_robotPoseCharacteristic);
 
     BLE.addService(this->_mainService);
     BLE.setAdvertisedService(this->_mainService);
@@ -89,34 +73,31 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     BLE.advertise();
 }
 
-void BluetoothLowEnergy::updateBumper(uint8_t value) {
-    this->_bumperCharacteristic.writeValue(value);
+void BluetoothLowEnergy::sendObstaclePosition(Position obstaclePosition,
+                                              uint8_t priority) {
+    CompressedObstacleStruct compressedObstaclePosition;
+
+    compressedObstaclePosition.x = (int16_t)obstaclePosition.x;
+    compressedObstaclePosition.y = (int16_t)obstaclePosition.y;
+    compressedObstaclePosition.priority = (int16_t)priority;
+
+    uint8_t* dataToSend = (uint8_t*)&compressedObstaclePosition;
+
+    this->_obstaclePositionCharacteristic.writeValue(
+        dataToSend, sizeof(CompressedObstacleStruct));
 }
 
-void BluetoothLowEnergy::updateRangeSensors(uint16_t leftSensor,
-                                            uint16_t frontSensor,
-                                            uint16_t rightSensor) {
-    RangeSensorData sensorData;
+void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {
+    CompressedPoseStruct compressedRobotPose;
 
-    sensorData.leftInfrared = leftSensor;
-    sensorData.frontUltrasonic = frontSensor;
-    sensorData.rightInfrared = rightSensor;
+    compressedRobotPose.x = (int16_t)robotPose.position.x;
+    compressedRobotPose.y = (int16_t)robotPose.position.y;
+    compressedRobotPose.angle = (int16_t)robotPose.angle;
 
-    uint8_t* dataToSend = (uint8_t*)&sensorData;
+    uint8_t* dataToSend = (uint8_t*)&compressedRobotPose;
 
-    this->_rangeSensorsCharacteristic.writeValue(dataToSend, RANGE_SIZE);
-}
-
-void BluetoothLowEnergy::updatePosition(int16_t x, int16_t y, int16_t angle) {
-    PositionStruct PositionData;
-
-    PositionData.x = x;
-    PositionData.y = y;
-    PositionData.angle = angle;
-
-    uint8_t* dataToSend = (uint8_t*)&PositionData;
-
-    this->_positionCharacteristic.writeValue(dataToSend, RANGE_SIZE);
+    this->_robotPoseCharacteristic.writeValue(dataToSend,
+                                              sizeof(CompressedPoseStruct));
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }

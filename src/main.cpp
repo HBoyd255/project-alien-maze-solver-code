@@ -47,9 +47,7 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_ROTATION_OFFSET);
 
 BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
-                                      BUMPER_CHARACTERISTIC_UUID,
-                                      RANGE_SENSORS_CHARACTERISTIC_UUID,
-                                      POSITION_CHARACTERISTIC_UUID);
+                                      OBSTACLE_POSITION_UUID, ROBOT_POSE_UUID);
 
 MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
                             &frontRightInfrared);
@@ -88,6 +86,7 @@ int16_t val;
 void polls() {
     ultrasonic.poll();
     motionTracker.poll();
+    bluetoothLowEnergy.poll();
 }
 
 Position overlayPositionOntoPose(Position position, Pose pose) {
@@ -121,8 +120,10 @@ void loop() {
 
         Position posGlob = overlayPositionOntoPose(posRelRobot, robotPose);
 
-        Serial.println(posGlob);
+        bluetoothLowEnergy.sendObstaclePosition(posGlob, 2);
     }
+
+    bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
 
     delay(10);
 }

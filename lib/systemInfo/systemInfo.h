@@ -21,10 +21,13 @@
 
 // UUIDS for the BLE service and characteristics, generated at using
 // https://www.uuidgenerator.net/
+// There must all be less than 80 character line length, to my python script
+// breaks.
+// TODO Move these to a json or something, so that my CPP and Python can both
+// properly read from the same file without having to parse a .h file in python.
 #define MAIN_SERVICE_UUID "cbb12285-f4bf-44e3-95e3-f402eb8ccd49"
-#define RANGE_SENSORS_CHARACTERISTIC_UUID "1995fd92-e400-40a0-8001-e82d89ea5aaf"
-#define BUMPER_CHARACTERISTIC_UUID "a2425f99-39c2-4770-9098-b1a7ea9b2e35"
-#define POSITION_CHARACTERISTIC_UUID "911926f2-a3b4-442d-86eb-e90d2f90f59a"
+#define OBSTACLE_POSITION_UUID "911926f2-a3b4-442d-86eb-e90d2f90f59a"
+#define ROBOT_POSE_UUID "0d9d01ba-f4e5-4cbc-896e-e391c9b7ae74"
 
 // Serial
 #define SERIAL_BAUD_RATE 115200
