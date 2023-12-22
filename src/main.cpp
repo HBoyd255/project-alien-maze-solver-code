@@ -90,13 +90,23 @@ void polls() {
 }
 
 Position overlayPositionOntoPose(Position position, Pose pose) {
-    float sinAngle = sin(pose.angle.toRadians());
-    float cosAngle = cos(pose.angle.toRadians());
+    Angle angleToRotate = pose.angle - 90;
+
+    float sinAngle = sin(angleToRotate.toRadians());
+    float cosAngle = cos(angleToRotate.toRadians());
 
     Position positionToReturn;
 
-    positionToReturn.x = position.x * cosAngle + position.y * sinAngle;
+    // Serial.print(" pre:");
+    // Serial.print(position);
+    // Serial.print(" angle:");
+    // Serial.print(pose.angle);
+
+    positionToReturn.x = position.x * cosAngle - position.y * sinAngle;
     positionToReturn.y = position.y * cosAngle + position.x * sinAngle;
+    //
+    //     Serial.print(" post:");
+    //     Serial.println(positionToReturn);
 
     positionToReturn += pose.position;
 
@@ -106,7 +116,7 @@ Position overlayPositionOntoPose(Position position, Pose pose) {
 void loop() {
     polls();
 
-    static Pose UsonicPose = {{0, 85}, 0};
+    static Pose UsonicPose = {{0, 85}, 90};
     Pose robotPose = motionTracker.getPose();
 
     int16_t distance = ultrasonic.read();
@@ -120,8 +130,18 @@ void loop() {
 
         Position posGlob = overlayPositionOntoPose(posRelRobot, robotPose);
 
+        Serial.println(posGlob);
+
         bluetoothLowEnergy.sendObstaclePosition(posGlob, 2);
+
+        //         Position testo = {400, 100};
+        //
+        //         posGlob += testo;
+        //
+        //         bluetoothLowEnergy.sendObstaclePosition(posGlob, 1);
     }
+
+    // Serial.println(motionTracker.getPose());
 
     bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
 

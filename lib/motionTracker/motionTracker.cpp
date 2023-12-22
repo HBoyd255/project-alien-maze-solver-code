@@ -53,7 +53,7 @@ Angle MotionTracker::angleFromFrontIR() {
 }
 
 void MotionTracker::updateAngle() {
-    this->_currentAngle = this->angleFromOdometry();
+    this->_currentAngle = 90 + this->angleFromOdometry();
 }
 
 void MotionTracker::updatePosition() {
@@ -61,13 +61,16 @@ void MotionTracker::updatePosition() {
     static int32_t lastAverageDistance = 0;
     static int32_t difference;
 
+    float sinAngle = sin(this->_currentAngle.toRadians());
+    float cosAngle = cos(this->_currentAngle.toRadians());
+
     AverageDistance = this->_averageTravelDistance();
     difference = AverageDistance - lastAverageDistance;
     lastAverageDistance = AverageDistance;
 
     if (difference != 0) {
-        float xDif = difference * sin(this->_currentAngle.toRadians());
-        float yDif = difference * cos(this->_currentAngle.toRadians());
+        float xDif = difference * cosAngle;
+        float yDif = difference * sinAngle;
 
         this->_currentPosition.x += xDif;
         this->_currentPosition.y += yDif;
