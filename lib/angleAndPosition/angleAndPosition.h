@@ -124,7 +124,7 @@ class Angle {
  * default set to (0,0)
  *
  */
-typedef struct {
+struct Position {
     /**
      * @brief The x position, measured in millimetres, set to 0 by default.
      */
@@ -141,13 +141,21 @@ typedef struct {
      */
     operator String() const;
 
-} Position;
+    /**
+     * @brief Overloaded compound addition operator, used to add a Position to
+     * the current Position by summing their x and y components.
+     *
+     * @param positionToAdd The Position to add to the current Position.
+     * @return reference to the modified Position.
+     */
+    Position& operator+=(Position& positionToAdd);
+};
 
 /**
  * @brief Struct for storing a 2D pose, consisting of a position(x and y
  * measured in millimetres) and an angle(measured in degrees);
  */
-typedef struct {
+struct Pose {
     /**
      * @brief The position of the Pose,(x and y measured in millimetres), set to
      * (0,0) by default.
@@ -163,6 +171,6 @@ typedef struct {
      * @return (String) The Pose as a string.
      */
     operator String() const;
-} Pose;
+};
 
 #endif  // ANGLE_AND_POSITION_H

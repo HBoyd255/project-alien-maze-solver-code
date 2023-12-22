@@ -149,6 +149,19 @@ Position::operator String() const {
 }
 
 /**
+ * @brief Overloaded compound addition operator, used to add a Position to
+ * the current Position by summing their x and y components.
+ *
+ * @param positionToAdd The Position to add to the current Position.
+ * @return reference to the modified Position.
+ */
+Position& Position::operator+=(Position& positionToAdd) {
+    this->x += positionToAdd.x;
+    this->y += positionToAdd.y;
+    return *this;
+}
+
+/**
  * @brief Converts the Pose into a string.
  *
  * @return (String) The Pose as a string, in the format (X,Y)@Angle°
