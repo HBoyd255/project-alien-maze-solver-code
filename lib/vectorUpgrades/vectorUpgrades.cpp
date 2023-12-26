@@ -3,9 +3,9 @@
 #include "vectorUpgrades.h"
 
 void printAngleVector(AngleVector& vectorToPrint) {
-    uint8_t itemCount = vectorToPrint.size();
+    uint16_t itemCount = vectorToPrint.size();
 
-    Serial.print("Vector Containing ");
+    Serial.print("Angle Vector Containing ");
     Serial.print(itemCount);
     Serial.print(" Items - ");
 
