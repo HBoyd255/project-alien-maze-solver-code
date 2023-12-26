@@ -81,7 +81,7 @@ int16_t ObstacleDetector::_readRange() {
     switch (this->_sensorUsed) {
         case InfraredSensor:
 
-            return this->_infraredSensorPtr->read();
+            return this->_infraredSensorPtr->readSafe();
 
             break;
         case UltrasonicSensor:
