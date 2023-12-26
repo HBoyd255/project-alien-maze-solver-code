@@ -119,9 +119,13 @@ class Angle {
     uint16_t _get360();
 };
 
+// Declare the Pose structure so that it can be given as a Argument to a
+// position modifier.
+struct Pose;
+
 /**
- * @brief Struct for storing a position, where x and y represent millimetres, by
- * default set to (0,0)
+ * @brief Struct for storing a position, where x and y represent
+ * millimetres, by default set to (0,0)
  *
  */
 struct Position {
@@ -133,6 +137,17 @@ struct Position {
      * @brief The y  position, measured in millimetres, set to 0 by default.
      */
     float y = 0;
+
+    /**
+     * @brief Transforms the position by a given pose, constructed of a position
+     * and an angle.
+     *
+     * The Position is first rotated by the given pose's angle, and then offset
+     * by the pose's position.
+     *
+     * @param offsetPose (Pose) The pose to transform the position by.
+     */
+    void transformByPose(Pose offsetPose);
 
     /**
      * @brief Converts the Position into a string, in the format (X,Y).

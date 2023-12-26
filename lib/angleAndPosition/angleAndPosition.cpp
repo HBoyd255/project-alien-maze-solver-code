@@ -135,6 +135,31 @@ uint16_t Angle::_get360() {
 }
 
 /**
+ * @brief Transforms the position by a given pose, constructed of a position
+ * and an angle.
+ *
+ * The Position is first rotated by the given pose's angle, and then offset
+ * by the pose's position.
+ *
+ * @param offsetPose (Pose) The pose to transform the position by.
+ */
+void Position::transformByPose(Pose offsetPose) {
+    Angle angleToRotate = offsetPose.angle - 90;
+
+    float sinAngle = sin(angleToRotate.toRadians());
+    float cosAngle = cos(angleToRotate.toRadians());
+
+    float tempX = this->x * cosAngle - this->y * sinAngle;
+    float tempY = this->y * cosAngle + this->x * sinAngle;
+
+    tempX += offsetPose.position.x;
+    tempY += offsetPose.position.y;
+
+    this->x = tempX;
+    this->y = tempY;
+}
+
+/**
  * @brief Converts the Position into a string, in the format (X,Y).
  *
  * @return (String) The Position as a string.
