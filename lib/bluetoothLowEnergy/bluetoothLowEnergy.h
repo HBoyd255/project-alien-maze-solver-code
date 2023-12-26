@@ -9,8 +9,8 @@
 // https://www.arduino.cc/reference/en/libraries/arduinoble/
 #include <ArduinoBLE.h>
 
-#include "angleAndPosition.h"
 #include "errorIndicator.h"
+#include "obstacles.h"
 
 class BluetoothLowEnergy {
    public:
@@ -20,7 +20,7 @@ class BluetoothLowEnergy {
 
     void setup(const char* deviceName, const char* macAddress);
 
-    void sendObstaclePosition(Position obstaclePosition, uint8_t priority);
+    void sendObstacle(Obstacle obstacle);
     void sendRobotPose(Pose robotPose);
 
     void poll();
@@ -28,7 +28,7 @@ class BluetoothLowEnergy {
    private:
     ErrorIndicator* _errorIndicatorPtr;
     BLEService _mainService;
-    BLECharacteristic _obstaclePositionCharacteristic;
+    BLECharacteristic _obstacleCharacteristic;
     BLECharacteristic _robotPoseCharacteristic;
 };
 

@@ -18,7 +18,7 @@ struct CompressedPoseStruct {
 struct CompressedObstacleStruct {
     int16_t x;  // X position in millimeters.
     int16_t y;  // Y position in millimeters.
-    int16_t priority;
+    int16_t type;
 };
 
 // BLERead and BLENotify are bitmask flags, the logical or combines them into
@@ -31,8 +31,8 @@ BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                                        const char* robotPoseUUID)
     : _errorIndicatorPtr(errorIndicatorPtr),
       _mainService(mainServiceUUID),
-      _obstaclePositionCharacteristic(obstacleUUID, BLE_READ_NOTIFY,
-                                      sizeof(CompressedObstacleStruct)),
+      _obstacleCharacteristic(obstacleUUID, BLE_READ_NOTIFY,
+                              sizeof(CompressedObstacleStruct)),
       _robotPoseCharacteristic(robotPoseUUID, BLE_READ_NOTIFY,
                                sizeof(CompressedPoseStruct)) {}
 
@@ -63,7 +63,7 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     BLE.setDeviceName(deviceName);
     BLE.setLocalName(deviceName);
 
-    this->_mainService.addCharacteristic(this->_obstaclePositionCharacteristic);
+    this->_mainService.addCharacteristic(this->_obstacleCharacteristic);
     this->_mainService.addCharacteristic(this->_robotPoseCharacteristic);
 
     BLE.addService(this->_mainService);
@@ -73,18 +73,17 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     BLE.advertise();
 }
 
-void BluetoothLowEnergy::sendObstaclePosition(Position obstaclePosition,
-                                              uint8_t priority) {
+void BluetoothLowEnergy::sendObstacle(Obstacle obstacleToSend) {
     CompressedObstacleStruct compressedObstaclePosition;
 
-    compressedObstaclePosition.x = (int16_t)obstaclePosition.x;
-    compressedObstaclePosition.y = (int16_t)obstaclePosition.y;
-    compressedObstaclePosition.priority = (int16_t)priority;
+    compressedObstaclePosition.x = (int16_t)obstacleToSend.position.x;
+    compressedObstaclePosition.y = (int16_t)obstacleToSend.position.y;
+    compressedObstaclePosition.type = (int16_t)obstacleToSend.sensorType;
 
     uint8_t* dataToSend = (uint8_t*)&compressedObstaclePosition;
 
-    this->_obstaclePositionCharacteristic.writeValue(
-        dataToSend, sizeof(CompressedObstacleStruct));
+    this->_obstacleCharacteristic.writeValue(dataToSend,
+                                             sizeof(CompressedObstacleStruct));
 }
 
 void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {

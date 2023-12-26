@@ -12,6 +12,7 @@
 #include "infrared.h"
 #include "motionTracker.h"
 #include "motor.h"
+#include "obstacles.h"
 #include "pixels.h"
 #include "schedule.h"
 #include "systemInfo.h"
@@ -76,74 +77,85 @@ void setup() {
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 }
 
-PassiveSchedule scheduler1(100);
+ObstacleDetector usonicObby(&motionTracker, &ultrasonic, {{0, 85}, 90});
 
-uint32_t startTime;
-uint32_t endTime;
-uint32_t duration;
-int16_t val;
+ObstacleDetector FLIROB(&motionTracker, &frontLeftInfrared, {{-36, 64}, 90});
+ObstacleDetector FRIROB(&motionTracker, &frontRightInfrared, {{36, 64}, 90});
+ObstacleDetector LIROB(&motionTracker, &leftInfrared, {{-85, 0}, 180});
+ObstacleDetector RIROB(&motionTracker, &rightInfrared, {{85, 0}, 0});
+
+ObstacleDetector bumperObby(&motionTracker, &bumper, {{0, 125}, 90});
 
 void polls() {
+    frontLeftInfrared.poll();
+    frontRightInfrared.poll();
+    leftInfrared.poll();
+    rightInfrared.poll();
+
     ultrasonic.poll();
+
     motionTracker.poll();
+
     bluetoothLowEnergy.poll();
-}
-
-Position overlayPositionOntoPose(Position position, Pose pose) {
-    Angle angleToRotate = pose.angle - 90;
-
-    float sinAngle = sin(angleToRotate.toRadians());
-    float cosAngle = cos(angleToRotate.toRadians());
-
-    Position positionToReturn;
-
-    // Serial.print(" pre:");
-    // Serial.print(position);
-    // Serial.print(" angle:");
-    // Serial.print(pose.angle);
-
-    positionToReturn.x = position.x * cosAngle - position.y * sinAngle;
-    positionToReturn.y = position.y * cosAngle + position.x * sinAngle;
-    //
-    //     Serial.print(" post:");
-    //     Serial.println(positionToReturn);
-
-    positionToReturn += pose.position;
-
-    return positionToReturn;
 }
 
 void loop() {
     polls();
 
-    static Pose UsonicPose = {{0, 85}, 90};
-    Pose robotPose = motionTracker.getPose();
+    ObstacleVector obstacles;
 
-    int16_t distance = ultrasonic.read();
+    FLIROB.addObstaclesToVector(&obstacles);
+    FRIROB.addObstaclesToVector(&obstacles);
+    LIROB.addObstaclesToVector(&obstacles);
+    RIROB.addObstaclesToVector(&obstacles);
 
-    if (distance > 0) {
-        Position posRelSensor;
-        posRelSensor.y = distance;
+    usonicObby.addObstaclesToVector(&obstacles);
 
-        Position posRelRobot =
-            overlayPositionOntoPose(posRelSensor, UsonicPose);
+    bumperObby.addObstaclesToVector(&obstacles);
 
-        Position posGlob = overlayPositionOntoPose(posRelRobot, robotPose);
+    for (const Obstacle obstacle : obstacles) {
+        Serial.print(obstacle);
+        Serial.print(",");
 
-        Serial.println(posGlob);
-
-        bluetoothLowEnergy.sendObstaclePosition(posGlob, 2);
-
-        //         Position testo = {400, 100};
-        //
-        //         posGlob += testo;
-        //
-        //         bluetoothLowEnergy.sendObstaclePosition(posGlob, 1);
+        bluetoothLowEnergy.sendObstacle(obstacle);
     }
-
-    // Serial.println(motionTracker.getPose());
+    Serial.println();
 
     bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
 
-    delay(10);
+    //
+    //     static Pose UsonicPose = {{0, 85}, 90};
+    //     Pose robotPose = motionTracker.getPose();
+    //
+    //     int16_t distance = ultrasonic.read();
+    //
+    //     if (distance > 0) {
+    //         Position positionToReturn;
+    //
+    //         // Set the position of the detected obstacle relative to the
+    //         sensor. positionToReturn.y = distance;
+    //
+    //         // Transform the position from being relative to the sensor, to
+    //         being
+    //         // relative to the robot.
+    //         positionToReturn.transformByPose(UsonicPose);
+    //
+    //         // Transform the position from being relative to the robot, to
+    //         being
+    //         // relative to the global coordinate system.
+    //         positionToReturn.transformByPose(robotPose);
+    //
+    //         bluetoothLowEnergy.sendObstaclePosition(positionToReturn, 2);
+    //
+    //         Serial.print(" Obstacle:");
+    //         Serial.print(positionToReturn);
+    //         Serial.print(" Robot:");
+    //         Serial.println(robotPose);
+    //     }
+    //
+    //     // Serial.println(motionTracker.getPose());
+    //
+    //     bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
+    //
+    // delay(10);
 }
