@@ -8,6 +8,7 @@
 #include "bumper.h"
 #include "drive.h"
 #include "errorIndicator.h"
+#include "grid.h"
 #include "history.h"
 #include "infrared.h"
 #include "motionTracker.h"
@@ -77,14 +78,14 @@ void setup() {
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 }
 
-ObstacleDetector usonicObby(&motionTracker, &ultrasonic, {{0, 85}, 90});
+ObstacleDetector usonicOD(&motionTracker, &ultrasonic, {{0, 85}, 90});
 
-ObstacleDetector FLIROB(&motionTracker, &frontLeftInfrared, {{-36, 64}, 90});
-ObstacleDetector FRIROB(&motionTracker, &frontRightInfrared, {{36, 64}, 90});
-ObstacleDetector LIROB(&motionTracker, &leftInfrared, {{-85, 0}, 180});
-ObstacleDetector RIROB(&motionTracker, &rightInfrared, {{85, 0}, 0});
+ObstacleDetector FLIROD(&motionTracker, &frontLeftInfrared, {{-36, 64}, 90});
+ObstacleDetector FRIROD(&motionTracker, &frontRightInfrared, {{36, 64}, 90});
+ObstacleDetector LIROD(&motionTracker, &leftInfrared, {{-85, 0}, 180});
+ObstacleDetector RIROD(&motionTracker, &rightInfrared, {{85, 0}, 0});
 
-ObstacleDetector bumperObby(&motionTracker, &bumper, {{0, 125}, 90});
+ObstacleDetector bumperOD(&motionTracker, &bumper, {{0, 125}, 90});
 
 void polls() {
     frontLeftInfrared.poll();
@@ -99,29 +100,48 @@ void polls() {
     bluetoothLowEnergy.poll();
 }
 
+Grid ObstacleGrid;
+
 void loop() {
     polls();
 
-    ObstacleVector obstacles;
-
-    FLIROB.addObstaclesToVector(&obstacles);
-    FRIROB.addObstaclesToVector(&obstacles);
-    LIROB.addObstaclesToVector(&obstacles);
-    RIROB.addObstaclesToVector(&obstacles);
-
-    usonicObby.addObstaclesToVector(&obstacles);
-
-    bumperObby.addObstaclesToVector(&obstacles);
-
-    for (const Obstacle obstacle : obstacles) {
-        Serial.print(obstacle);
-        Serial.print(",");
-
-        bluetoothLowEnergy.sendObstacle(obstacle);
-    }
+    Serial.println("Start");
     Serial.println();
 
-    bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
+    Obstacle testObstacle = {{31, 0}, 3};
+
+    ObstacleGrid.updateObstacle(testObstacle);
+
+    Obstacle testObstacle2 = {{33, 0}, 2};
+
+    ObstacleGrid.updateObstacle(testObstacle2);
+
+    Serial.println("9");
+    ObstacleGrid.print({10, 10}, 9);
+
+    Serial.println("End");
+
+    //
+    //     ObstacleVector obstacles;
+    //
+    //     FLIROD.addObstaclesToVector(&obstacles);
+    //     FRIROD.addObstaclesToVector(&obstacles);
+    //     LIROD.addObstaclesToVector(&obstacles);
+    //     RIROD.addObstaclesToVector(&obstacles);
+    //
+    //     usonicOD.addObstaclesToVector(&obstacles);
+    //
+    //     bumperOD.addObstaclesToVector(&obstacles);
+    //
+    //     for (const Obstacle obstacle : obstacles) {
+    //         Serial.print(obstacle);
+    //         Serial.print(",");
+    //
+    //         bluetoothLowEnergy.sendObstacle(obstacle);
+    //     }
+    //     Serial.println();
+    //
+    //     bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
 
     //
     //     static Pose UsonicPose = {{0, 85}, 90};

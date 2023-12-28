@@ -74,6 +74,14 @@ void ObstacleDetector::addObstaclesToVector(ObstacleVector* vectorPtr) {
             this->_addObstaclesFromBumper(vectorPtr);
 
             break;
+
+        default:
+
+            Serial.println("Unknown Sensor");
+            Serial.println(this->_sensorUsed);
+            Serial.println("Please Fix");
+
+            break;
     }
 }
 
@@ -89,7 +97,13 @@ int16_t ObstacleDetector::_readRange() {
             return this->_ultrasonicSensorPtr->read();
 
             break;
-        case BumperSensor:
+
+        default:
+
+            Serial.println("Unknown Sensor");
+            Serial.println(this->_sensorUsed);
+            Serial.println("Please Fix");
+
             return -1;
 
             break;

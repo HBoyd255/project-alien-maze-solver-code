@@ -19,7 +19,7 @@ enum SensorType {
 
 struct Obstacle {
     Position position;
-    SensorType sensorType = UnknownSensor;
+    uint8_t sensorType = UnknownSensor;
 
     operator String() const;
 };
