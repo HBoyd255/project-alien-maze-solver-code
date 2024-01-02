@@ -3,6 +3,11 @@
 #include "obstacles.h"
 
 #include "binary.h"
+#include "bumper.h"
+#include "grid.h"
+#include "infrared.h"
+#include "motionTracker.h"
+#include "ultrasonic.h"
 
 const String SensorNames[4] = {"Unknown", "Infrared", "Ultrasonic", "Bumper"};
 
@@ -83,6 +88,40 @@ void ObstacleDetector::addObstaclesToVector(ObstacleVector* vectorPtr) {
 
             break;
     }
+}
+
+void ObstacleDetector::updateGrid(Grid* gridToUpdatePtr) {
+    // get the global pose of the sensor
+
+    Pose robotPose = this->_motionTrackerPtr->getPose();
+
+    int16_t distance = this->_readRange();
+
+    if (distance > 0) {
+        Position positionFromObstacle;
+        positionFromObstacle.y = distance;
+        positionFromObstacle.transformByPose(this->_sensorPose);
+        positionFromObstacle.transformByPose(robotPose);
+
+        gridToUpdatePtr->setFromPosition(positionFromObstacle, 100);
+
+        distance -= 10;
+        while (distance > 0) {
+            Position positionGap;
+            positionGap.y = distance;
+            positionGap.transformByPose(this->_sensorPose);
+            positionGap.transformByPose(robotPose);
+
+            gridToUpdatePtr->setFromPosition(positionGap, 0);
+            distance -= 10;
+        }
+    }
+
+    // get the distance of the sensor
+
+    // set everyrhing from the sensor to the obstacle to 0.
+
+    // gridToUpdatePtr->_setAndSend();
 }
 
 int16_t ObstacleDetector::_readRange() {

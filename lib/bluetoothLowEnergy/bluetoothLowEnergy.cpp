@@ -24,8 +24,10 @@ struct CompressedPoseStruct {
     int16_t angle;  // The angle in degrees.
 };
 
+// I dont remember why value is 32 bit.
+// TODO find out why and document.
 struct CompressedGridChunkStruct {
-    uint32_t value;
+    int32_t value;
     uint32_t startIndex;
     uint32_t count;
 };
@@ -105,7 +107,7 @@ void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {
                                               sizeof(CompressedPoseStruct));
 }
 
-void BluetoothLowEnergy::sendGridChunk(uint8_t value, uint32_t startIndex,
+void BluetoothLowEnergy::sendGridChunk(int8_t value, uint32_t startIndex,
                                        uint32_t count) {
     CompressedGridChunkStruct compressedGridChunk;
 
@@ -114,6 +116,13 @@ void BluetoothLowEnergy::sendGridChunk(uint8_t value, uint32_t startIndex,
     compressedGridChunk.count = count;
 
     uint8_t* dataToSend = (uint8_t*)&compressedGridChunk;
+
+    Serial.print(" value:");
+    Serial.print(value);
+    Serial.print(" startIndex:");
+    Serial.print(startIndex);
+    Serial.print(" count:");
+    Serial.println(count);
 
     this->_gridChunkCharacteristic.writeValue(
         dataToSend, sizeof(CompressedGridChunkStruct));

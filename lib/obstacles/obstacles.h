@@ -1,14 +1,19 @@
 #ifndef OBSTACLES_H
 #define OBSTACLES_H
 
+// TODO fix this mess
+
 #include <Arduino.h>
 
 #include "angleAndPosition.h"
-#include "bumper.h"
-#include "infrared.h"
-#include "motionTracker.h"
-#include "ultrasonic.h"
 #include "vectorUpgrades.h"
+
+// Forward declaration
+class MotionTracker;
+class Infrared;
+class Ultrasonic;
+class Bumper;
+class Grid;
 
 enum SensorType {
     UnknownSensor,
@@ -28,12 +33,6 @@ using ObstacleVector = std::vector<Obstacle>;
 
 void printObstacleVector(ObstacleVector& vectorToPrint);
 
-// Forward declaration
-class MotionTracker;
-class Infrared;
-class Ultrasonic;
-class Bumper;
-
 class ObstacleDetector {
    public:
     ObstacleDetector(MotionTracker* motionTrackerPtr,
@@ -44,6 +43,8 @@ class ObstacleDetector {
                      Pose sensorPose);
 
     void addObstaclesToVector(ObstacleVector* vectorPtr);
+
+    void updateGrid(Grid* gridToUpdatePtr);
 
     int16_t _readRange();
 

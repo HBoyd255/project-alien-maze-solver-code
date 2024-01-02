@@ -21,7 +21,7 @@ class BluetoothLowEnergy {
 
     void setup(const char* deviceName, const char* macAddress);
     void sendRobotPose(Pose robotPose);
-    void sendGridChunk(uint8_t value, uint32_t startIndex, uint32_t count);
+    void sendGridChunk(int8_t value, uint32_t startIndex, uint32_t count);
 
     void poll();
 
@@ -36,6 +36,7 @@ class BluetoothLowEnergy {
     BLECharacteristic _gridChunkCharacteristic;
     BLECharacteristic _needyCharacteristic;
 
+    // TODO fix the inline variavle issue;
     static inline bool newlyConnectedFlag = false;
     static inline bool newlyDisconnectedFlag = false;
     static inline bool needsDataFlag = false;

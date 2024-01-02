@@ -117,6 +117,7 @@ void polls() {
 
         bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
         obstacleGrid.startDripFeed();
+        Serial.println("DAta requested");
     }
 
     if (bluetoothLowEnergy.newlyDisconnected()) {
@@ -127,30 +128,37 @@ void polls() {
 void loop() {
     polls();
 
-    ObstacleVector obstacles;
+    usonicOD.updateGrid(&obstacleGrid);
 
-    FLIROD.addObstaclesToVector(&obstacles);
-    FRIROD.addObstaclesToVector(&obstacles);
-    LIROD.addObstaclesToVector(&obstacles);
-    RIROD.addObstaclesToVector(&obstacles);
+    // ObstacleVector obstacles;
 
-    usonicOD.addObstaclesToVector(&obstacles);
+    // FLIROD.addObstaclesToVector(&obstacles);
+    // FRIROD.addObstaclesToVector(&obstacles);
+    // LIROD.addObstaclesToVector(&obstacles);
+    // RIROD.addObstaclesToVector(&obstacles);
 
-    bumperOD.addObstaclesToVector(&obstacles);
+    // usonicOD.addObstaclesToVector(&obstacles);
 
-    for (const Obstacle obstacle : obstacles) {
-        obstacleGrid.updateObstacle(obstacle, true);
-    }
+    // bumperOD.addObstaclesToVector(&obstacles);
+
+    // for (const Obstacle obstacle : obstacles) {
+    //     obstacleGrid.updateObstacle(obstacle, true);
+    // }
+
+    // usonicOD.addObstaclesToVector(&obstacles);
 
     if (eachSecond.isReadyToRun()) {
         Serial.print("Still Ticking over ");
         Serial.println(millis() / 1000);
     }
 
-    // if (gridPrintSchedule.isReadyToRun()) {
-    //     obstacleGrid.print({0, 0}, 10);
-    //     // bluetoothLowEnergy.sendGridChunk(3, 0, 10000);
-    // }
+    //     if (gridPrintSchedule.isReadyToRun()) {
+    //         // obstacleGrid.bill();
+    //
+    //         // obstacleGrid.startDripFeed();
+    //
+    //         obstacleGrid.print({0, 0}, 10);
+    //     }
 
     // bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
     // Serial.println(motionTracker.getPose());
