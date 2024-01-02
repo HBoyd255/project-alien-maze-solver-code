@@ -28,6 +28,12 @@ using ObstacleVector = std::vector<Obstacle>;
 
 void printObstacleVector(ObstacleVector& vectorToPrint);
 
+// Forward declaration
+class MotionTracker;
+class Infrared;
+class Ultrasonic;
+class Bumper;
+
 class ObstacleDetector {
    public:
     ObstacleDetector(MotionTracker* motionTrackerPtr,

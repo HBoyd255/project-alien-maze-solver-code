@@ -2,26 +2,33 @@
 #define MOTION_TRACKER_H
 
 #include "angleAndPosition.h"
+#include "bluetoothLowEnergy.h"
 #include "infrared.h"
 #include "motor.h"
 
+// Forward declaration
+class BluetoothLowEnergy;
+class Motor;
+class Infrared;
+
 class MotionTracker {
    public:
-    MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
-                  Infrared* frontLeftInfraredPtr,
+    MotionTracker(BluetoothLowEnergy* blePtr, Motor* leftMotorPtr,
+                  Motor* rightMotorPtr, Infrared* frontLeftInfraredPtr,
                   Infrared* frontRightInfraredPtr);
 
     Angle angleFromOdometry();
     Angle angleFromFrontIR();
 
-    void updateAngle();
-    void updatePosition();
+    bool updateAngle();
+    bool updatePosition();
 
-    void poll();
+    void poll(bool sendOverBLE);
 
     Pose getPose();
 
    private:
+    BluetoothLowEnergy* _blePtr;
     Motor* _leftMotorPtr;
     Motor* _rightMotorPtr;
     Infrared* _frontLeftInfraredPtr;

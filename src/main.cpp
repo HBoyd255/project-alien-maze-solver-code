@@ -2,6 +2,7 @@
 // https://www.arduino.cc/reference/en/
 #include <Arduino.h>
 
+// TODO remove circles by using forward declaration
 #include "angleAndPosition.h"
 #include "binary.h"
 #include "bluetoothLowEnergy.h"
@@ -49,10 +50,11 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_ROTATION_OFFSET);
 
 BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
-                                      OBSTACLE_POSITION_UUID, ROBOT_POSE_UUID);
+                                      ROBOT_POSE_UUID, GRID_CHUNK_UUID,
+                                      NEEDY_UUID);
 
-MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
-                            &frontRightInfrared);
+MotionTracker motionTracker(&bluetoothLowEnergy, &leftMotor, &rightMotor,
+                            &frontLeftInfrared, &frontRightInfrared);
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -87,6 +89,11 @@ ObstacleDetector RIROD(&motionTracker, &rightInfrared, {{85, 0}, 0});
 
 ObstacleDetector bumperOD(&motionTracker, &bumper, {{0, 125}, 90});
 
+Grid obstacleGrid(&bluetoothLowEnergy);
+
+PassiveSchedule eachSecond(1000);
+PassiveSchedule gridPrintSchedule(5000);
+
 void polls() {
     frontLeftInfrared.poll();
     frontRightInfrared.poll();
@@ -95,87 +102,72 @@ void polls() {
 
     ultrasonic.poll();
 
-    motionTracker.poll();
+    motionTracker.poll(true);
 
     bluetoothLowEnergy.poll();
-}
 
-Grid ObstacleGrid;
+    obstacleGrid.pollDripFeed();
+
+    if (bluetoothLowEnergy.newlyConnected()) {
+        Serial.println("Connected");
+    }
+
+    if (bluetoothLowEnergy.needsData()) {
+        Serial.println("Sending all Data");
+
+        bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
+        obstacleGrid.startDripFeed();
+    }
+
+    if (bluetoothLowEnergy.newlyDisconnected()) {
+        Serial.println("Disconnected");
+    }
+}
 
 void loop() {
     polls();
 
-    Serial.println("Start");
-    Serial.println();
+    ObstacleVector obstacles;
 
-    Obstacle testObstacle = {{31, 0}, 3};
+    FLIROD.addObstaclesToVector(&obstacles);
+    FRIROD.addObstaclesToVector(&obstacles);
+    LIROD.addObstaclesToVector(&obstacles);
+    RIROD.addObstaclesToVector(&obstacles);
 
-    ObstacleGrid.updateObstacle(testObstacle);
+    usonicOD.addObstaclesToVector(&obstacles);
 
-    Obstacle testObstacle2 = {{33, 0}, 2};
+    bumperOD.addObstaclesToVector(&obstacles);
 
-    ObstacleGrid.updateObstacle(testObstacle2);
+    for (const Obstacle obstacle : obstacles) {
+        obstacleGrid.updateObstacle(obstacle, true);
+    }
 
-    Serial.println("9");
-    ObstacleGrid.print({10, 10}, 9);
+    if (eachSecond.isReadyToRun()) {
+        Serial.print("Still Ticking over ");
+        Serial.println(millis() / 1000);
+    }
 
-    Serial.println("End");
+    // if (gridPrintSchedule.isReadyToRun()) {
+    //     obstacleGrid.print({0, 0}, 10);
+    //     // bluetoothLowEnergy.sendGridChunk(3, 0, 10000);
+    // }
 
-    //
-    //     ObstacleVector obstacles;
-    //
-    //     FLIROD.addObstaclesToVector(&obstacles);
-    //     FRIROD.addObstaclesToVector(&obstacles);
-    //     LIROD.addObstaclesToVector(&obstacles);
-    //     RIROD.addObstaclesToVector(&obstacles);
-    //
-    //     usonicOD.addObstaclesToVector(&obstacles);
-    //
-    //     bumperOD.addObstaclesToVector(&obstacles);
-    //
-    //     for (const Obstacle obstacle : obstacles) {
-    //         Serial.print(obstacle);
-    //         Serial.print(",");
-    //
-    //         bluetoothLowEnergy.sendObstacle(obstacle);
-    //     }
-    //     Serial.println();
-    //
-    //     bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
+    // bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
+    // Serial.println(motionTracker.getPose());
 
+    //   polls();
     //
-    //     static Pose UsonicPose = {{0, 85}, 90};
-    //     Pose robotPose = motionTracker.getPose();
     //
-    //     int16_t distance = ultrasonic.read();
+    //     // Serial.println();
     //
-    //     if (distance > 0) {
-    //         Position positionToReturn;
-    //
-    //         // Set the position of the detected obstacle relative to the
-    //         sensor. positionToReturn.y = distance;
-    //
-    //         // Transform the position from being relative to the sensor, to
-    //         being
-    //         // relative to the robot.
-    //         positionToReturn.transformByPose(UsonicPose);
-    //
-    //         // Transform the position from being relative to the robot, to
-    //         being
-    //         // relative to the global coordinate system.
-    //         positionToReturn.transformByPose(robotPose);
-    //
-    //         bluetoothLowEnergy.sendObstaclePosition(positionToReturn, 2);
-    //
-    //         Serial.print(" Obstacle:");
-    //         Serial.print(positionToReturn);
-    //         Serial.print(" Robot:");
-    //         Serial.println(robotPose);
+    //     if (gridPrinter.isReadyToRun()) {
+    //         obstacleGrid.print({0, 0}, 10);
+    //         for (const Obstacle obstacle : obstacles) {
+    //             Serial.print(obstacle);
+    //             Serial.print(",");
+    //         }
+    //         Serial.println();
     //     }
     //
-    //     // Serial.println(motionTracker.getPose());
-    //
-    //     bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
-    //
-    // delay(10);
+    //     delay(10);
 }

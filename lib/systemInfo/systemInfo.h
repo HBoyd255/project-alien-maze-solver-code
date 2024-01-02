@@ -12,7 +12,7 @@
 #define SYSTEM_INFO_H
 
 // The mac address of the BLE module.
-#define BLE_MAC_ADDRESS "2c:bc:f3:cb:1f:f9"
+#define BLE_MAC_ADDRESS "8d:b6:2e:ef:3b:6b"
 
 // The name of the BLE module.
 #define BLE_DEVICE_NAME "A.L.I.E.N"
@@ -26,8 +26,9 @@
 // TODO Move these to a json or something, so that my CPP and Python can both
 // properly read from the same file without having to parse a .h file in python.
 #define MAIN_SERVICE_UUID "cbb12285-f4bf-44e3-95e3-f402eb8ccd49"
-#define OBSTACLE_POSITION_UUID "911926f2-a3b4-442d-86eb-e90d2f90f59a"
 #define ROBOT_POSE_UUID "0d9d01ba-f4e5-4cbc-896e-e391c9b7ae74"
+#define GRID_CHUNK_UUID "91900562-2377-46f1-8432-d7c4e57c2257"
+#define NEEDY_UUID "e233e08c-ab7b-4e73-95b3-e77236dde767"
 
 // Serial
 #define SERIAL_BAUD_RATE 115200

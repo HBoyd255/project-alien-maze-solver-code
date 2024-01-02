@@ -9,27 +9,41 @@
 // https://www.arduino.cc/reference/en/libraries/arduinoble/
 #include <ArduinoBLE.h>
 
-#include "errorIndicator.h"
-#include "obstacles.h"
+// Forward declaration
+class ErrorIndicator;
+class Pose;
 
 class BluetoothLowEnergy {
    public:
     BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
-                       const char* mainServiceUUID, const char* obstacleUUID,
-                       const char* robotPoseUUID);
+                       const char* mainServiceUUID, const char* robotPoseUUID,
+                       const char* gridChunkUUID, const char* needyUUID);
 
     void setup(const char* deviceName, const char* macAddress);
-
-    void sendObstacle(Obstacle obstacle);
     void sendRobotPose(Pose robotPose);
+    void sendGridChunk(uint8_t value, uint32_t startIndex, uint32_t count);
 
     void poll();
+
+    static bool newlyConnected();
+    static bool newlyDisconnected();
+    static bool needsData();
 
    private:
     ErrorIndicator* _errorIndicatorPtr;
     BLEService _mainService;
-    BLECharacteristic _obstacleCharacteristic;
     BLECharacteristic _robotPoseCharacteristic;
+    BLECharacteristic _gridChunkCharacteristic;
+    BLECharacteristic _needyCharacteristic;
+
+    static inline bool newlyConnectedFlag = false;
+    static inline bool newlyDisconnectedFlag = false;
+    static inline bool needsDataFlag = false;
+
+    static void _onConnect(BLEDevice central);
+    static void _onDisconnect(BLEDevice central);
+    static void _onNeedsData(BLEDevice central,
+                             BLECharacteristic characteristic);
 };
 
 #endif  // BLUETOOTH_LOW_ENERGY_H

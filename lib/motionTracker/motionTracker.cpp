@@ -1,5 +1,7 @@
 #include "motionTracker.h"
 
+#include "bluetoothLowEnergy.h"
+
 // TODO calibrate this
 // This value also changes depending on the surface for some reason.
 #define STEPS_PER_ROTATION 855
@@ -7,15 +9,18 @@
 // The period to wait between updating the angle and position.
 #define MOTION_TRACKER_POLL_RATE 10
 
-MotionTracker::MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
+MotionTracker::MotionTracker(BluetoothLowEnergy* blePtr, Motor* leftMotorPtr,
+                             Motor* rightMotorPtr,
                              Infrared* frontLeftInfraredPtr,
-                             Infrared* frontRightInfraredPtr) {
-    _leftMotorPtr = leftMotorPtr;
-    _rightMotorPtr = rightMotorPtr;
-    _frontLeftInfraredPtr = frontLeftInfraredPtr;
-    _frontRightInfraredPtr = frontRightInfraredPtr;
-}
+                             Infrared* frontRightInfraredPtr)
+    : _blePtr(blePtr),
+      _leftMotorPtr(leftMotorPtr),
+      _rightMotorPtr(rightMotorPtr),
+      _frontLeftInfraredPtr(frontLeftInfraredPtr),
+      _frontRightInfraredPtr(frontRightInfraredPtr) {}
 
+// TODO Check if the vales of distance traveled has changes before doing all
+// that maths
 Angle MotionTracker::angleFromOdometry() {
     int32_t leftTravelDistance = this->_leftMotorPtr->getDistanceTraveled();
     int32_t rightTravelDistance = this->_rightMotorPtr->getDistanceTraveled();
@@ -52,37 +57,57 @@ Angle MotionTracker::angleFromFrontIR() {
     return angle;
 }
 
-void MotionTracker::updateAngle() {
-    this->_currentAngle = 90 + this->angleFromOdometry();
+bool MotionTracker::updateAngle() {
+    Angle newAngle = 90 + this->angleFromOdometry();
+
+    bool hasMoved = false;
+    if (this->_currentAngle != newAngle) {
+        hasMoved = true;
+        this->_currentAngle = newAngle;
+    }
+
+    return hasMoved;
 }
 
-void MotionTracker::updatePosition() {
+bool MotionTracker::updatePosition() {
     static int32_t AverageDistance = 0;
     static int32_t lastAverageDistance = 0;
     static int32_t difference;
 
-    float sinAngle = sin(this->_currentAngle.toRadians());
-    float cosAngle = cos(this->_currentAngle.toRadians());
+    bool hasMoved = false;
 
     AverageDistance = this->_averageTravelDistance();
     difference = AverageDistance - lastAverageDistance;
     lastAverageDistance = AverageDistance;
 
     if (difference != 0) {
+        hasMoved = true;
+
+        float sinAngle = sin(this->_currentAngle.toRadians());
+        float cosAngle = cos(this->_currentAngle.toRadians());
+
         float xDif = difference * cosAngle;
         float yDif = difference * sinAngle;
 
         this->_currentPosition.x += xDif;
         this->_currentPosition.y += yDif;
     }
+    return hasMoved;
 }
 
-void MotionTracker::poll() {
+void MotionTracker::poll(bool sendOverBLE = false) {
     static PassiveSchedule motionTrackerSchedule(MOTION_TRACKER_POLL_RATE);
 
     if (motionTrackerSchedule.isReadyToRun()) {
-        this->updateAngle();
-        this->updatePosition();
+        bool angleHasChanged = this->updateAngle();
+
+        bool positionHasChanged = this->updatePosition();
+
+        bool poseHasChanged = angleHasChanged || positionHasChanged;
+
+        if (poseHasChanged && sendOverBLE) {
+            this->_blePtr->sendRobotPose(this->getPose());
+        }
     }
 }
 

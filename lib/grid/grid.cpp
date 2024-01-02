@@ -8,6 +8,9 @@
 #include "bluetoothLowEnergy.h"
 #include "obstacles.h"
 
+// TODO add a value for "no data read" and combine usonic and ir into one "Range
+// sensor" data origin.
+
 const String edgeOfMapCharacter = "B";
 const String obstacleCharacters[4] = {"░", "▒", "▓", "█"};
 const String originCharacter = "S";
@@ -39,8 +42,7 @@ void Grid::setObstacle(Obstacle obstacleToAdd, bool sendOverBLE) {
     this->_setData(yIndex, xIndex, obstacleToAdd.sensorType);
 
     if (sendOverBLE) {
-        uint16_t totalIndex = yIndex * GRID_DIMENSION + xIndex;
-
+        uint32_t totalIndex = (yIndex * GRID_DIMENSION) + xIndex;
         this->_blePtr->sendGridChunk(obstacleToAdd.sensorType, totalIndex, 1);
     }
 }
@@ -49,23 +51,19 @@ void Grid::updateObstacle(Obstacle obstacle, bool sendOverBLE) {
     uint8_t existingValue = this->getSensorType(obstacle.position);
     uint8_t newValue = obstacle.sensorType;
 
-    // TODO set this back
-    //  if (newValue > existingValue) {
-    if (1) {
+    if (newValue > existingValue) {
         this->setObstacle(obstacle, sendOverBLE);
     }
 }
 
 void Grid::sendEntireGridOverBLE() {
-    uint8_t recordedCharacter = this->_getData(0, 0);
+    uint8_t recordedCharacter = this->_getDataAtMegaIndex(0);
     uint32_t startIndex = 0;
     uint32_t count = 0;
 
-    for (uint32_t index = GRID_LOWER_INDEX; index < GRID_ITEM_COUNT; index++) {
-        uint16_t y = index / GRID_DIMENSION;
-        uint16_t x = index % GRID_DIMENSION;
-
-        uint8_t valueAtCurrentIndex = this->_getData(y, x);
+    for (uint32_t index = GRID_LOWER_INDEX + 1; index < GRID_ITEM_COUNT;
+         index++) {
+        uint8_t valueAtCurrentIndex = this->_getDataAtMegaIndex(index);
 
         if (valueAtCurrentIndex != recordedCharacter) {
             count = index - startIndex;
@@ -82,6 +80,28 @@ void Grid::sendEntireGridOverBLE() {
 
     this->_blePtr->sendGridChunk(recordedCharacter, startIndex, count);
 }
+
+// TODO fix this logic when I have more brain cells
+void Grid::pollDripFeed() {
+    if (this->_dripFeedIndex < GRID_ITEM_COUNT) {
+        uint32_t startIndex = this->_dripFeedIndex;
+        uint8_t currentValue = this->_getDataAtMegaIndex(startIndex);
+
+        while (this->_dripFeedIndex < GRID_ITEM_COUNT) {
+            this->_dripFeedIndex++;
+
+            if (this->_getDataAtMegaIndex(this->_dripFeedIndex) !=
+                    currentValue ||
+                (this->_dripFeedIndex >= (GRID_ITEM_COUNT))) {
+                uint32_t count = this->_dripFeedIndex - startIndex;
+
+                this->_blePtr->sendGridChunk(currentValue, startIndex, count);
+                return;
+            }
+        }
+    }
+}
+void Grid::startDripFeed() { this->_dripFeedIndex = 0; }
 
 void Grid::print(Position centrePosition, uint8_t radius) {
     int16_t xCentreIndex = this->_getXIndexFromMillimeter(centrePosition.x);
@@ -155,7 +175,8 @@ void Grid::print(Position centrePosition, uint8_t radius) {
 
 #include "binary.h"
 void Grid::_setData(uint16_t yIndex, uint16_t xIndex, uint8_t value) {
-    // Look up table for the bitmasks to clear the data in the target position.
+    // Look up table for the bitmasks to clear the data in the target
+    // position.
     const uint8_t punchMasks[4] = {0b11111100, 0b11110011, 0b11001111,
                                    0b00111111};
 
@@ -172,41 +193,11 @@ void Grid::_setData(uint16_t yIndex, uint16_t xIndex, uint8_t value) {
 
     uint8_t blob = _data[yIndex][innerXIndex];
 
-    Serial.print(" xIndex:");
-    Serial.print(xIndex);
-    Serial.print(" yIndex:");
-    Serial.print(yIndex);
-    Serial.print(" innerXIndex:");
-    Serial.print(innerXIndex);
-    Serial.print(" innerBlobIndex:");
-    Serial.print(innerBlobIndex);
-
-    Serial.print(" Data :");
-    Serial.print(value);
-    Serial.println();
-
-    Serial.print(" blob:");
-    printByte(blob);
-
     blob &= punchMasks[innerBlobIndex];
-    Serial.print(" Punch:");
-    printByte(punchMasks[innerBlobIndex]);
-
-    Serial.print(" blob:");
-    printByte(blob);
 
     blob |= dataMasks[innerBlobIndex][value];
-    Serial.print(" dataMasks:");
-    printByte(dataMasks[innerBlobIndex][value]);
-
-    Serial.print(" blob:");
-    printByte(blob);
 
     this->_data[yIndex][innerXIndex] = blob;
-
-    Serial.print(" Now To read :");
-    Serial.println(_getData(yIndex, xIndex));
-    Serial.println();
 }
 uint8_t Grid::_getData(uint16_t yIndex, uint16_t xIndex) {
     uint16_t outerXIndex = xIndex;
@@ -252,4 +243,12 @@ int16_t Grid::_getXIndexFromMillimeter(int16_t distanceMM) {
     }
 
     return index;
+}
+
+// TODO Fix THis
+uint8_t Grid::_getDataAtMegaIndex(uint32_t megaIndex) {
+    uint16_t y = megaIndex / GRID_DIMENSION;
+    uint16_t x = megaIndex % GRID_DIMENSION;
+
+    return this->_getData(y, x);
 }
