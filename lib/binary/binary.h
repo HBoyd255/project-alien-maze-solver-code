@@ -33,6 +33,19 @@
 void printByte(uint8_t byteToPrint, String separator = "");
 
 /**
+ * @brief Prints a 4 bytes of data as its individual bits.
+ *
+ * Works the same as printByte, but with a long.
+ *
+ * This function assumes that a serial connection has been initialised.
+ *
+ * @param longToPrint The unsigned 32 bits of data to print to the serial port.
+ * @param separator (Optional) The string to be printed between each bit, by
+ * default this is an empty string.
+ */
+void printLong(uint32_t longToPrint, String separator = "");
+
+/**
  * @brief Rotates a byte by shifting it left and adding the lost bits onto the
  * right side.
  *
