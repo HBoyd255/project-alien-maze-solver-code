@@ -50,7 +50,7 @@ void printByte(uint8_t byteToPrint, String separator) {
 void printLong(uint32_t longToPrint, String separator) {
     for (uint8_t b = 31; b != 0; b--) {
         Serial.print((longToPrint >> b) & 1);
-        Serial.print(longToPrint);
+        Serial.print(separator);
     }
     // Print the final bit, followed by a newline character.
     Serial.println(longToPrint & 1);
