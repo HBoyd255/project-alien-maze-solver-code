@@ -1,6 +1,8 @@
 #ifndef MOTION_TRACKER_H
 #define MOTION_TRACKER_H
 
+#include <Arduino.h>
+
 #include "angleAndPosition.h"
 #include "bluetoothLowEnergy.h"
 #include "infrared.h"
@@ -26,6 +28,16 @@ class MotionTracker {
     void poll(bool sendOverBLE);
 
     Pose getPose();
+
+    void setTargetPosition(int16_t xValue, int16_t yValue);
+
+    void moveToTarget();
+
+    Angle getGlobalAngleToPoint();
+    Angle getLocalAngleToTurn();
+    int16_t getDistanceFromTarget();
+
+    Position targetPosition;
 
    private:
     BluetoothLowEnergy* _blePtr;

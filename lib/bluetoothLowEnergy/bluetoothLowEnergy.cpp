@@ -24,12 +24,16 @@ struct CompressedPoseStruct {
     int16_t angle;  // The angle in degrees.
 };
 
-// I dont remember why value is 32 bit.
-// TODO find out why and document.
-struct CompressedGridChunkStruct {
-    int32_t value;
-    uint32_t startIndex;
-    uint32_t count;
+struct CompressedSensorStruct {
+    int16_t sensorType;
+    int16_t sensorX;
+    int16_t sensorY;
+    int16_t sensorAngle;
+    int16_t sensorValue;
+};
+struct CompressedGoToStruct {
+    int16_t goToX;
+    int16_t goToY;
 };
 
 // BLERead and BLENotify are bitmask flags, the logical or combines them into
@@ -39,15 +43,17 @@ struct CompressedGridChunkStruct {
 BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                                        const char* mainServiceUUID,
                                        const char* robotPoseUUID,
-                                       const char* gridChunkUUID,
-                                       const char* needyUUID)
+                                       const char* sensorUUID,
+                                       const char* needyUUID,
+                                       const char* goToUUID)
     : _errorIndicatorPtr(errorIndicatorPtr),
       _mainService(mainServiceUUID),
       _robotPoseCharacteristic(robotPoseUUID, BLE_READ_NOTIFY,
                                sizeof(CompressedPoseStruct)),
-      _gridChunkCharacteristic(gridChunkUUID, BLE_READ_NOTIFY,
-                               sizeof(CompressedGridChunkStruct)),
-      _needyCharacteristic(needyUUID, BLEWrite, sizeof(byte)) {}
+      _sensorCharacteristic(sensorUUID, BLE_READ_NOTIFY,
+                            sizeof(CompressedSensorStruct)),
+      _needyCharacteristic(needyUUID, BLEWrite, sizeof(byte)),
+      _goToCharacteristic(goToUUID, BLEWrite, sizeof(CompressedGoToStruct)) {}
 
 void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     // Set a boolean indicating if the error indicator object is available
@@ -80,8 +86,9 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
         BLEWritten, BluetoothLowEnergy::_onNeedsData);
 
     this->_mainService.addCharacteristic(this->_robotPoseCharacteristic);
-    this->_mainService.addCharacteristic(this->_gridChunkCharacteristic);
-    this->_mainService.addCharacteristic(_needyCharacteristic);
+    this->_mainService.addCharacteristic(this->_sensorCharacteristic);
+    this->_mainService.addCharacteristic(this->_needyCharacteristic);
+    this->_mainService.addCharacteristic(this->_goToCharacteristic);
 
     BLE.addService(this->_mainService);
     BLE.setAdvertisedService(this->_mainService);
@@ -107,25 +114,20 @@ void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {
                                               sizeof(CompressedPoseStruct));
 }
 
-void BluetoothLowEnergy::sendGridChunk(int8_t value, uint32_t startIndex,
-                                       uint32_t count) {
-    CompressedGridChunkStruct compressedGridChunk;
+void BluetoothLowEnergy::sendSensor(uint8_t sensorType, Pose sensorPose,
+                                    int16_t sensorValue) {
+    CompressedSensorStruct sensorStruct;
 
-    compressedGridChunk.value = value;
-    compressedGridChunk.startIndex = startIndex;
-    compressedGridChunk.count = count;
+    sensorStruct.sensorType = (int16_t)sensorType;
+    sensorStruct.sensorX = (int16_t)sensorPose.position.x;
+    sensorStruct.sensorY = (int16_t)sensorPose.position.y;
+    sensorStruct.sensorAngle = (int16_t)sensorPose.angle;
+    sensorStruct.sensorValue = (int16_t)sensorValue;
 
-    uint8_t* dataToSend = (uint8_t*)&compressedGridChunk;
+    uint8_t* dataToSend = (uint8_t*)&sensorStruct;
 
-    Serial.print(" value:");
-    Serial.print(value);
-    Serial.print(" startIndex:");
-    Serial.print(startIndex);
-    Serial.print(" count:");
-    Serial.println(count);
-
-    this->_gridChunkCharacteristic.writeValue(
-        dataToSend, sizeof(CompressedGridChunkStruct));
+    this->_sensorCharacteristic.writeValue(dataToSend,
+                                           sizeof(CompressedSensorStruct));
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }

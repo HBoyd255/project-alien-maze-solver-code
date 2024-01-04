@@ -118,6 +118,83 @@ Pose MotionTracker::getPose() {
     return poseToReturn;
 }
 
+void MotionTracker::setTargetPosition(int16_t xValue, int16_t yValue) {
+    this->targetPosition.x = xValue;
+    this->targetPosition.y = yValue;
+}
+
+void MotionTracker::moveToTarget() {
+    const int minSpeed = 40;
+    const int angleTolerance = 20;
+    const int withinRangeRadius = 50;
+
+    int16_t distanceFromTarget = this->getDistanceFromTarget();
+    Angle angleToTurn = getLocalAngleToTurn();
+
+    int8_t targetLeftSpeed = 0;
+    int8_t targetRightSpeed = 0;
+
+    if (distanceFromTarget > withinRangeRadius) {
+        if (angleToTurn < -angleTolerance) {
+            targetLeftSpeed = minSpeed;
+            targetRightSpeed = -minSpeed;
+
+        } else if (angleToTurn > angleTolerance) {
+            targetLeftSpeed = -minSpeed;
+            targetRightSpeed = minSpeed;
+        } else {  // Angle within toleranec
+
+            uint16_t angleAdjustment = constrain(
+                (int16_t)angleToTurn, -angleTolerance, angleTolerance);
+
+            targetLeftSpeed = minSpeed - angleAdjustment;
+            targetRightSpeed = minSpeed + angleAdjustment;
+        }
+
+    } else {
+        targetLeftSpeed = 0;
+        targetRightSpeed = 0;
+    }
+
+    this->_leftMotorPtr->setVelocity(targetLeftSpeed);
+    this->_rightMotorPtr->setVelocity(targetRightSpeed);
+
+//     Serial.print(" Rob:");
+//     Serial.print(this->getPose());
+// 
+//     Serial.print(" target:");
+//     Serial.print(this->targetPosition);
+// 
+//     Serial.print(" distance:");
+//     Serial.print(distanceFromTarget);
+// 
+//     Serial.print(" LS:");
+//     Serial.print(targetLeftSpeed);
+//     Serial.print(" RS:");
+//     Serial.print(targetRightSpeed);
+// 
+//     Serial.println();
+
+}
+
+Angle MotionTracker::getGlobalAngleToPoint() {
+    int xDif = this->targetPosition.x - this->_currentPosition.x;
+    int yDif = this->targetPosition.y - this->_currentPosition.y;
+
+    return (Angle)degrees(atan2(yDif, xDif));
+}
+
+Angle MotionTracker::getLocalAngleToTurn() {
+    return this->getGlobalAngleToPoint() - this->_currentAngle;
+}
+
+int16_t MotionTracker::getDistanceFromTarget() {
+    float xDif = this->targetPosition.x - this->_currentPosition.x;
+    float yDif = this->targetPosition.y - this->_currentPosition.y;
+
+    return sqrt(xDif * xDif + yDif * yDif);
+}
+
 int32_t MotionTracker::_averageTravelDistance() {
     int32_t leftTravelDistance = this->_leftMotorPtr->getDistanceTraveled();
     int32_t rightTravelDistance = this->_rightMotorPtr->getDistanceTraveled();

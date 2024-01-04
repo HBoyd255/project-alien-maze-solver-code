@@ -2,17 +2,27 @@
 
 #include "drive.h"
 
-Drive::Drive(Motor* leftMotorPtr, Motor* rightMotorPtr) {
-    this->leftMotorPtr = leftMotorPtr;
-    this->rightMotorPtr = rightMotorPtr;
-}
+#include "motor.h"
+
+Drive::Drive(Motor* leftMotorPtr, Motor* rightMotorPtr)
+    : _leftMotorPtr(leftMotorPtr), _rightMotorPtr(rightMotorPtr) {}
 
 void Drive::setVelocity(int velocity) {
-    this->leftMotorPtr->setVelocity(velocity);
-    this->rightMotorPtr->setVelocity(velocity);
+    this->_leftMotorPtr->setVelocity(velocity);
+    this->_rightMotorPtr->setVelocity(velocity);
 }
 
-void Drive::stop() {
-    this->leftMotorPtr->stop();
-    this->rightMotorPtr->stop();
+void Drive::setRotationalVelocity(int rotationalVelocity) {
+    this->_leftMotorPtr->setVelocity(-rotationalVelocity);
+    this->_rightMotorPtr->setVelocity(rotationalVelocity);
 }
+
+void Drive::forwards() { this->setVelocity(this->_minSpeed); }
+
+void Drive::back() { this->setVelocity(-this->_minSpeed); }
+
+void Drive::left() { this->setRotationalVelocity(this->_minSpeed); }
+
+void Drive::right() { this->setRotationalVelocity(-this->_minSpeed); }
+
+void Drive::stop() { this->setVelocity(0); }

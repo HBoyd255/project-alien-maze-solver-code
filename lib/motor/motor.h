@@ -5,8 +5,8 @@
 
 class Motor {
    public:
-    Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,
-          uint8_t encoderBPin, bool rotationInverted);
+    Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderChannelA,
+          uint8_t encoderChannelB, bool rotationInverted);
     void setup(voidFuncPtr isrPtr);
 
     void setVelocity(int8_t formattedVelocity);
@@ -22,14 +22,14 @@ class Motor {
 
    private:
     void setSpeedAndDir(uint8_t formattedSpeed, bool direction);
-    uint8_t directionPin;
-    uint8_t speedPin;
-    uint8_t encoderAPin;
-    uint8_t encoderBPin;
+    uint8_t _directionPin;
+    uint8_t _speedPin;
+    uint8_t _encoderChannelA;
+    uint8_t _encoderChannelB;
 
-    volatile int32_t steps;
+    volatile int32_t _encoderSteps = 0;
 
-    bool rotationInverted;
+    bool _rotationInverted;
 
     bool oldEncoderState;
 };

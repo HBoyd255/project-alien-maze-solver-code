@@ -17,11 +17,12 @@ class BluetoothLowEnergy {
    public:
     BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                        const char* mainServiceUUID, const char* robotPoseUUID,
-                       const char* gridChunkUUID, const char* needyUUID);
+                       const char* sensorUUID, const char* needyUUID,
+                       const char* goToUUID);
 
     void setup(const char* deviceName, const char* macAddress);
     void sendRobotPose(Pose robotPose);
-    void sendGridChunk(int8_t value, uint32_t startIndex, uint32_t count);
+    void sendSensor(uint8_t sensorType, Pose sensorPose, int16_t sensorValue);
 
     void poll();
 
@@ -33,10 +34,11 @@ class BluetoothLowEnergy {
     ErrorIndicator* _errorIndicatorPtr;
     BLEService _mainService;
     BLECharacteristic _robotPoseCharacteristic;
-    BLECharacteristic _gridChunkCharacteristic;
+    BLECharacteristic _sensorCharacteristic;
     BLECharacteristic _needyCharacteristic;
+    BLECharacteristic _goToCharacteristic;
 
-    // TODO fix the inline variavle issue;
+    // TODO fix the inline variable issue;
     static inline bool newlyConnectedFlag = false;
     static inline bool newlyDisconnectedFlag = false;
     static inline bool needsDataFlag = false;

@@ -9,7 +9,6 @@
 #include "bumper.h"
 #include "drive.h"
 #include "errorIndicator.h"
-#include "grid.h"
 #include "history.h"
 #include "infrared.h"
 #include "motionTracker.h"
@@ -50,8 +49,8 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_ROTATION_OFFSET);
 
 BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
-                                      ROBOT_POSE_UUID, GRID_CHUNK_UUID,
-                                      NEEDY_UUID);
+                                      ROBOT_POSE_UUID, SENSOR_UUID, NEEDY_UUID,
+                                      GO_TO_UUID);
 
 MotionTracker motionTracker(&bluetoothLowEnergy, &leftMotor, &rightMotor,
                             &frontLeftInfrared, &frontRightInfrared);
@@ -89,11 +88,6 @@ ObstacleDetector RIROD(&motionTracker, &rightInfrared, {{85, 0}, 0});
 
 ObstacleDetector bumperOD(&motionTracker, &bumper, {{0, 125}, 90});
 
-Grid obstacleGrid(&bluetoothLowEnergy);
-
-PassiveSchedule eachSecond(1000);
-PassiveSchedule gridPrintSchedule(5000);
-
 void polls() {
     frontLeftInfrared.poll();
     frontRightInfrared.poll();
@@ -106,18 +100,12 @@ void polls() {
 
     bluetoothLowEnergy.poll();
 
-    obstacleGrid.pollDripFeed();
-
     if (bluetoothLowEnergy.newlyConnected()) {
         Serial.println("Connected");
     }
 
     if (bluetoothLowEnergy.needsData()) {
         Serial.println("Sending all Data");
-
-        bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
-        obstacleGrid.startDripFeed();
-        Serial.println("DAta requested");
     }
 
     if (bluetoothLowEnergy.newlyDisconnected()) {
@@ -125,57 +113,157 @@ void polls() {
     }
 }
 
+PassiveSchedule eachSecond(1000);
+
+enum State {
+    DrivingForwards,
+    Aligning,
+    InFrontOfWall  // -----------------------
+};
+
+State systemState = DrivingForwards;
+
+void DriveForwards() {
+    drive.forwards();
+
+    int distance = ultrasonic.read();
+
+    if (distance < 100 && distance != -1) {
+        drive.stop();
+        systemState = Aligning;
+    }
+}
+
+void aligning() {
+    const Angle angleTolerance = 0;
+    Angle angleToAlign = motionTracker.angleFromFrontIR();
+
+    if (angleToAlign < -angleTolerance) {
+        drive.right();
+    } else if (angleToAlign > angleTolerance) {
+        drive.left();
+    } else {
+        drive.stop();
+        systemState = InFrontOfWall;
+    }
+}
+
+void inFrontOfWall() {
+    int distance = ultrasonic.read();
+    Serial.println(distance);
+
+    static int innerMode = 0;
+
+    if (innerMode == 0) {
+        if (distance < 200 && distance != -1) {
+            drive.left();
+        } else {
+            drive.stop();
+            innerMode = 1;
+        }
+    }
+    if (innerMode == 0) {
+    }
+}
+
+void doState(State stateToExecute) {
+    switch (stateToExecute) {
+        case DrivingForwards:
+            DriveForwards();
+            break;
+        case Aligning:
+            aligning();
+
+            break;
+        case InFrontOfWall:
+            inFrontOfWall();
+
+            break;
+
+        default:
+            break;
+    }
+}
+
 void loop() {
     polls();
 
-    usonicOD.updateGrid(&obstacleGrid);
+    // doState(systemState);
 
-    // ObstacleVector obstacles;
+    Serial.println(frontLeftInfrared.readSafe());
 
-    // FLIROD.addObstaclesToVector(&obstacles);
-    // FRIROD.addObstaclesToVector(&obstacles);
-    // LIROD.addObstaclesToVector(&obstacles);
-    // RIROD.addObstaclesToVector(&obstacles);
-
-    // usonicOD.addObstaclesToVector(&obstacles);
-
-    // bumperOD.addObstaclesToVector(&obstacles);
-
-    // for (const Obstacle obstacle : obstacles) {
-    //     obstacleGrid.updateObstacle(obstacle, true);
+    // if (eachSecond.isReadyToRun()) {
+    //     Serial.print(motionTracker.getPose());
+    //     Serial.print(" L:");
+    //     Serial.print(leftMotor.getDistanceTraveled());
+    //     Serial.print(" R:");
+    //     Serial.print(rightMotor.getDistanceTraveled());
+    //     Serial.println();
     // }
 
-    // usonicOD.addObstaclesToVector(&obstacles);
+    //     usonicOD.sendOverBLE(&bluetoothLowEnergy);
+    //
+    //     FLIROD.sendOverBLE(&bluetoothLowEnergy);
+    //     FRIROD.sendOverBLE(&bluetoothLowEnergy);
+    //     LIROD.sendOverBLE(&bluetoothLowEnergy);
+    //     RIROD.sendOverBLE(&bluetoothLowEnergy);
 
-    if (eachSecond.isReadyToRun()) {
-        Serial.print("Still Ticking over ");
-        Serial.println(millis() / 1000);
-    }
-
-    //     if (gridPrintSchedule.isReadyToRun()) {
-    //         // obstacleGrid.bill();
+    //     motionTracker.moveToTarget();
     //
-    //         // obstacleGrid.startDripFeed();
+    //     pixels.point(-motionTracker.getLocalAngleToTurn());
+    // //
+    //     if (eachSecond.isReadyToRun()) {
+    //         static int count = 0;
     //
-    //         obstacleGrid.print({0, 0}, 10);
-    //     }
-
-    // bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
-    // Serial.println(motionTracker.getPose());
-
-    //   polls();
-    //
-    //
-    //     // Serial.println();
-    //
-    //     if (gridPrinter.isReadyToRun()) {
-    //         obstacleGrid.print({0, 0}, 10);
-    //         for (const Obstacle obstacle : obstacles) {
-    //             Serial.print(obstacle);
-    //             Serial.print(",");
+    //         if (count == 0) {
+    //             motionTracker.setTargetPosition(0, 300);
     //         }
-    //         Serial.println();
+    //         if (count == 1) {
+    //             motionTracker.setTargetPosition(300, 300);
+    //         }
+    //         if (count == 2) {
+    //             motionTracker.setTargetPosition(300, 0);
+    //         }
+    //         if (count == 3) {
+    //             motionTracker.setTargetPosition(0, 0);
+    //         }
+    //         count++;
+    //         count %= 4;
     //     }
+
+    //     if (Serial.available() > 0) {
+    //         // This part was stolend from gpt
+    //         String inputString = "";
+    //         // Read the incoming string until newline character
+    //         inputString = Serial.readStringUntil('\n');
     //
-    //     delay(10);
+    //         // If you want to parse two integers separated by a comma
+    //         int commaIndex =
+    //             inputString.indexOf(',');  // Find the position of the
+    //             comma
+    //         if (commaIndex != -1) {        // Check if a comma was found
+    //             int firstNumber = inputString.substring(0, commaIndex)
+    //                                   .toInt();  // Extract first number
+    //             int secondNumber = inputString.substring(commaIndex + 1)
+    //                                    .toInt();  // Extract second
+    //                                    number
+    //
+    //             motionTracker.setTargetPosition(firstNumber,
+    //             secondNumber);
+    //         }
+    //     }
+
+    //     static PassiveSchedule printer(1000);
+    //     static uint32_t lastTime;
+    //     static uint32_t thisTime;
+    //     static uint32_t duration;
+    //     lastTime = thisTime;
+    //     thisTime = micros();
+    //
+    //     duration = thisTime - lastTime;
+    //
+    //     if (printer.isReadyToRun()) {
+    //         Serial.print(" Duration:");
+    //         Serial.println(duration);
+    //     }
 }

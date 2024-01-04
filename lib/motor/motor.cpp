@@ -1,15 +1,14 @@
 #include "motor.h"
 
-Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,
-             uint8_t encoderBPin, bool rotationInverted) {
-    this->directionPin = directionPin;
-    this->speedPin = speedPin;
-    this->encoderAPin = encoderAPin;
-    this->encoderBPin = encoderBPin;
+Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderChannelA,
+             uint8_t encoderChannelB, bool rotationInverted)
+    : _directionPin(directionPin),
+      _speedPin(speedPin),
+      _encoderChannelA(encoderChannelA),
+      _encoderChannelB(encoderChannelB),
+      _rotationInverted(rotationInverted)
 
-    this->rotationInverted = rotationInverted;
-    this->steps = 0;
-}
+{}
 
 /**
  * @brief Sets up the motor class by
@@ -17,12 +16,13 @@ Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderAPin,
  * @param isrPtr Pointer to the
  */
 void Motor::setup(voidFuncPtr isrPtr) {
-    attachInterrupt(digitalPinToInterrupt(this->encoderAPin), isrPtr, CHANGE);
+    pinMode(this->_directionPin, OUTPUT);
+    pinMode(this->_speedPin, OUTPUT);
+    pinMode(this->_encoderChannelA, INPUT);
+    pinMode(this->_encoderChannelB, INPUT);
 
-    pinMode(this->directionPin, OUTPUT);
-    pinMode(this->speedPin, OUTPUT);
-    pinMode(this->encoderAPin, INPUT);
-    pinMode(this->encoderBPin, INPUT);
+    attachInterrupt(digitalPinToInterrupt(this->_encoderChannelA), isrPtr,
+                    CHANGE);
 }
 
 void Motor::setSpeedAndDir(uint8_t formattedSpeed, bool direction) {
@@ -50,10 +50,10 @@ void Motor::setSpeedAndDir(uint8_t formattedSpeed, bool direction) {
 
     // If the target motor is the left motor, reverse the direction, because to
     // Drive forwards, both motors need to rotate in the opposite direction.
-    direction ^= this->rotationInverted;
+    direction ^= this->_rotationInverted;
 
-    digitalWrite(this->directionPin, direction);
-    analogWrite(this->speedPin, scaledSpeed);
+    digitalWrite(this->_directionPin, direction);
+    analogWrite(this->_speedPin, scaledSpeed);
 }
 
 void Motor::setVelocity(int8_t formattedVelocity) {
@@ -74,11 +74,11 @@ void Motor::setVelocity(int8_t formattedVelocity) {
 void Motor::stop() { this->setSpeedAndDir(0, 0); }
 
 void Motor::isr() {
-    if (digitalRead(this->encoderAPin) !=
-        (digitalRead(this->encoderBPin) ^ this->rotationInverted)) {
-        this->steps++;
+    if (digitalRead(this->_encoderChannelA) !=
+        (digitalRead(this->_encoderChannelB) ^ this->_rotationInverted)) {
+        this->_encoderSteps++;
     } else {
-        this->steps--;
+        this->_encoderSteps--;
     }
 }
 
@@ -92,5 +92,5 @@ int32_t Motor::getDistanceTraveled() {
     // further testing showed that 200 mm is 390 steps, so distance can be
     // calculated by dividing the steps by 1.95.
 
-    return this->steps / 1.95;
+    return this->_encoderSteps / 1.95;
 }

@@ -3,8 +3,8 @@
 #include "obstacles.h"
 
 #include "binary.h"
+#include "bluetoothLowEnergy.h"
 #include "bumper.h"
-#include "grid.h"
 #include "infrared.h"
 #include "motionTracker.h"
 #include "ultrasonic.h"
@@ -39,7 +39,7 @@ ObstacleDetector::ObstacleDetector(MotionTracker* motionTrackerPtr,
                                    Infrared* infraredSensorPtr, Pose sensorPose)
     : _motionTrackerPtr(motionTrackerPtr),
       _infraredSensorPtr(infraredSensorPtr),
-      _sensorUsed(InfraredSensor),
+      _sensorType(InfraredSensor),
       _sensorPose(sensorPose)
 
 {}
@@ -49,7 +49,7 @@ ObstacleDetector::ObstacleDetector(MotionTracker* motionTrackerPtr,
                                    Pose sensorPose)
     : _motionTrackerPtr(motionTrackerPtr),
       _ultrasonicSensorPtr(ultrasonicSensorPtr),
-      _sensorUsed(UltrasonicSensor),
+      _sensorType(UltrasonicSensor),
       _sensorPose(sensorPose)
 
 {}
@@ -57,13 +57,13 @@ ObstacleDetector::ObstacleDetector(MotionTracker* motionTrackerPtr,
                                    Bumper* bumperSensorPtr, Pose sensorPose)
     : _motionTrackerPtr(motionTrackerPtr),
       _bumperSensorPtr(bumperSensorPtr),
-      _sensorUsed(BumperSensor),
+      _sensorType(BumperSensor),
       _sensorPose(sensorPose)
 
 {}
 
 void ObstacleDetector::addObstaclesToVector(ObstacleVector* vectorPtr) {
-    switch (this->_sensorUsed) {
+    switch (this->_sensorType) {
         case InfraredSensor:
 
             this->_addObstaclesFromRangeSensor(vectorPtr);
@@ -83,49 +83,22 @@ void ObstacleDetector::addObstaclesToVector(ObstacleVector* vectorPtr) {
         default:
 
             Serial.println("Unknown Sensor");
-            Serial.println(this->_sensorUsed);
+            Serial.println(this->_sensorType);
             Serial.println("Please Fix");
 
             break;
     }
 }
 
-void ObstacleDetector::updateGrid(Grid* gridToUpdatePtr) {
-    // get the global pose of the sensor
+void ObstacleDetector::sendOverBLE(BluetoothLowEnergy* blePtr) {
+    int16_t value = this->_readRange();
+    int16_t type = this->_sensorType;
 
-    Pose robotPose = this->_motionTrackerPtr->getPose();
-
-    int16_t distance = this->_readRange();
-
-    if (distance > 0) {
-        Position positionFromObstacle;
-        positionFromObstacle.y = distance;
-        positionFromObstacle.transformByPose(this->_sensorPose);
-        positionFromObstacle.transformByPose(robotPose);
-
-        gridToUpdatePtr->setFromPosition(positionFromObstacle, 100);
-
-        distance -= 10;
-        while (distance > 0) {
-            Position positionGap;
-            positionGap.y = distance;
-            positionGap.transformByPose(this->_sensorPose);
-            positionGap.transformByPose(robotPose);
-
-            gridToUpdatePtr->setFromPosition(positionGap, 0);
-            distance -= 10;
-        }
-    }
-
-    // get the distance of the sensor
-
-    // set everyrhing from the sensor to the obstacle to 0.
-
-    // gridToUpdatePtr->_setAndSend();
+    blePtr->sendSensor(type, this->_getGlobalPoseOfSensor(), value);
 }
 
 int16_t ObstacleDetector::_readRange() {
-    switch (this->_sensorUsed) {
+    switch (this->_sensorType) {
         case InfraredSensor:
 
             return this->_infraredSensorPtr->readSafe();
@@ -140,7 +113,7 @@ int16_t ObstacleDetector::_readRange() {
         default:
 
             Serial.println("Unknown Sensor");
-            Serial.println(this->_sensorUsed);
+            Serial.println(this->_sensorType);
             Serial.println("Please Fix");
 
             return -1;
@@ -169,7 +142,7 @@ void ObstacleDetector::_addObstaclesFromRangeSensor(ObstacleVector* vectorPtr) {
         // being relative to the global coordinate system.
         positionToReturn.transformByPose(robotPose);
 
-        Obstacle obstacleToAdd = {positionToReturn, this->_sensorUsed};
+        Obstacle obstacleToAdd = {positionToReturn, this->_sensorType};
 
         vectorPtr->push_back(obstacleToAdd);
     }
@@ -206,9 +179,30 @@ void ObstacleDetector::_addObstaclesFromBumper(ObstacleVector* vectorPtr) {
             // being relative to the global coordinate system.
             positionToReturn.transformByPose(robotPose);
 
-            Obstacle obstacleToAdd = {positionToReturn, this->_sensorUsed};
+            Obstacle obstacleToAdd = {positionToReturn, this->_sensorType};
 
             vectorPtr->push_back(obstacleToAdd);
         }
     }
+}
+
+// TODO fix this garbage
+Pose ObstacleDetector::_getGlobalPoseOfSensor() {
+    Pose relativeSensorPose = this->_sensorPose;
+    Pose robotPose = this->_motionTrackerPtr->getPose();
+
+    Position positionToReturn;
+    positionToReturn.transformByPose(relativeSensorPose);
+    positionToReturn.transformByPose(robotPose);
+
+    Angle angleToReturn = 90;
+
+    angleToReturn += (relativeSensorPose.angle - 90);
+    angleToReturn += (robotPose.angle - 90);
+
+    Pose poseToReturn;
+    poseToReturn.position = positionToReturn;
+    poseToReturn.angle = angleToReturn;
+
+    return poseToReturn;
 }
