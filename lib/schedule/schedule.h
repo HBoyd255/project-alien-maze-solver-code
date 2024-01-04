@@ -14,7 +14,7 @@
 #include <Arduino.h>
 
 /**
- * @brief Schedule Class, designed to record the times at which a given function
+ * @brief Schedule class, designed to record the times at which a given function
  * was last called, and to call the function again if a specified mahout of time
  * has passed.
  *
@@ -72,7 +72,7 @@ class Schedule {
 };
 
 /**
- * @brief PassiveSchedule Class, Used to keep track of the last time that an
+ * @brief PassiveSchedule class, Used to keep track of the last time that an
  * execution took place.
  */
 class PassiveSchedule {

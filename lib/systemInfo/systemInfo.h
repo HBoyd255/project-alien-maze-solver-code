@@ -14,14 +14,13 @@
 // The mac address of the BLE module.
 #define BLE_MAC_ADDRESS "8d:b6:2e:ef:3b:6b"
 
-// The name of the BLE module.
+// The name of the BLE device.
 #define BLE_DEVICE_NAME "A.L.I.E.N"
-// A.L.I.E.N stands for Autonomous Labyrinth Investigator, Explorer, and
-// Navigator
+// A.L.I.E.N - Autonomous Labyrinth Investigator, Explorer, and Navigator
 
 // UUIDS for the BLE service and characteristics, generated at using
 // https://www.uuidgenerator.net/
-// There must all be less than 80 character line length, to my python script
+// There must all be less than 80 character line length, or the python script
 // breaks.
 // TODO Move these to a json or something, so that my CPP and Python can both
 // properly read from the same file without having to parse a .h file in python.

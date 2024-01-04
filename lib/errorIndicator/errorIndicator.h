@@ -18,8 +18,8 @@
 #include "pixels.h"
 
 /**
- * @brief ErrorIndicator Class, responsible for halting operations upon an
- * error, and drawing the users attention to the serial monitor.
+ * @brief ErrorIndicator class, responsible for halting operations upon an
+ * error, and drawing the user's attention to the serial monitor.
  */
 class ErrorIndicator {
    public:
