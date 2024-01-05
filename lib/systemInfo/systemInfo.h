@@ -12,7 +12,7 @@
 #define SYSTEM_INFO_H
 
 // The mac address of the BLE module.
-#define BLE_MAC_ADDRESS "8d:b6:2e:ef:3b:6b"
+#define BLE_MAC_ADDRESS "ad:3b:c7:5d:ee:35"
 
 // The name of the BLE device.
 #define BLE_DEVICE_NAME "A.L.I.E.N"
@@ -58,6 +58,8 @@
 #define RIGHT_MOTOR_ENCODER_A_PIN D3
 #define RIGHT_MOTOR_ENCODER_B_PIN A7  // GPIO 1
 #define RIGHT_MOTOR_ROTATION_INVERTED false
+
+#define DEFAULT_DRIVE_SPEED 40
 
 // Bumper
 // Shift register

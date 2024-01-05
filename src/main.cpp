@@ -6,6 +6,7 @@
 #include "angleAndPosition.h"
 #include "binary.h"
 #include "bluetoothLowEnergy.h"
+#include "brick.h"
 #include "bumper.h"
 #include "drive.h"
 #include "errorIndicator.h"
@@ -30,7 +31,7 @@ Motor rightMotor(RIGHT_MOTOR_DIRECTION_PIN, RIGHT_MOTOR_SPEED_PIN,
                  RIGHT_MOTOR_ENCODER_A_PIN, RIGHT_MOTOR_ENCODER_B_PIN,
                  RIGHT_MOTOR_ROTATION_INVERTED);
 
-Drive drive(&leftMotor, &rightMotor);
+Drive drive(&leftMotor, &rightMotor, DEFAULT_DRIVE_SPEED);
 
 Pixels pixels(PIXELS_DATA_PIN, LED_COUNT, LED_ROTATION_OFFSET);
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO,
@@ -185,12 +186,20 @@ void doState(State stateToExecute) {
     }
 }
 
+void test() {
+    Brick testBrick;
+
+    Serial.println(testBrick);
+}
+
 void loop() {
-    polls();
+    test();
 
-    // doState(systemState);
-
-    Serial.println(frontLeftInfrared.readSafe());
+    //     polls();
+    //
+    //     // doState(systemState);
+    //
+    //     Serial.println(frontLeftInfrared.readSafe());
 
     // if (eachSecond.isReadyToRun()) {
     //     Serial.print(motionTracker.getPose());
