@@ -15,7 +15,7 @@
 
 /**
  * @brief Schedule class, designed to record the times at which a given function
- * was last called, and to call the function again if a specified mahout of time
+ * was last called, and to call the function again if a specified amount of time
  * has passed.
  *
  */
