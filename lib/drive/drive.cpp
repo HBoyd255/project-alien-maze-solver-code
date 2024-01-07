@@ -16,7 +16,7 @@
  *
  * @param leftMotorPtr Pointer to the left motor object.
  * @param rightMotorPtr Pointer to the right motor object.
- * @param defaultSpeed (int) The percentage of the motor's max spreed to use
+ * @param defaultSpeed (int) The percentage of the motor's max seed to use
  * as default.
  */
 Drive::Drive(Motor* leftMotorPtr, Motor* rightMotorPtr, int defaultSpeed)
@@ -25,55 +25,75 @@ Drive::Drive(Motor* leftMotorPtr, Motor* rightMotorPtr, int defaultSpeed)
       _defaultSpeed(defaultSpeed) {}
 
 /**
- * @brief Set the Velocity of both motors.
+ * @brief Sets the speed of both motors based on a bipolar percentage of
+ * their maximum speeds, allowing for both linear and rotational velocities.
  *
- * @param velocity A positive or negative percentage of the motors max
- * speed, a negative value is a reverse speed, in the range [-100,100].
- */
-void Drive::setVelocity(int velocity) {
-    this->_leftMotorPtr->setVelocity(velocity);
-    this->_rightMotorPtr->setVelocity(velocity);
-}
-
-/**
- * @brief Set the Velocity of both motors in opposite directions, in order
- * to rotate the robot.
+ * The speeds are calculated as
+ * - Left motor velocity = linearVelocity - rotationalVelocity
+ * - right motor velocity = linearVelocity + rotationalVelocity
+ *
+ * both values being constrained to a range of [-100,100]
+ *
+ * A positive linearVelocity moves the robot forwards.
+ * A positive rotationalVelocity moved the robot counter-clockwise.
+ *
+ * rotationalVelocity is set to 0 be default.
  *
  * A positive value of rotationalVelocity will rotate the robot
  * counter-clockwise.
  *
- * @param rotationalVelocity A positive or negative percentage of the motors
- * max speed, a negative value is a reverse speed, in the range [-100,100].
+ * @param linearVelocity The speed to set the motors in the same direction
+ * as a bipolar percentage [-100,100].
+ * @param rotationalVelocity The speed to set the motors in the opposite
+ * direction as a bipolar percentage [-100,100].
  */
-void Drive::setRotationalVelocity(int rotationalVelocity) {
-    this->_leftMotorPtr->setVelocity(-rotationalVelocity);
-    this->_rightMotorPtr->setVelocity(rotationalVelocity);
+void Drive::setVelocity(int linearVelocity, int rotationalVelocity) {
+    int leftVelocity = linearVelocity - rotationalVelocity;
+    leftVelocity = constrain(leftVelocity, -100, 100);
+
+    int rightVelocity = linearVelocity + rotationalVelocity;
+    rightVelocity = constrain(rightVelocity, -100, 100);
+
+    this->_leftMotorPtr->setVelocity(leftVelocity);
+    this->_rightMotorPtr->setVelocity(rightVelocity);
 }
 
 /**
- * @brief Drives the robot forwards by setting both motors to the default
- * speed.
+ * @brief Drives the robot forwards at the default speed, allowing for an
+ * optional slight offset in rotational velocity.
+ *
+ * A positive offsetRotationalVelocity with turn the robot counter-clockwise
+ *
+ * @param offsetRotationalVelocity
  */
-void Drive::forwards() { this->setVelocity(this->_defaultSpeed); }
+void Drive::forwards(int offsetRotationalVelocity) {
+    this->setVelocity(this->_defaultSpeed, offsetRotationalVelocity);
+}
 
 /**
- * @brief Drives the robot backwards by setting both motors to the negative
- * default speed.
+ * @brief Drives the robot backwards at the default speed, allowing for an
+ * optional slight offset in rotational velocity.
+ *
+ * A positive offsetRotationalVelocity with turn the robot counter-clockwise
+ *
+ * @param offsetRotationalVelocity
  */
-void Drive::backwards() { this->setVelocity(-this->_defaultSpeed); }
+void Drive::backwards(int offset) {
+    this->setVelocity(-(this->_defaultSpeed), offset);
+}
 
 /**
  * @brief Starts rotating the robot counter-clockwise, by setting the right
  * motor to the default speed and the left motor to the negative default
  * speed.
  */
-void Drive::left() { this->setRotationalVelocity(this->_defaultSpeed); }
+void Drive::turnLeft() { this->setVelocity(0, this->_defaultSpeed); }
 
 /**
  * @brief Starts rotating the robot clockwise, by setting the right motor to
  * the negative default speed and the left motor to the default speed.
  */
-void Drive::right() { this->setRotationalVelocity(-this->_defaultSpeed); }
+void Drive::turnRight() { this->setVelocity(0, -this->_defaultSpeed); }
 
 /**
  * @brief Stops the robot by setting both motors to 0% speed.

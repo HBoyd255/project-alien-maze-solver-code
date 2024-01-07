@@ -23,55 +23,68 @@ class Drive {
      *
      * @param leftMotorPtr Pointer to the left motor object.
      * @param rightMotorPtr Pointer to the right motor object.
-     * @param defaultSpeed (int) The percentage of the motor's max spreed to use
+     * @param defaultSpeed (int) The percentage of the motor's max speed to use
      * as default.
      */
     Drive(Motor* leftMotorPtr, Motor* rightMotorPtr, int defaultSpeed);
 
     /**
-     * @brief Set the Velocity of both motors.
+     * @brief Sets the speed of both motors based on a bipolar percentage of
+     * their maximum speeds, allowing for both linear and rotational velocities.
      *
-     * @param velocity A positive or negative percentage of the motors max
-     * speed, a negative value is a reverse speed, in the range [-100,100].
-     */
-    void setVelocity(int velocity);
-
-    /**
-     * @brief Set the Velocity of both motors in opposite directions, in order
-     * to rotate the robot.
+     * The speeds are calculated as
+     * - Left motor velocity = linearVelocity - rotationalVelocity
+     * - right motor velocity = linearVelocity + rotationalVelocity
+     *
+     * both values being constrained to a range of [-100,100]
+     *
+     * A positive linearVelocity moves the robot forwards.
+     * A positive rotationalVelocity moved the robot counter-clockwise.
+     *
+     * rotationalVelocity is set to 0 be default.
      *
      * A positive value of rotationalVelocity will rotate the robot
      * counter-clockwise.
      *
-     * @param rotationalVelocity A positive or negative percentage of the motors
-     * max speed, a negative value is a reverse speed, in the range [-100,100].
+     * @param linearVelocity The speed to set the motors in the same direction
+     * as a bipolar percentage [-100,100].
+     * @param rotationalVelocity The speed to set the motors in the opposite
+     * direction as a bipolar percentage [-100,100].
      */
-    void setRotationalVelocity(int rotationalVelocity);
+    void setVelocity(int linearVelocity, int rotationalVelocity = 0);
 
     /**
-     * @brief Drives the robot forwards by setting both motors to the default
-     * speed.
+     * @brief Drives the robot forwards at the default speed, allowing for an
+     * optional slight offset in rotational velocity.
+     *
+     * A positive offsetRotationalVelocity with turn the robot counter-clockwise
+     *
+     * @param offsetRotationalVelocity
      */
-    void forwards();
+    void forwards(int offsetRotationalVelocity = 0);
 
     /**
-     * @brief Drives the robot backwards by setting both motors to the negative
-     * default speed.
+     * @brief Drives the robot backwards at the default speed, allowing for an
+     * optional slight offset in rotational velocity.
+     *
+     * A positive offsetRotationalVelocity with turn the robot counter-clockwise
+     *
+     * @param offsetRotationalVelocity
      */
-    void backwards();
+    void backwards(int offsetRotationalVelocity = 0);
 
     /**
      * @brief Starts rotating the robot counter-clockwise, by setting the right
      * motor to the default speed and the left motor to the negative default
      * speed.
      */
-    void left();
+    void turnLeft();
 
     /**
      * @brief Starts rotating the robot clockwise, by setting the right motor to
      * the negative default speed and the left motor to the default speed.
      */
-    void right();
+    void turnRight();
 
     /**
      * @brief Stops the robot by setting both motors to 0% speed.
@@ -89,7 +102,7 @@ class Drive {
     Motor* _rightMotorPtr;
 
     /**
-     * @brief The percentage of the motor's max spreed to use as default.
+     * @brief The percentage of the motor's max speed to use as default.
      */
     int _defaultSpeed;
 };
