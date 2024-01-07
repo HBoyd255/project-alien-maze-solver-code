@@ -14,6 +14,7 @@
 #include "infrared.h"
 #include "motionTracker.h"
 #include "motor.h"
+#include "navigator.h"
 #include "obstacles.h"
 #include "pixels.h"
 #include "schedule.h"
@@ -55,6 +56,8 @@ BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
 
 MotionTracker motionTracker(&bluetoothLowEnergy, &leftMotor, &rightMotor,
                             &frontLeftInfrared, &frontRightInfrared);
+
+Navigator navigator(&motionTracker, &drive);
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -116,23 +119,54 @@ void polls() {
 
 PassiveSchedule eachSecond(1000);
 
-enum State {
+enum SystemState {
     DrivingForwards,
+    GoingToTarget,
     Aligning,
-    InFrontOfWall  // -----------------------
+    InFrontOfWall,  // -----------------------
+    Chilling
 };
+const String SystemStateString[] = {"DrivingForwards", "GoingToTarget",
+                                    "Aligning", "InFrontOfWall", "Chilling"};
 
-State systemState = DrivingForwards;
+void printState(SystemState stateToPrint) {
+    Serial.print("Current State:");
+    Serial.println(SystemStateString[(int)stateToPrint]);
+}
+SystemState systemState = GoingToTarget;
+
+///
 
 void DriveForwards() {
     drive.forwards();
 
     int distance = ultrasonic.read();
 
+    // if a wall if his from the left bumper
+    if (bumper.read() & 128) {
+        drive.stop();
+        systemState = GoingToTarget;
+    }
+
+    // if a wall is there
     if (distance < 100 && distance != -1) {
         drive.stop();
         systemState = Aligning;
     }
+}
+void goingToTarget() {
+    // TODO change this to a .inRange() function
+
+    //     int dist = motionTracker.getDistanceFromTarget();
+    //
+    //     Serial.println(dist);
+    //
+    //     if (dist < 10) {
+    //         systemState = Chilling;
+    //
+    //     } else {
+    //         motionTracker.moveToTarget();
+    //     }
 }
 
 void aligning() {
@@ -140,72 +174,102 @@ void aligning() {
     Angle angleToAlign = motionTracker.angleFromFrontIR();
 
     if (angleToAlign < -angleTolerance) {
-        drive.right();
+        drive.turnRight();
     } else if (angleToAlign > angleTolerance) {
-        drive.left();
+        drive.turnLeft();
     } else {
         drive.stop();
         systemState = InFrontOfWall;
     }
 }
 
-void inFrontOfWall() {
-    int distance = ultrasonic.read();
-    Serial.println(distance);
+void measureWall() {
+    enum MeasurementState { TurningLeft, TurningRight, DoneMeasuring };
+    static MeasurementState interState = TurningLeft;
 
-    static int innerMode = 0;
+    switch (interState) {
+        case TurningLeft:
 
-    if (innerMode == 0) {
-        if (distance < 200 && distance != -1) {
-            drive.left();
-        } else {
-            drive.stop();
-            innerMode = 1;
-        }
-    }
-    if (innerMode == 0) {
+            Serial.println("LEft");
+            interState = TurningRight;
+            break;
+        case TurningRight:
+
+            interState = DoneMeasuring;
+            Serial.println("Right");
+
+            break;
+        case DoneMeasuring:
+
+            Serial.println("Done");
+
+            interState = TurningLeft;
+
+            break;
     }
 }
 
-void doState(State stateToExecute) {
+void chilling() {
+    if (bumper.read()) {
+        // navigator.setTargetPosition(100, 100);
+        systemState = GoingToTarget;
+    }
+}
+
+void doState(SystemState stateToExecute) {
+    printState(stateToExecute);
+
     switch (stateToExecute) {
         case DrivingForwards:
             DriveForwards();
+            break;
+        case GoingToTarget:
+            goingToTarget();
             break;
         case Aligning:
             aligning();
 
             break;
         case InFrontOfWall:
-            inFrontOfWall();
+            measureWall();
 
             break;
+        case Chilling:
+            chilling();
 
-        default:
             break;
     }
 }
 
 PassiveSchedule send(1000);
 
-void test() {
-    Brick testBrick;
-
-    testBrick.position = {800, 450};
-    testBrick.isVertical = 0;
-
-    if (send.isReadyToRun()) {
-        Serial.println(testBrick);
-        bluetoothLowEnergy.sendBrick(testBrick, 0);
-    }
-}
-
 void loop() {
     polls();
 
-    // test();
+    // navigator.moveToTarget();
 
-    doState(systemState);
+    // doState(systemState);
 
-    Serial.println(frontLeftInfrared.readSafe());
+    // doState(systemState);
+
+    if (Serial.available() > 0) {
+        // This part was stolend from gpt
+        String inputString = "";
+        // Read the incoming string until newline character
+        inputString = Serial.readStringUntil('\n');
+
+        // If you want to parse two integers separated by a comma
+        int commaIndex =
+            inputString.indexOf(',');  // Find the position of the coma
+        if (commaIndex != -1) {        // Check if a comma was found
+            int firstNumber = inputString.substring(0, commaIndex)
+                                  .toInt();  // Extract first number
+            int secondNumber = inputString.substring(commaIndex + 1)
+                                   .toInt();  // Extract second number
+
+            navigator.setTargetPosition(firstNumber, secondNumber);
+
+            drive.forwards(firstNumber);
+        }
+    }
 }

@@ -27,17 +27,15 @@ class MotionTracker {
 
     void poll(bool sendOverBLE);
 
+    Angle getAngle();
+    Position getPosition();
     Pose getPose();
 
-    void setTargetPosition(int16_t xValue, int16_t yValue);
+    // void moveToTarget();
 
-    void moveToTarget();
-
-    Angle getGlobalAngleToPoint();
-    Angle getLocalAngleToTurn();
-    int16_t getDistanceFromTarget();
-
-    Position targetPosition;
+    // Angle getGlobalAngleToPoint();
+    // Angle getLocalAngleToTurn();
+    // int16_t getDistanceFromTarget();
 
    private:
     BluetoothLowEnergy* _blePtr;
