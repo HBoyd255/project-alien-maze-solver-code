@@ -2,6 +2,7 @@
 
 #include "bluetoothLowEnergy.h"
 
+#include "brick.h"
 #include "errorIndicator.h"
 
 void blePeripheralConnectHandler(BLEDevice central) {
@@ -24,16 +25,11 @@ struct CompressedPoseStruct {
     int16_t angle;  // The angle in degrees.
 };
 
-struct CompressedSensorStruct {
-    int16_t sensorType;
-    int16_t sensorX;
-    int16_t sensorY;
-    int16_t sensorAngle;
-    int16_t sensorValue;
-};
-struct CompressedGoToStruct {
-    int16_t goToX;
-    int16_t goToY;
+struct CompressedBrickStruct {
+    int16_t x;           // X position in millimeters.
+    int16_t y;           // Y position in millimeters.
+    uint8_t isVertical;  // The angle in degrees.
+    uint8_t brickNumber;
 };
 
 // BLERead and BLENotify are bitmask flags, the logical or combines them into
@@ -43,17 +39,15 @@ struct CompressedGoToStruct {
 BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                                        const char* mainServiceUUID,
                                        const char* robotPoseUUID,
-                                       const char* sensorUUID,
-                                       const char* needyUUID,
-                                       const char* goToUUID)
+                                       const char* brickUUID,
+                                       const char* needyUUID)
     : _errorIndicatorPtr(errorIndicatorPtr),
       _mainService(mainServiceUUID),
       _robotPoseCharacteristic(robotPoseUUID, BLE_READ_NOTIFY,
                                sizeof(CompressedPoseStruct)),
-      _sensorCharacteristic(sensorUUID, BLE_READ_NOTIFY,
-                            sizeof(CompressedSensorStruct)),
-      _needyCharacteristic(needyUUID, BLEWrite, sizeof(byte)),
-      _goToCharacteristic(goToUUID, BLEWrite, sizeof(CompressedGoToStruct)) {}
+      _brickCharacteristic(brickUUID, BLE_READ_NOTIFY,
+                           sizeof(CompressedBrickStruct)),
+      _needyCharacteristic(needyUUID, BLEWrite, sizeof(byte)) {}
 
 void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     // Set a boolean indicating if the error indicator object is available
@@ -86,9 +80,8 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
         BLEWritten, BluetoothLowEnergy::_onNeedsData);
 
     this->_mainService.addCharacteristic(this->_robotPoseCharacteristic);
-    this->_mainService.addCharacteristic(this->_sensorCharacteristic);
+    this->_mainService.addCharacteristic(this->_brickCharacteristic);
     this->_mainService.addCharacteristic(this->_needyCharacteristic);
-    this->_mainService.addCharacteristic(this->_goToCharacteristic);
 
     BLE.addService(this->_mainService);
     BLE.setAdvertisedService(this->_mainService);
@@ -97,7 +90,6 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     BLE.advertise();
 
     BLE.setEventHandler(BLEConnected, BluetoothLowEnergy::_onConnect);
-
     BLE.setEventHandler(BLEDisconnected, BluetoothLowEnergy::_onDisconnect);
 }
 
@@ -114,20 +106,18 @@ void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {
                                               sizeof(CompressedPoseStruct));
 }
 
-void BluetoothLowEnergy::sendSensor(uint8_t sensorType, Pose sensorPose,
-                                    int16_t sensorValue) {
-    CompressedSensorStruct sensorStruct;
+void BluetoothLowEnergy::sendBrick(Brick brickToSend, int brickNumber) {
+    CompressedBrickStruct compressedBrick;
 
-    sensorStruct.sensorType = (int16_t)sensorType;
-    sensorStruct.sensorX = (int16_t)sensorPose.position.x;
-    sensorStruct.sensorY = (int16_t)sensorPose.position.y;
-    sensorStruct.sensorAngle = (int16_t)sensorPose.angle;
-    sensorStruct.sensorValue = (int16_t)sensorValue;
+    compressedBrick.x = (int16_t)brickToSend.position.x;
+    compressedBrick.y = (int16_t)brickToSend.position.y;
+    compressedBrick.isVertical = (uint8_t)brickToSend.isVertical;
+    compressedBrick.brickNumber = (uint8_t)brickNumber;
 
-    uint8_t* dataToSend = (uint8_t*)&sensorStruct;
+    uint8_t* dataToSend = (uint8_t*)&compressedBrick;
 
-    this->_sensorCharacteristic.writeValue(dataToSend,
-                                           sizeof(CompressedSensorStruct));
+    this->_brickCharacteristic.writeValue(dataToSend,
+                                          sizeof(CompressedBrickStruct));
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }

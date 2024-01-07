@@ -50,8 +50,8 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_ROTATION_OFFSET);
 
 BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
-                                      ROBOT_POSE_UUID, SENSOR_UUID, NEEDY_UUID,
-                                      GO_TO_UUID);
+                                      ROBOT_POSE_UUID, BRICK_UUID,
+                                      NEEDS_DATA_UUID);
 
 MotionTracker motionTracker(&bluetoothLowEnergy, &leftMotor, &rightMotor,
                             &frontLeftInfrared, &frontRightInfrared);
@@ -186,93 +186,26 @@ void doState(State stateToExecute) {
     }
 }
 
+PassiveSchedule send(1000);
+
 void test() {
     Brick testBrick;
 
-    Serial.println(testBrick);
+    testBrick.position = {800, 450};
+    testBrick.isVertical = 0;
+
+    if (send.isReadyToRun()) {
+        Serial.println(testBrick);
+        bluetoothLowEnergy.sendBrick(testBrick, 0);
+    }
 }
 
 void loop() {
-    test();
+    polls();
 
-    //     polls();
-    //
-    //     // doState(systemState);
-    //
-    //     Serial.println(frontLeftInfrared.readSafe());
+    // test();
 
-    // if (eachSecond.isReadyToRun()) {
-    //     Serial.print(motionTracker.getPose());
-    //     Serial.print(" L:");
-    //     Serial.print(leftMotor.getDistanceTraveled());
-    //     Serial.print(" R:");
-    //     Serial.print(rightMotor.getDistanceTraveled());
-    //     Serial.println();
-    // }
+    doState(systemState);
 
-    //     usonicOD.sendOverBLE(&bluetoothLowEnergy);
-    //
-    //     FLIROD.sendOverBLE(&bluetoothLowEnergy);
-    //     FRIROD.sendOverBLE(&bluetoothLowEnergy);
-    //     LIROD.sendOverBLE(&bluetoothLowEnergy);
-    //     RIROD.sendOverBLE(&bluetoothLowEnergy);
-
-    //     motionTracker.moveToTarget();
-    //
-    //     pixels.point(-motionTracker.getLocalAngleToTurn());
-    // //
-    //     if (eachSecond.isReadyToRun()) {
-    //         static int count = 0;
-    //
-    //         if (count == 0) {
-    //             motionTracker.setTargetPosition(0, 300);
-    //         }
-    //         if (count == 1) {
-    //             motionTracker.setTargetPosition(300, 300);
-    //         }
-    //         if (count == 2) {
-    //             motionTracker.setTargetPosition(300, 0);
-    //         }
-    //         if (count == 3) {
-    //             motionTracker.setTargetPosition(0, 0);
-    //         }
-    //         count++;
-    //         count %= 4;
-    //     }
-
-    //     if (Serial.available() > 0) {
-    //         // This part was stolend from gpt
-    //         String inputString = "";
-    //         // Read the incoming string until newline character
-    //         inputString = Serial.readStringUntil('\n');
-    //
-    //         // If you want to parse two integers separated by a comma
-    //         int commaIndex =
-    //             inputString.indexOf(',');  // Find the position of the
-    //             comma
-    //         if (commaIndex != -1) {        // Check if a comma was found
-    //             int firstNumber = inputString.substring(0, commaIndex)
-    //                                   .toInt();  // Extract first number
-    //             int secondNumber = inputString.substring(commaIndex + 1)
-    //                                    .toInt();  // Extract second
-    //                                    number
-    //
-    //             motionTracker.setTargetPosition(firstNumber,
-    //             secondNumber);
-    //         }
-    //     }
-
-    //     static PassiveSchedule printer(1000);
-    //     static uint32_t lastTime;
-    //     static uint32_t thisTime;
-    //     static uint32_t duration;
-    //     lastTime = thisTime;
-    //     thisTime = micros();
-    //
-    //     duration = thisTime - lastTime;
-    //
-    //     if (printer.isReadyToRun()) {
-    //         Serial.print(" Duration:");
-    //         Serial.println(duration);
-    //     }
+    Serial.println(frontLeftInfrared.readSafe());
 }

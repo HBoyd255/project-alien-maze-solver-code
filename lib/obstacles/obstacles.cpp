@@ -3,7 +3,6 @@
 #include "obstacles.h"
 
 #include "binary.h"
-#include "bluetoothLowEnergy.h"
 #include "bumper.h"
 #include "infrared.h"
 #include "motionTracker.h"
@@ -88,13 +87,6 @@ void ObstacleDetector::addObstaclesToVector(ObstacleVector* vectorPtr) {
 
             break;
     }
-}
-
-void ObstacleDetector::sendOverBLE(BluetoothLowEnergy* blePtr) {
-    int16_t value = this->_readRange();
-    int16_t type = this->_sensorType;
-
-    blePtr->sendSensor(type, this->_getGlobalPoseOfSensor(), value);
 }
 
 int16_t ObstacleDetector::_readRange() {

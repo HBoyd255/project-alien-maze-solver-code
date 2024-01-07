@@ -142,7 +142,7 @@ void MotionTracker::moveToTarget() {
         } else if (angleToTurn > angleTolerance) {
             targetLeftSpeed = -minSpeed;
             targetRightSpeed = minSpeed;
-        } else {  // Angle within toleranec
+        } else {  // Angle within tolerance
 
             uint16_t angleAdjustment = constrain(
                 (int16_t)angleToTurn, -angleTolerance, angleTolerance);

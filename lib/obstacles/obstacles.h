@@ -13,7 +13,6 @@ class MotionTracker;
 class Infrared;
 class Ultrasonic;
 class Bumper;
-class BluetoothLowEnergy;
 
 enum SensorType {
     UnknownSensor,
@@ -44,8 +43,6 @@ class ObstacleDetector {
 
     void addObstaclesToVector(ObstacleVector* vectorPtr);
 
-    void sendOverBLE(BluetoothLowEnergy* blePtr);
-
    private:
     MotionTracker* _motionTrackerPtr;
 
@@ -61,7 +58,6 @@ class ObstacleDetector {
     void _addObstaclesFromBumper(ObstacleVector* vectorPtr);
 
     Pose _getGlobalPoseOfSensor();
-
-    };
+};
 
 #endif  // OBSTACLES_H

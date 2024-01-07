@@ -12,17 +12,17 @@
 // Forward declaration
 class ErrorIndicator;
 class Pose;
+class Brick;
 
 class BluetoothLowEnergy {
    public:
     BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                        const char* mainServiceUUID, const char* robotPoseUUID,
-                       const char* sensorUUID, const char* needyUUID,
-                       const char* goToUUID);
+                       const char* brickUUID, const char* needyUUID);
 
     void setup(const char* deviceName, const char* macAddress);
     void sendRobotPose(Pose robotPose);
-    void sendSensor(uint8_t sensorType, Pose sensorPose, int16_t sensorValue);
+    void sendBrick(Brick brickToSend, int brickNumber);
 
     void poll();
 
@@ -34,9 +34,8 @@ class BluetoothLowEnergy {
     ErrorIndicator* _errorIndicatorPtr;
     BLEService _mainService;
     BLECharacteristic _robotPoseCharacteristic;
-    BLECharacteristic _sensorCharacteristic;
+    BLECharacteristic _brickCharacteristic;
     BLECharacteristic _needyCharacteristic;
-    BLECharacteristic _goToCharacteristic;
 
     // TODO fix the inline variable issue;
     static inline bool newlyConnectedFlag = false;

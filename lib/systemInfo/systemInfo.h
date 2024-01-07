@@ -26,9 +26,9 @@
 // properly read from the same file without having to parse a .h file in python.
 #define MAIN_SERVICE_UUID "cbb12285-f4bf-44e3-95e3-f402eb8ccd49"
 #define ROBOT_POSE_UUID "0d9d01ba-f4e5-4cbc-896e-e391c9b7ae74"
-#define SENSOR_UUID "d14e8cdf-93f8-4e25-8393-f23c8c2c0684"
-#define NEEDY_UUID "e233e08c-ab7b-4e73-95b3-e77236dde767"
-#define GO_TO_UUID "a9e3419b-5aa1-414e-915d-f746404694ae"
+#define BRICK_UUID "3aa898fd-58bb-42f8-b126-d2f31bbc6c5b"
+#define NEEDS_DATA_UUID "e233e08c-ab7b-4e73-95b3-e77236dde767"
+
 
 // Serial
 #define SERIAL_BAUD_RATE 115200

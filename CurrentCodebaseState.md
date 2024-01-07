@@ -33,6 +33,8 @@ Schlosser to generate template comment block and then write the content myself.
 
 ### Undocumented Files
 
+- brick
+- mazeConstants
 - obstacles
 - pixels
 - infrared
