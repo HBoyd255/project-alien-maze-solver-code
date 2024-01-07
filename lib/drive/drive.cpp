@@ -3,7 +3,7 @@
  * @brief Definition  of the Drive class, an interface for the
  * Motor class, to simplify controlling the robot.
  *
- * @author Harry Boyd - hboyd255@gmail.com
+ * @author Harry Boyd - github.com/HBoyd255
  * @date 2024-01-04
  * @copyright Copyright (c) 2024
  */

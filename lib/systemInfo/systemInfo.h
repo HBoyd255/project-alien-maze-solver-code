@@ -3,7 +3,7 @@
  * @brief Definition for constant values related to the hardware setup of my
  * project.
  *
- * @author Harry Boyd - hboyd255@gmail.com
+ * @author Harry Boyd - github.com/HBoyd255
  * @date 2023-12-21
  * @copyright Copyright (c) 2023
  */

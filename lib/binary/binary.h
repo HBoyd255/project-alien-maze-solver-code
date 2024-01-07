@@ -3,7 +3,7 @@
  * @brief Declares the functions responsible for formatting binary data into a
  * more readable format.
  *
- * @author Harry Boyd - hboyd255@gmail.com
+ * @author Harry Boyd - github.com/HBoyd255
  * @date 2023-12-08
  * @copyright Copyright (c) 2023
  */

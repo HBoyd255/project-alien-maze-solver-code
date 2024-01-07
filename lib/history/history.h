@@ -3,7 +3,7 @@
  * @brief Declaration of the History class, a class responsible for storing a
  * queue of values, and calculating their median.
  *
- * @author Harry Boyd - hboyd255@gmail.com
+ * @author Harry Boyd - github.com/HBoyd255
  * @date 2023-12-20
  * @copyright Copyright (c) 2023
  */

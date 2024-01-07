@@ -3,7 +3,7 @@
  * @brief Definitions of the Schedule  and PassiveSchedule classes, the class
  * responsible for keeping track of when to execute routine functions.
  *
- * @author Harry Boyd - hboyd255@gmail.com
+ * @author Harry Boyd - github.com/HBoyd255
  * @date 2023-12-20
  * @copyright Copyright (c) 2023
  */
