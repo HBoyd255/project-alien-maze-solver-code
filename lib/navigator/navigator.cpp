@@ -8,64 +8,96 @@
 Navigator::Navigator(MotionTracker* motionTrackerPtr, Drive* drivePtr)
     : _motionTrackerPtr(motionTrackerPtr), _drivePtr(drivePtr) {}
 
-bool Navigator::isAtTarget() {
-    return this->_getDistanceToTarget() <= this->_inRangeTolerance;
-}
+bool Navigator::gotOneInScope() { return this->_hasTarget; }
 
-void Navigator::setTargetPosition(int16_t targetXValue, int16_t targetYValue) {
-    this->_targetPosition.x = targetXValue;
-    this->_targetPosition.y = targetYValue;
+void Navigator::setTargetPosition(int targetXValue, int targetYValue) {
+    this->_hasTarget = true;
+    this->_targetPose.position.x = targetXValue;
+    this->_targetPose.position.y = targetYValue;
+    this->_targetPose.angle = this->_motionTrackerPtr->getAngle();
+}
+void Navigator::simpleGoTo(int localX, int localY) {
+    Angle robotAngle = this->_motionTrackerPtr->getAngle();
+
+    Angle rotationAngle = robotAngle - 90;
+
+    float sinAngle = sin(rotationAngle.toRadians());
+    float cosAngle = cos(rotationAngle.toRadians());
+
+    float rotatedLocalX = localX * cosAngle - localY * sinAngle;
+    float rotatedLocalY = localY * cosAngle + localX * sinAngle;
+
+    Position currentPosition = this->_motionTrackerPtr->getPosition();
+
+    int newTargetX = currentPosition.x + rotatedLocalX;
+    int newTargetY = currentPosition.y + rotatedLocalY;
+
+    this->setTargetPosition(newTargetX, newTargetY);
 }
 
 void Navigator::moveToTarget() {
-    Serial.print(" Moving To:");
-    Serial.print(this->_targetPosition);
-    Serial.print(" Turning:");
-    Serial.print(this->_getLocalAngleToTarget());
-    Serial.println();
+    if (this->_hasTarget == false) {
+        return;
+    }
 
-    if (this->isAtTarget()) {
-        Serial.println("Made it");
-        this->_drivePtr->stop();
-    } else {
-        Angle angleToTurn = this->_getLocalAngleToTarget();
+    const int upperAngle = this->_angleTolerance;
+    const int lowerAngle = -(this->_angleTolerance);
 
-        // if target is in front of angle
-        if ((angleToTurn > -90) && (angleToTurn < 90)) {
-            if (angleToTurn <= -(this->_angleTolerance)) {
-                this->_drivePtr->turnRight();
-            } else if (angleToTurn >= (this->_angleTolerance)) {
-                this->_drivePtr->turnLeft();
+    // If in range
+    if (this->_getDistanceToTarget() <= this->_inRangeTolerance) {
+        Angle angleToTurnToPoint =
+            _targetPose.angle - this->_motionTrackerPtr->getAngle();
 
-            } else {  // Point towards target
+        Serial.println(angleToTurnToPoint);
 
-                int angleAdjustment =
-                    constrain((int16_t)angleToTurn, -(this->_angleTolerance),
-                              this->_angleTolerance);
+        if (angleToTurnToPoint <= lowerAngle) {
+            this->_drivePtr->turnRight();
 
-                this->_drivePtr->forwards(angleAdjustment);
-            }
-        } else {  // If targer is begind robot
-            Angle oppositeAngleToTurn = angleToTurn + 180;
+        } else if (angleToTurnToPoint >= upperAngle) {
+            this->_drivePtr->turnLeft();
 
-            if (oppositeAngleToTurn <= -(this->_angleTolerance)) {
-                this->_drivePtr->turnRight();
-            } else if (oppositeAngleToTurn >= (this->_angleTolerance)) {
-                this->_drivePtr->turnLeft();
+        } else {  // If pointing towards target.
+            this->_drivePtr->stop();
+            _hasTarget = false;
+        }
+        return;
+    }
 
-            } else {  // pointing away from target
+    Angle angleToTurn = this->_getLocalAngleToTarget();
+    bool drivingForwards = true;
 
-                this->_drivePtr->stop();
-            }
+    // if target is in behind the robot, drive backwards to the target.
+    if ((angleToTurn < -90) || (angleToTurn > 90)) {
+        angleToTurn += 180;
+        drivingForwards = false;
+    }
+
+    if (angleToTurn <= lowerAngle) {
+        this->_drivePtr->turnRight();
+
+    } else if (angleToTurn >= upperAngle) {
+        this->_drivePtr->turnLeft();
+
+    } else {  // If pointing towards target.
+
+        int angleAdjustment =
+            constrain((int)angleToTurn, lowerAngle, upperAngle);
+
+        if (drivingForwards) {
+            this->_drivePtr->forwards(angleAdjustment);
+        } else {
+            this->_drivePtr->backwards(angleAdjustment);
         }
     }
 }
 
+void Navigator::forwardsLeft() {}
+
 int Navigator::_getDistanceToTarget() {
     Position robotPosition = this->_motionTrackerPtr->getPosition();
 
-    int xDifference = this->_targetPosition.x - robotPosition.x;
-    int yDifference = this->_targetPosition.y - robotPosition.y;
+    int xDifference = this->_targetPose.position.x - robotPosition.x;
+    int yDifference = this->_targetPose.position.y - robotPosition.y;
 
     return sqrt(xDifference * xDifference + yDifference * yDifference);
 }
@@ -73,8 +105,8 @@ int Navigator::_getDistanceToTarget() {
 Angle Navigator::_getGlobalAngleToTarget() {
     Position robotPosition = this->_motionTrackerPtr->getPosition();
 
-    int xDifference = this->_targetPosition.x - robotPosition.x;
-    int yDifference = this->_targetPosition.y - robotPosition.y;
+    int xDifference = this->_targetPose.position.x - robotPosition.x;
+    int yDifference = this->_targetPose.position.y - robotPosition.y;
 
     return (Angle)degrees(atan2(yDifference, xDifference));
 }
@@ -84,55 +116,8 @@ Angle Navigator::_getLocalAngleToTarget() {
     return this->_getGlobalAngleToTarget() - currentRobotAngle;
 }
 
-// void MotionTracker::moveToTarget() {
-//     const int minSpeed = 40;
-//     const int angleTolerance = 20;
-//     const int withinRangeRadius = 50;
-//
-//     int16_t distanceFromTarget = this->getDistanceFromTarget();
-//     Angle angleToTurn = getLocalAngleToTurn();
-//
-//     int8_t targetLeftSpeed = 0;
-//     int8_t targetRightSpeed = 0;
-//
-//     if (distanceFromTarget > withinRangeRadius) {
-//         if (angleToTurn < -angleTolerance) {
-//             targetLeftSpeed = minSpeed;
-//             targetRightSpeed = -minSpeed;
-//
-//         } else if (angleToTurn > angleTolerance) {
-//             targetLeftSpeed = -minSpeed;
-//             targetRightSpeed = minSpeed;
-//         } else {  // Angle within tolerance
-//
-//             uint16_t angleAdjustment = constrain(
-//                 (int16_t)angleToTurn, -angleTolerance, angleTolerance);
-//
-//             targetLeftSpeed = minSpeed - angleAdjustment;
-//             targetRightSpeed = minSpeed + angleAdjustment;
-//         }
-//
-//     } else {
-//         targetLeftSpeed = 0;
-//         targetRightSpeed = 0;
-//     }
-//
-//     this->_leftMotorPtr->setVelocity(targetLeftSpeed);
-//     this->_rightMotorPtr->setVelocity(targetRightSpeed);
-//
-//     //     Serial.print(" Rob:");
-//     //     Serial.print(this->getPose());
-//     //
-//     //     Serial.print(" target:");
-//     //     Serial.print(this->targetPosition);
-//     //
-//     //     Serial.print(" distance:");
-//     //     Serial.print(distanceFromTarget);
-//     //
-//     //     Serial.print(" LS:");
-//     //     Serial.print(targetLeftSpeed);
-//     //     Serial.print(" RS:");
-//     //     Serial.print(targetRightSpeed);
-//     //
-//     //     Serial.println();
-// }
+void Navigator::_clearQueue() {
+    while () {
+        this->_pathQueue()
+    }
+}
