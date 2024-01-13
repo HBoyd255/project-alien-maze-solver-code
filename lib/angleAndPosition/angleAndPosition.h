@@ -83,6 +83,9 @@ class Angle {
      */
     double toRadians();
 
+    // TODO document
+    Angle toClosestRightAngle();
+
     /**
      * @brief Returns the index of the segments at the current angle.
      *
@@ -119,9 +122,10 @@ class Angle {
     uint16_t _get360();
 };
 
-// Declare the Pose structure so that it can be given as a Argument to a
-// position modifier.
+// Forward declaration of the Pose and Position structs, so that they can be
+// used as arguments for methods of the Position struct;
 struct Pose;
+struct Position;
 
 /**
  * @brief Struct for storing a position, where x and y represent
@@ -148,6 +152,43 @@ struct Position {
      * @param offsetPose (Pose) The pose to transform the position by.
      */
     void transformByPose(Pose offsetPose);
+
+    /**
+     * @brief Calculates the euclidean distance between this position and a
+     * provided target position.
+     *
+     * @param target The other position to calculate the distance to.
+     * @return (int) The euclidean distance to the target position in
+     * millimeters.
+     */
+    int calculateDistanceTo(Position target);
+
+    /**
+     * @brief Calculates the square of the euclidean distance between this
+     * position and a provided target position.
+     *
+     * This function uses less computation than calculateDistanceTo(), as no
+     * square root required. For basic comparisons between two distances, this
+     * function will suffice.
+     *
+     * c * c = a * a + b * b
+     * is a lot easier to compute than
+     * c = (a * a + b * b) ^ 0.5
+     *
+     * @param target The other position to calculate the squared distance to.
+     * @return (int) The square of the euclidean distance to the target position
+     * in millimeters.
+     */
+    int calculateSquaredDistanceTo(Position target);
+
+    /**
+     * @brief Calculates the angle from this position to a given target position
+     *
+     * @param target The other position to calculate the angle to.
+     * @return (Angle) The angle in degrees from this position to the target
+     * position.
+     */
+    Angle calculateAngleTo(Position target);
 
     /**
      * @brief Converts the Position into a string, in the format (X,Y).
