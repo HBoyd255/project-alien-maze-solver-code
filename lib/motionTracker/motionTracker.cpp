@@ -1,7 +1,5 @@
 #include "motionTracker.h"
 
-#include "bluetoothLowEnergy.h"
-
 // TODO calibrate this
 // This value also changes depending on the surface for some reason.
 #define STEPS_PER_ROTATION 855
@@ -9,12 +7,10 @@
 // The period to wait between updating the angle and position.
 #define MOTION_TRACKER_POLL_RATE 10
 
-MotionTracker::MotionTracker(BluetoothLowEnergy* blePtr, Motor* leftMotorPtr,
-                             Motor* rightMotorPtr,
+MotionTracker::MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
                              Infrared* frontLeftInfraredPtr,
                              Infrared* frontRightInfraredPtr)
-    : _blePtr(blePtr),
-      _leftMotorPtr(leftMotorPtr),
+    : _leftMotorPtr(leftMotorPtr),
       _rightMotorPtr(rightMotorPtr),
       _frontLeftInfraredPtr(frontLeftInfraredPtr),
       _frontRightInfraredPtr(frontRightInfraredPtr) {}
@@ -32,33 +28,35 @@ Angle MotionTracker::angleFromOdometry() {
     return angle;
 }
 
-Angle MotionTracker::angleFromFrontIR() {
-    // TODO move this into somewhere different
-    // The measurement was obtained from my cad file.
-    const uint16_t distanceBetweenSensors = 73;
-
-    uint16_t L = _frontLeftInfraredPtr->read();
-    uint16_t R = _frontRightInfraredPtr->read();
-
-    if (L == 639 || R == 639) {
-        // 91 is just supposed to represent that the angle cannot be measured.
-        // Ill fix this later.
-        return 91;
-    }
-
-    int16_t height = R - L;
-
-    Angle angle = (int16_t)degrees(atan2(height, distanceBetweenSensors));
-
-    if (angle > 45 || angle < -45) {
-        return 91;
-    }
-
-    return angle;
-}
+// TODO remove this
+//  Angle MotionTracker::angleFromFrontIR() {
+//      // TODO move this into somewhere different
+//      // The measurement was obtained from my cad file.
+//      const uint16_t distanceBetweenSensors = 73;
+//
+//      uint16_t L = _frontLeftInfraredPtr->read();
+//      uint16_t R = _frontRightInfraredPtr->read();
+//
+//      if (L == 639 || R == 639) {
+//          // 91 is just supposed to represent that the angle cannot be
+//          measured.
+//          // Ill fix this later.
+//          return 91;
+//      }
+//
+//      int16_t height = R - L;
+//
+//      Angle angle = (int16_t)degrees(atan2(height, distanceBetweenSensors));
+//
+//      if (angle > 45 || angle < -45) {
+//          return 91;
+//      }
+//
+//      return angle;
+//  }
 
 bool MotionTracker::updateAngle() {
-    Angle newAngle = 90 + this->angleFromOdometry();
+    Angle newAngle = 90 + this->angleFromOdometry() + this->_angleCalibration;
 
     bool hasMoved = false;
     if (this->_currentAngle != newAngle) {
@@ -95,7 +93,7 @@ bool MotionTracker::updatePosition() {
     return hasMoved;
 }
 
-void MotionTracker::poll(bool sendOverBLE = false) {
+bool MotionTracker::poll() {
     static PassiveSchedule motionTrackerSchedule(MOTION_TRACKER_POLL_RATE);
 
     if (motionTrackerSchedule.isReadyToRun()) {
@@ -105,11 +103,32 @@ void MotionTracker::poll(bool sendOverBLE = false) {
 
         bool poseHasChanged = angleHasChanged || positionHasChanged;
 
-        if (poseHasChanged && sendOverBLE) {
-            this->_blePtr->sendRobotPose(this->getPose());
-        }
+        return poseHasChanged;
     }
+    // False indicating that nothing has changed since the last poll;
+    return false;
 }
+
+// ☝️🤓
+void MotionTracker::umActually() {
+    // TODO fix this
+    Angle currentAngle = this->_currentAngle;
+    Angle closest90 = currentAngle.toClosestRightAngle();
+
+    Angle angleDrift = closest90 - currentAngle;
+
+    this->_angleCalibration += angleDrift;
+    this->updateAngle();
+}
+
+void MotionTracker::setInitialX(int initialX) {
+    this->_currentPosition.x = initialX;
+}
+
+void MotionTracker::setInitialY(int initialY) {
+    this->_currentPosition.y = initialY;
+}
+
 Angle MotionTracker::getAngle() { return this->_currentAngle; }
 
 Position MotionTracker::getPosition() { return this->_currentPosition; }
@@ -120,8 +139,6 @@ Pose MotionTracker::getPose() {
     poseToReturn.position = this->getPosition();
     return poseToReturn;
 }
-
-
 
 int32_t MotionTracker::_averageTravelDistance() {
     int32_t leftTravelDistance = this->_leftMotorPtr->getDistanceTraveled();

@@ -12,6 +12,7 @@
 #include "errorIndicator.h"
 #include "history.h"
 #include "infrared.h"
+#include "map.h"
 #include "motionTracker.h"
 #include "motor.h"
 #include "navigator.h"
@@ -58,6 +59,68 @@ Navigator navigator(&motionTracker, &drive);
 
 BrickList brickList;
 
+Angle globalTargetAngle = 0;
+
+Map gridMap;
+
+// void updateFollowAngle(Pose currentPose) {
+//     Point directions[8] = {{1, 0},  {1, 1},   {0, 1},  {-1, 1},
+//                            {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+//
+//     if (brickList.nearDeadzone(currentPose.position)) {
+//         return;
+//     }
+//
+//     int currentXCM = (currentPose.position.x / 10);
+//     int currentYCM = (currentPose.position.y / 10);
+//
+//     Point innerPoint = {currentXCM, currentYCM};
+//
+//     int16_t innerValue = map[innerPoint.y][innerPoint.x];
+//     int16_t LowestValue = INT16_MAX;
+//     int lowestIndex = -1;
+//     // Serial.print("Inner");
+//     // Serial.print(innerValue);
+//     // Serial.println(",");
+//     // Serial.print("LowestValue");
+//     // Serial.print(LowestValue);
+//     // Serial.println(",");
+//
+//     for (int D = 0; D < 8; D++) {
+//         Point outerPoint = innerPoint + directions[D];
+//
+//         int16_t outerValue = map[outerPoint.y][outerPoint.x];
+//         // Serial.print(outerValue);
+//         // Serial.print(",");
+//
+//         bool isValid = validatePoint(outerPoint);
+//         bool notWall = (map[outerPoint.y][outerPoint.x] != -1);
+//         bool lessThanInner = outerValue < innerValue;
+//         bool lessThanLowest = outerValue < LowestValue;
+//         // Serial.print(" isValid:");
+//         // Serial.print(isValid);
+//         // Serial.print(" notWall:");
+//         // Serial.print(notWall);
+//         // Serial.print(" lessThanInner:");
+//         // Serial.print(lessThanInner);
+//         // Serial.print(" lessThanLowest:");
+//         // Serial.print(lessThanLowest);
+//
+//         if (isValid && notWall && lessThanInner && lessThanLowest) {
+//             LowestValue = outerValue;
+//             lowestIndex = D;
+//             // Serial.print("New LowestValue");
+//             // Serial.print(LowestValue);
+//         }
+//         // Serial.println(" END");
+//     }
+//
+//     if (lowestIndex != -1) {
+//         Angle newAngle = (45 * lowestIndex);
+//         globalTargetAngle = newAngle;
+//     }
+// }
+
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
@@ -80,9 +143,7 @@ void setup() {
     bumper.setup([]() { bumper.isr(); });
 
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
-
 }
-
 
 void polls() {
     frontLeftInfrared.poll();
@@ -113,15 +174,23 @@ void polls() {
 
 PassiveSchedule eachSecond(1000);
 
-enum SystemState { DriveTaxi, WallsInMyFace, FollowingPath, Chilling, Ready };
-const String SystemStateString[] = {"DriveTaxi", "WallsInMyFace",
-                                    "FollowingPath", "Chilling", "Ready"};
+enum SystemState {
+    DriveTaxi,
+    WallsInMyFace,
+    FollowingPath,
+    Chilling,
+    Ready,
+    Mazing
+};
+const String SystemStateString[] = {"DriveTaxi",     "WallsInMyFace",
+                                    "FollowingPath", "Chilling",
+                                    "Ready",         "Mazing"};
 
 void printState(SystemState stateToPrint) {
     Serial.print("Current State:");
     Serial.println(SystemStateString[(int)stateToPrint]);
 }
-const SystemState startingSystemState = DriveTaxi;
+const SystemState startingSystemState = Mazing;
 SystemState systemState = startingSystemState;
 
 bool readyToGo = false;
@@ -440,6 +509,27 @@ void ready() {
     }
 }
 
+void doMaze() {
+    //     Pose currentPose = motionTracker.getPose();
+    //
+    //     updateFollowAngle(currentPose);
+    //
+    //     Serial.print(" Angle:");
+    //     Serial.println(globalTargetAngle);
+    //
+    //     Angle angleToTurn = globalTargetAngle - currentPose.angle;
+    //
+    //     if (angleToTurn > 45) {
+    //         drive.turnLeft();
+    //     } else if (angleToTurn < -45) {
+    //         drive.turnRight();
+    //     } else {
+    //         int angleInt = (int)angleToTurn;
+    //         int offest = constrain(angleInt, -10, 10);
+    //         drive.forwards(offest);
+    //     }
+}
+
 void doState(SystemState stateToExecute) {
     // printState(stateToExecute);
 
@@ -468,41 +558,162 @@ void doState(SystemState stateToExecute) {
             ready();
 
             break;
+        case Mazing:
+            pixels.setAll(255, 0, 255);
+            doMaze();
+            break;
     }
 }
 
-PassiveSchedule second(1000);
+// void findEdges() {
+//     Point directions[8] = {{1, 0},  {1, 1},   {0, 1},  {-1, 1},
+//                            {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+//
+//     for (int y = 0; y < MAX_Y; y++) {
+//         for (int x = 0; x < MAX_X; x++) {
+//             Point iterativePoint = {x, y};
+//
+//             bool isDeadZone = (map[iterativePoint.y][iterativePoint.x] ==
+//             -1);
+//
+//             if (isDeadZone) {
+//                 for (int D = 0; D < 8; D++) {
+//                     Point newPoint = iterativePoint + directions[D];
+//                     int outerValue = map[newPoint.y][newPoint.x];
+//
+//                     if (outerValue != -1) {
+//                         // Serial.println(outerValue);
+//                         Serial.print("self.coordsToPoint(");
+//                         Serial.print(iterativePoint.x);
+//                         Serial.print(", ");
+//                         Serial.print(iterativePoint.y);
+//                         Serial.println(")");
+//                         break;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+
+PassiveSchedule five(5000);
 
 void loop() {
     polls();
 
-    byte bumperValue = bumper.read();
-    if (bumperValue && readyToGo) {
-        runAwayFromBumper(bumperValue);
+    // if (eachSecond.isReadyToRun()) {
+    //     Serial.print(" Pose:");
+    //     Serial.println(motionTracker.getPose());
+    // }
+
+    // Serial.println(brickList.toString());
+
+    if (five.isReadyToRun()) {
+        // findEdges();
     }
+
+    // byte bumperValue = bumper.read();
+    // if (bumperValue && readyToGo) {
+    //     runAwayFromBumper(bumperValue);
+    // }
 
     // if (second.isReadyToRun()) {
     //     Serial.println(motionTracker.getPose());
     // }
 
     pixels.clear();
-
-    if (readyToGo) {
-        doState(systemState);
-    } else {
-        setStatingPosition();
-    }
+    //
+    //     if (readyToGo) {
+    //         doState(systemState);
+    //     } else {
+    //         setStatingPosition();
+    //     }
 
     pixels.clear();
     pixels.show();
+
+    // if (five.isReadyToRun()) {
+    //     Brick brick = brickList.getBrick(0);
+
+    //         for (int i = 0; i < 40; i++) {
+    //             for (int j = 0; j < 60; j++) {
+    //                 int y = (i * 10) + 100;
+    //                 int x = (j * 10) + 200;
+    //
+    //                 Position scanPosition = {x, y};
+    //
+    //                 int distance = brick.squaredDistanceTo(scanPosition);
+    //
+    //                 distance = sqrt(distance);
+    //
+    //                 distance = constrain(distance, 0, 100);
+    //
+    //                 gridMap.jankyPrintPosition(scanPosition, distance);
+    //             }
+    //         }
+
+    //         Serial.println("Here1");
+    //
+
+    //         // gridMap.print();
+    //         // gridMap.printDir();
+    //
+    //         // gridMap.JankyPrintPath2({5, 5});
+    //         Serial.println("Here6");
+    // }
+
+    if (Serial.available() > 0) {
+        String data = Serial.readString();
+        const int maxArgs = 10;
+        String args[maxArgs];
+        int foundArgs = 0;
+        int spaceIndex = 0;
+
+        while ((data.length() > 0) && (foundArgs < maxArgs) &&
+               (spaceIndex != -1)) {
+            spaceIndex = data.indexOf(" ");
+            args[foundArgs] = data.substring(0, spaceIndex);
+            data = data.substring(spaceIndex + 1);
+            foundArgs++;
+        }
+
+        if (args[0] == "get-csv") {
+            brickList.TEMP_fillWithTestData();
+
+            gridMap.fillFromBrickList(brickList);
+
+            gridMap.solve({12, 180});
+
+            int samplingInterval = 5;
+            if (foundArgs > 1) {
+                samplingInterval = args[1].toInt();
+            }
+            gridMap.printDataToCSV(samplingInterval);
+        }
+        if (args[0] == "get-bin") {
+            brickList.TEMP_fillWithTestData();
+
+            gridMap.fillFromBrickList(brickList);
+
+            gridMap.solve({12, 180});
+
+            int samplingInterval = 5;
+            if (foundArgs > 1) {
+                samplingInterval = args[1].toInt();
+            }
+            gridMap.printDataToBIN(samplingInterval);
+        }
+    }
 }
 
 // Short Sides are looking like 56,49
 // Long side looks like 222,228
 // Readings are seeming to be like 20-30 mm shy
 
+// TODO swap distance comparison for squared length comparison.
+
 //
-// if (Serial.available() > 0) {
+//  if (Serial.available() > 0) {
 //         // This part was stolen from gpt
 //         String inputString = "";
 //         // Read the incoming string until newline character
@@ -512,9 +723,22 @@ void loop() {
 //         int commaIndex =
 //             inputString.indexOf(',');  // Find the position of the coma
 //         if (commaIndex != -1) {        // Check if a comma was found
-//             int firstNumber = inputString.substring(0, commaIndex)
-//                                   .toInt();  // Extract first number
-//             int secondNumber = inputString.substring(commaIndex + 1)
-//                                    .toInt();  // Extract second number
+//             float firstNumber = inputString.substring(0, commaIndex)
+//                                     .toInt();  // Extract first number
+//             float secondNumber = inputString.substring(commaIndex + 1)
+//                                      .toInt();  // Extract second number
+//
+//             Serial.println("Here1");
+//
+//             gridMap.fillFromBrickList(brickList);
+//
+//             gridMap.solve({15, 15});
+//             gridMap.print();
+//             Serial.println();
+//
+//             gridMap.printDir();
+//
+//             gridMap.JankyPrintPath({5, 5});
+//             Serial.println("Here6");
 //         }
 //     }

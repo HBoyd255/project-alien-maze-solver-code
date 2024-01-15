@@ -120,6 +120,14 @@ void BluetoothLowEnergy::sendBrick(Brick brickToSend, int brickNumber) {
                                           sizeof(CompressedBrickStruct));
 }
 
+void BluetoothLowEnergy::sendBrickList(BrickList brickListToSend) {
+    int brickCount = brickListToSend.getBrickCount();
+
+    for (int i = 0; i < brickCount; i++) {
+        this->sendBrick(brickListToSend.getBrick(i), i);
+    }
+}
+
 void BluetoothLowEnergy::poll() { BLE.poll(); }
 
 bool BluetoothLowEnergy::newlyConnected() {

@@ -23,35 +23,38 @@ class Navigator {
 
     bool hasNoPath();
 
-    void setTargetPosition(int targetXValue, int targetYValue);
+    void turn(Angle localAngleToTurn, int distanceToDriveBeforeTurning = 0);
 
-    void simpleGoTo(int targetXValue, int targetYValue);
+    void turnLeft(int distanceToDriveBeforeTurning = 0);
+    void turnRight(int distanceToDriveBeforeTurning = 0);
 
     void moveToTarget();
-    void newMoveToTarget();
 
     String getPathAsString();
+
+    void hitBumper(byte bumperData);
+
+    void goDirection(Angle angleToDrive);
 
    private:
     MotionTracker* _motionTrackerPtr;
     Drive* _drivePtr;
-    Pose _targetPose;
 
     int _inRangeTolerance = 30;
     int _angleTolerance = 10;
     bool _hasTarget = false;
 
-    int _getDistanceToTarget();
-    Angle _getGlobalAngleToTarget();
-    Angle _getLocalAngleToTarget();
-
     bool _goToAngle(Angle angleToGoTo);
     bool _goToPosition(Position positionToGoTo);
 
     void _pushPosition(Position positionToPush);
+    void _pushLocalPosition(float localX, float LocalY);
+    void _pushOffsetPosition(float offsetX, float offsetY);
     void _pushAngle(Angle angleToPush);
 
     void _clearQueue();
+
+    void _simpleGoTo(int targetXValue, int targetYValue, bool goBack = false);
 
     std::queue<PathPoint> _pathQueue;
 };

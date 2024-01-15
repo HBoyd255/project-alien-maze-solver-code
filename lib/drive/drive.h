@@ -57,9 +57,8 @@ class Drive {
      * @brief Drives the robot forwards at the default speed, allowing for an
      * optional slight offset in rotational velocity.
      *
-     * A positive offsetRotationalVelocity with turn the robot counter-clockwise
-     *
-     * @param offsetRotationalVelocity
+     * @param offsetRotationalVelocity A positive offsetRotationalVelocity with
+     * turn the robot counter-clockwise.
      */
     void forwards(int offsetRotationalVelocity = 0);
 
@@ -67,9 +66,8 @@ class Drive {
      * @brief Drives the robot backwards at the default speed, allowing for an
      * optional slight offset in rotational velocity.
      *
-     * A positive offsetRotationalVelocity with turn the robot counter-clockwise
-     *
-     * @param offsetRotationalVelocity
+     * @param offsetRotationalVelocity A positive offsetRotationalVelocity with
+     * turn the robot counter-clockwise.
      */
     void backwards(int offsetRotationalVelocity = 0);
 

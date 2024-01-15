@@ -31,7 +31,7 @@
 
 
 // Serial
-#define SERIAL_BAUD_RATE 115200
+#define SERIAL_BAUD_RATE 230400
 
 // Hardware definitions
 
@@ -59,7 +59,7 @@
 #define RIGHT_MOTOR_ENCODER_B_PIN A7  // GPIO 1
 #define RIGHT_MOTOR_ROTATION_INVERTED false
 
-#define DEFAULT_DRIVE_SPEED 40
+#define DEFAULT_DRIVE_SPEED 35
 
 // Bumper
 // Shift register

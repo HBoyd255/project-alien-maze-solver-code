@@ -13,6 +13,7 @@
 class ErrorIndicator;
 class Pose;
 class Brick;
+class BrickList;
 
 class BluetoothLowEnergy {
    public:
@@ -23,6 +24,7 @@ class BluetoothLowEnergy {
     void setup(const char* deviceName, const char* macAddress);
     void sendRobotPose(Pose robotPose);
     void sendBrick(Brick brickToSend, int brickNumber);
+    void sendBrickList(BrickList brickListToSend);
 
     void poll();
 

@@ -9,43 +9,40 @@
 #include "motor.h"
 
 // Forward declaration
-class BluetoothLowEnergy;
 class Motor;
 class Infrared;
 
 class MotionTracker {
    public:
-    MotionTracker(BluetoothLowEnergy* blePtr, Motor* leftMotorPtr,
-                  Motor* rightMotorPtr, Infrared* frontLeftInfraredPtr,
+    MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
+                  Infrared* frontLeftInfraredPtr,
                   Infrared* frontRightInfraredPtr);
 
     Angle angleFromOdometry();
-    Angle angleFromFrontIR();
 
     bool updateAngle();
     bool updatePosition();
+    bool poll();
 
-    void poll(bool sendOverBLE);
+    void umActually();
+
+    void setInitialX(int initialX);
+
+    void setInitialY(int initialY);
 
     Angle getAngle();
     Position getPosition();
     Pose getPose();
 
-    // void moveToTarget();
-
-    // Angle getGlobalAngleToPoint();
-    // Angle getLocalAngleToTurn();
-    // int16_t getDistanceFromTarget();
-
    private:
-    BluetoothLowEnergy* _blePtr;
     Motor* _leftMotorPtr;
     Motor* _rightMotorPtr;
     Infrared* _frontLeftInfraredPtr;
     Infrared* _frontRightInfraredPtr;
 
     Position _currentPosition;
-    Angle _currentAngle = 0;
+    Angle _currentAngle = 90;
+    Angle _angleCalibration = 0;
 
     int32_t _averageTravelDistance();
 };

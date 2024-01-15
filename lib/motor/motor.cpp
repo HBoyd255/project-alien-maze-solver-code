@@ -73,6 +73,8 @@ void Motor::setVelocity(int8_t formattedVelocity) {
 
 void Motor::stop() { this->setSpeedAndDir(0, 0); }
 
+void Motor::resetTimer() { this->_lastMoveTime = millis(); }
+
 void Motor::isr() {
     if (digitalRead(this->_encoderChannelA) !=
         (digitalRead(this->_encoderChannelB) ^ this->_rotationInverted)) {
@@ -80,6 +82,7 @@ void Motor::isr() {
     } else {
         this->_encoderSteps--;
     }
+    this->resetTimer();
 }
 
 int32_t Motor::getDistanceTraveled() {
@@ -94,3 +97,5 @@ int32_t Motor::getDistanceTraveled() {
 
     return this->_encoderSteps / 1.95;
 }
+
+long Motor::timeSinceLastMoved() { return millis() - this->_lastMoveTime; }

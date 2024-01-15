@@ -87,13 +87,39 @@ void Drive::backwards(int offset) {
  * motor to the default speed and the left motor to the negative default
  * speed.
  */
-void Drive::turnLeft() { this->setVelocity(0, this->_defaultSpeed); }
+void Drive::turnLeft() {
+    long lastLeft = this->_leftMotorPtr->timeSinceLastMoved();
+    long lestRight = this->_rightMotorPtr->timeSinceLastMoved();
+    long timeSinceLastMove = min(lastLeft, lestRight);
+
+    int rotationSpeed = this->_defaultSpeed;
+    int linearSpeed = 0;
+
+    // if been stuck for 100 miliseconds, set the speed to max
+    if (timeSinceLastMove > 100) {
+        rotationSpeed = 100;
+    }
+    this->setVelocity(0, rotationSpeed);
+}
 
 /**
  * @brief Starts rotating the robot clockwise, by setting the right motor to
  * the negative default speed and the left motor to the default speed.
  */
-void Drive::turnRight() { this->setVelocity(0, -this->_defaultSpeed); }
+void Drive::turnRight() {
+    long lastLeft = this->_leftMotorPtr->timeSinceLastMoved();
+    long lestRight = this->_rightMotorPtr->timeSinceLastMoved();
+    long timeSinceLastMove = min(lastLeft, lestRight);
+
+    int rotationSpeed = this->_defaultSpeed;
+    int linearSpeed = 0;
+
+    // if been stuck for 100 miliseconds, set the speed to max
+    if (timeSinceLastMove > 100) {
+        rotationSpeed = 100;
+    }
+    this->setVelocity(0, -rotationSpeed);
+}
 
 /**
  * @brief Stops the robot by setting both motors to 0% speed.

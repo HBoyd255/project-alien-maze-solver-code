@@ -37,12 +37,14 @@
  * new reading must be taken.
  */
 Ultrasonic::Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout,
-                       uint16_t maxRange, uint32_t dataShelfLife)
+                       uint16_t maxRange, uint32_t dataShelfLife,
+                       int distanceFromCentre)
     : _triggerPin(triggerPin),
       _echoPin(echoPin),
       _timeout(timeout),
       _maxRange(maxRange),
-      _dataShelfLife(dataShelfLife) {}
+      _dataShelfLife(dataShelfLife),
+      _distanceFromCentre(distanceFromCentre) {}
 
 /**
  * @brief Sets up the class by attaching the interrupt pin to the provided
@@ -105,6 +107,26 @@ int16_t Ultrasonic::read() {
     // Calculate and return the distance to an obstacle based on the width of
     // the most resent pulse to the echo pin.
     return _pulseWidthToDistance(this->_pulseWidthMicros);
+}
+
+/**
+ * @brief Reads the distance read by the sensor plus the distance from the
+ * sensor to the robots centre.
+ *
+ * @return (int) The total distance from the centre of the robot to the
+ * obstacle seen by the ultrasonic sensor.
+ * @return (-1) If the obstacle is out of range.
+ */
+int Ultrasonic::readFromRobotCenter() {
+    int measuredDistance = this->read();
+
+    if (measuredDistance == -1) {
+        return -1;
+    }
+
+    int totalDistance = measuredDistance + this->_distanceFromCentre;
+
+    return totalDistance;
 }
 
 /**

@@ -31,12 +31,14 @@
 // The period to wait between taking readings.
 #define POLL_PERIOD 10
 
+#define MAX_IR_RANGE 639
+
 Infrared::Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index,
-                   uint16_t maxRange)
+                   int distanceFromCentre)
     : _errorIndicatorPtr(errorIndicatorPtr),
       _index(index),
-      _maxRange(maxRange),
-      _valueHistory(MAX_HISTORY) {}
+      _valueHistory(MAX_HISTORY),
+      _distanceFromCentre(distanceFromCentre) {}
 
 void Infrared::setup(voidFuncPtr routineFunctionPtr) {
     Wire.begin();
@@ -86,7 +88,7 @@ int16_t Infrared::read() {
 
     uint16_t distance = (((high << 4) | low) * 10) >> (4 + this->_shiftValue);
 
-    return (distance < this->_maxRange) ? distance : -1;
+    return (distance < MAX_IR_RANGE) ? distance : -1;
 }
 
 int16_t Infrared::readSafe() {
@@ -97,7 +99,84 @@ int16_t Infrared::readSafe() {
     return (errorCount < errorThreshold) ? this->_valueHistory.getLast() : -1;
 }
 
-void Infrared::routineFunction() { this->_valueHistory.add(this->read()); }
+int Infrared::readFromRobotCenter(bool getOldReading) {
+    int measuredDistance;
+
+    if (getOldReading) {
+        measuredDistance = this->_secondMostRecentValue;
+    } else {
+        measuredDistance = this->_mostRecentValue;
+    }
+    //
+    //     Serial.print(" new:");
+    //     Serial.print(this->_mostRecentValue);
+    //     Serial.print(" Old:");
+    //     Serial.print(this->_secondMostRecentValue);
+    //     Serial.print(" and you wanted:");
+    //     String newOld[2] = {"new", "old"};
+    //     Serial.print(newOld[(int)getOldReading]);
+    //     Serial.print(" Here:");
+    //     Serial.print(measuredDistance);
+
+    if (measuredDistance == -1) {
+        return -1;
+    }
+
+    int totalDistance = measuredDistance + this->_distanceFromCentre;
+
+    // Serial.print(" For a total of:");
+    // Serial.print(totalDistance);
+
+    return totalDistance;
+}
+
+bool Infrared::brickAppeared(int range, int requiredDistanceChange) {
+    int mostRecentValue = this->_mostRecentValue;
+    if (mostRecentValue == -1) {
+        mostRecentValue = MAX_IR_RANGE;
+    }
+
+    int secondMostRecentValue = this->_secondMostRecentValue;
+    if (secondMostRecentValue == -1) {
+        secondMostRecentValue = MAX_IR_RANGE;
+    }
+
+    int distanceChange = mostRecentValue - secondMostRecentValue;
+
+    bool wallInRange = (mostRecentValue < range);
+    bool enoughChange = (distanceChange < -(requiredDistanceChange));
+
+    bool justAppeared = (wallInRange && enoughChange);
+
+    return justAppeared;
+}
+
+bool Infrared::brickDisappeared(int range, int requiredDistanceChange) {
+    int mostRecentValue = this->_mostRecentValue;
+    if (mostRecentValue == -1) {
+        mostRecentValue = MAX_IR_RANGE;
+    }
+
+    int secondMostRecentValue = this->_secondMostRecentValue;
+    if (secondMostRecentValue == -1) {
+        secondMostRecentValue = MAX_IR_RANGE;
+    }
+
+    int distanceChange = mostRecentValue - secondMostRecentValue;
+
+    bool wallWasInRange = (secondMostRecentValue < range);
+    bool enoughChange = (distanceChange > requiredDistanceChange);
+
+    bool justDisappeared = (wallWasInRange && enoughChange);
+
+    return justDisappeared;
+}
+void Infrared::routineFunction() {
+    this->_valueHistory.add(this->read());
+
+    this->_secondMostRecentValue = this->_mostRecentValue;
+    this->_mostRecentValue = this->readSafe();
+}
 
 void Infrared::poll() { this->_historyUpdater.poll(); }
 
@@ -112,3 +191,6 @@ void Infrared::_setMultiplexer() {
     Wire.write(1 << this->_index);
     Wire.endTransmission();
 }
+
+// int Infrared::getMostResentDistance() { return this->_mostRecentValue; }
+// int Infrared::secMost() { return this->_secondMostRecentValue; }

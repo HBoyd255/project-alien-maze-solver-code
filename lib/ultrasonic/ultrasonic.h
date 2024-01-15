@@ -39,9 +39,12 @@ class Ultrasonic {
      * sensor can measure, before -1 is returned.
      * @param dataShelfLife (uint32_t) The maximum age that data can be before a
      * new reading must be taken.
+     * @param distanceFromCentre (int) The distance between the sensor and the
+     * centre of the robot.
      */
     Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout,
-               uint16_t maxRange, uint32_t dataShelfLife);
+               uint16_t maxRange, uint32_t dataShelfLife,
+               int distanceFromCentre);
 
     /**
      * @brief Sets up the class by attaching the interrupt pin to the provided
@@ -84,14 +87,24 @@ class Ultrasonic {
     int16_t read();
 
     /**
-     * @brief The interrupt service routine that is called the echo pin changes
-     * state.
+     * @brief Reads the distance read by the sensor plus the distance from the
+     * sensor to the robots centre.
+     *
+     * @return (int) The total distance from the centre of the robot to the
+     * obstacle seen by the ultrasonic sensor.
+     * @return (-1) If the obstacle is out of range.
+     */
+    int readFromRobotCenter();
+
+    /**
+     * @brief The interrupt service routine that is called the echo pin
+     * changes state.
      */
     void isr();
 
     /**
-     * @brief Checks the scheduler to see if it is time to send a new trigger
-     * pulse.
+     * @brief Checks the scheduler to see if it is time to send a new
+     * trigger pulse.
      */
     void poll();
 
@@ -105,8 +118,8 @@ class Ultrasonic {
      */
     uint8_t _echoPin;
     /**
-     * @brief The number of microseconds that it takes for the class gives up on
-     * taking a reading.
+     * @brief The number of microseconds that it takes for the class gives
+     * up on taking a reading.
      */
     uint32_t _timeout;
     /**
@@ -121,7 +134,13 @@ class Ultrasonic {
     uint32_t _dataShelfLife;
 
     /**
-     * @brief The time in microseconds at which the trigger pin was last pulsed.
+     * @brief The distance between the sensor and the centre of the robot.
+     */
+    int _distanceFromCentre;
+
+    /**
+     * @brief The time in microseconds at which the trigger pin was last
+     * pulsed.
      */
     uint32_t _triggerTimeMicros = 0;
     /**
@@ -133,7 +152,8 @@ class Ultrasonic {
      */
     uint32_t _echoPinDownTimeMicros = 0;
     /**
-     * @brief The duration in microseconds of the last pulse to the echo pin.
+     * @brief The duration in microseconds of the last pulse to the echo
+     * pin.
      */
     int16_t _pulseWidthMicros = 0;
 
@@ -155,7 +175,8 @@ class Ultrasonic {
      *
      * @param pulseWidthMicros (int16_t) The duration in microseconds of the
      * given pulse.
-     * @return (int16_t) The distance to an obstacle based on the pulse width.
+     * @return (int16_t) The distance to an obstacle based on the pulse
+     * width.
      * @return (-1) If the distance is out of range.
      */
     int16_t _pulseWidthToDistance(int16_t pulseWidthMicros);
