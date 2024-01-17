@@ -11,6 +11,9 @@
 
 #define ROBOT_RADIUS 120
 
+#define DIAGONAL_DISTANCE 3
+#define ORTHOGONAL_DISTANCE 2
+
 #define SQUARED_ROBOT_RADIUS ROBOT_RADIUS* ROBOT_RADIUS
 
 MapPoint::MapPoint(int x, int y) : x(x), y(y) {}
@@ -31,6 +34,14 @@ Position MapPoint::toPosition() const {
     positionToReturn.y = yValueInMM;
 
     return positionToReturn;
+}
+
+void MapPoint::setFromPosition(Position position) {
+    int xValueInCM = position.x / 10.0f;
+    int yValueInCM = position.y / 10.0f;
+
+    this->x = xValueInCM;
+    this->y = yValueInCM;
 }
 
 String MapPoint::toString() const {
@@ -59,7 +70,7 @@ bool MapPoint::operator==(const MapPoint& PointToCompare) const {
 
 Map::Map() { this->_resetData(); }
 
-void Map::fillFromBrickList(BrickList brickList) {
+void Map::_primeFromBrickList(BrickList brickList) {
     for (int index = 0; index < this->_dimension; index++) {
         int x = index % this->_width;
         int y = index / this->_width;
@@ -69,11 +80,9 @@ void Map::fillFromBrickList(BrickList brickList) {
 
         int brickCount = brickList.getBrickCount();
 
-        bool pointIsBlocked = false;
-
         int lowestSquaredDistance = INT32_MAX;
 
-        for (int i = 0; i < brickCount && !pointIsBlocked; i++) {
+        for (int i = 0; i < brickCount; i++) {
             Brick brick = brickList.getBrick(i);
 
             int squaredDistanceToBrick = brick.squaredDistanceTo(scanPosition);
@@ -81,13 +90,12 @@ void Map::fillFromBrickList(BrickList brickList) {
             if (squaredDistanceToBrick < lowestSquaredDistance) {
                 lowestSquaredDistance = squaredDistanceToBrick;
             }
-
-            pointIsBlocked = (squaredDistanceToBrick < SQUARED_ROBOT_RADIUS);
         }
 
         int lowestDistance = sqrt(lowestSquaredDistance);
 
         lowestDistance = constrain(lowestDistance, 0, UINT8_MAX);
+        bool pointIsBlocked = (lowestDistance < ROBOT_RADIUS);
 
         this->_setBlocked(scanPoint, pointIsBlocked);
         this->_setDirection(scanPoint, 0);
@@ -96,7 +104,10 @@ void Map::fillFromBrickList(BrickList brickList) {
     }
 }
 
-void Map::solve(MapPoint endPoint) {
+void Map::solve(BrickList brickList, MapPoint endPoint) {
+
+    this->_primeFromBrickList(brickList);
+
     if (!_validatePoint(endPoint)) {
         Serial.println("Point out of bounds.");
 
@@ -121,12 +132,10 @@ void Map::solve(MapPoint endPoint) {
             MapPoint outerPoint = innerPoint + this->_localNeighbors[D];
             uint16_t existingOuterValue = this->_getDistanceToGoal(outerPoint);
 
-            int newOuterValue;
-            if (goingDiag) {
-                newOuterValue = innerValue + 3;
-            } else {
-                newOuterValue = innerValue + 2;
-            }
+            int localDistanceIncrease =
+                (goingDiag) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
+
+            int newOuterValue = innerValue + localDistanceIncrease;
 
             bool outerIsValid = this->_validatePoint(outerPoint);
             bool outerNotBlocked = !(this->_getBlocked(outerPoint));
@@ -141,183 +150,171 @@ void Map::solve(MapPoint endPoint) {
     this->_populateDirections();
 }
 
-void Map::print() {
-    for (int y = 0; y < this->_height; y++) {
-        for (int x = 0; x < this->_width; x++) {
-            MapPoint currentPoint = {x, y};
+void Map::maybeUpdateAngle(Position robotPosition, Angle* angleToUpdatePtr) {
+    MapPoint currentPoint;
 
-            if (this->_getBlocked(currentPoint)) {
-                Serial.print("B ");
-            } else {
-                Serial.print(this->_getDistanceToGoal(currentPoint));
-                Serial.print(" ");
-            }
-        }
-        Serial.println();
-    }
-    Serial.println();
-}
-void Map::printDir() {
-    for (int y = 0; y < this->_height; y++) {
-        for (int x = 0; x < this->_width; x++) {
-            MapPoint currentPoint = {x, y};
+    currentPoint.setFromPosition(robotPosition);
 
-            if (this->_getBlocked(currentPoint)) {
-                Serial.print("B ");
-            } else {
-                Serial.print(this->_getDirection(currentPoint));
-                Serial.print(" ");
-            }
-        }
-        Serial.println();
+    if (this->_getBlocked(currentPoint)) {
+        return;
     }
-    Serial.println();
+    if (!this->_validatePoint(currentPoint)) {
+        return;
+    }
+
+    int directionIndex = this->_getDirection(currentPoint);
+
+    Angle angleToDrive = directionIndex * 45;
+
+    *angleToUpdatePtr = angleToDrive;
 }
 
-void Map::printJank() {
-    for (int y = 0; y < this->_height; y++) {
-        for (int x = 0; x < this->_width; x++) {
-            MapPoint currentPoint = {x, y};
+// void Map::print() {
+//     for (int y = 0; y < this->_height; y++) {
+//         for (int x = 0; x < this->_width; x++) {
+//             MapPoint currentPoint = {x, y};
+//
+//             if (this->_getBlocked(currentPoint)) {
+//                 Serial.print("B ");
+//             } else {
+//                 Serial.print(this->_getDistanceToGoal(currentPoint));
+//                 Serial.print(" ");
+//             }
+//         }
+//         Serial.println();
+//     }
+//     Serial.println();
+// }
+// void Map::printDir() {
+//     for (int y = 0; y < this->_height; y++) {
+//         for (int x = 0; x < this->_width; x++) {
+//             MapPoint currentPoint = {x, y};
+//
+//             if (this->_getBlocked(currentPoint)) {
+//                 Serial.print("B ");
+//             } else {
+//                 Serial.print(this->_getDirection(currentPoint));
+//                 Serial.print(" ");
+//             }
+//         }
+//         Serial.println();
+//     }
+//     Serial.println();
+// }
+//
+// void Map::printJank() {
+//     for (int y = 0; y < this->_height; y++) {
+//         for (int x = 0; x < this->_width; x++) {
+//             MapPoint currentPoint = {x, y};
+//
+//             if (this->_getBlocked(currentPoint)) {
+//                 this->_jankyPrintPoint(currentPoint);
+//             }
+//         }
+//         Serial.println();
+//     }
+//     Serial.println();
+// }
+//
+// void Map::JankyPrintPath(MapPoint startPoint) {
+//     MapPoint innerPoint = startPoint;
+//
+//     bool pointBlocked = this->_getBlocked(innerPoint);
+//     bool pointValid = this->_validatePoint(innerPoint);
+//
+//     bool pointIsGood = pointValid && !pointBlocked;
+//
+//     while (pointIsGood) {
+//         this->_jankyPrintPoint(innerPoint);
+//
+//         uint8_t direction = this->_getDirection(innerPoint);
+//         MapPoint localNextPoint = this->_localNeighbors[direction];
+//
+//         innerPoint += localNextPoint;
+//
+//         pointBlocked = this->_getBlocked(innerPoint);
+//         pointValid = this->_validatePoint(innerPoint);
+//
+//         pointIsGood = pointValid && !pointBlocked;
+//
+//         if (innerPoint == this->_endPoint) {
+//             return;
+//         };
+//     }
+// }
+//
+// void Map::JankyPrintPath2(MapPoint startPoint) {
+//     MapPoint innerPoint = startPoint;
+//
+//     bool pointBlocked = this->_getBlocked(innerPoint);
+//     bool pointValid = this->_validatePoint(innerPoint);
+//
+//     bool pointIsGood = pointValid && !pointBlocked;
+//
+//     MapPoint lastPoint = innerPoint;
+//
+//     int distanceTolerance = 10;
+//     int squaredDistTolerance = distanceTolerance * distanceTolerance;
+//
+//     this->_jankyPrintPoint(lastPoint);
+//     while (pointIsGood) {
+//         uint8_t direction = this->_getDirection(innerPoint);
+//         MapPoint localNextPoint = this->_localNeighbors[direction];
+//
+//         innerPoint += localNextPoint;
+//
+//         if (innerPoint.squaredDistanceTo(lastPoint) > squaredDistTolerance) {
+//             lastPoint = innerPoint;
+//             this->_jankyPrintPoint(lastPoint);
+//         }
+//
+//         pointBlocked = this->_getBlocked(innerPoint);
+//         pointValid = this->_validatePoint(innerPoint);
+//
+//         pointIsGood = pointValid && !pointBlocked;
+//
+//         if (innerPoint == this->_endPoint) {
+//             return;
+//         };
+//     }
+// }
+//
+// void Map::JankyPrintBlockData() {
+//     for (int index = 0; index < this->_dimension; index++) {
+//         int x = index % this->_width;
+//         int y = index / this->_width;
+//
+//         MapPoint scanPoint = {x, y};
+//
+//         if (this->_getBlocked(scanPoint)) {
+//             this->_jankyPrintPoint(scanPoint, 12);
+//         }
+//     }
+// }
 
-            if (this->_getBlocked(currentPoint)) {
-                this->_jankyPrintPoint(currentPoint);
-            }
-        }
-        Serial.println();
-    }
-    Serial.println();
-}
+struct __attribute__((packed)) Bundle {
+    uint8_t x;
+    uint8_t y;
+    MapItem data;
+};
 
-void Map::JankyPrintPath(MapPoint startPoint) {
-    MapPoint innerPoint = startPoint;
-
-    bool pointBlocked = this->_getBlocked(innerPoint);
-    bool pointValid = this->_validatePoint(innerPoint);
-
-    bool pointIsGood = pointValid && !pointBlocked;
-
-    while (pointIsGood) {
-        this->_jankyPrintPoint(innerPoint);
-
-        uint8_t direction = this->_getDirection(innerPoint);
-        MapPoint localNextPoint = this->_localNeighbors[direction];
-
-        innerPoint += localNextPoint;
-
-        pointBlocked = this->_getBlocked(innerPoint);
-        pointValid = this->_validatePoint(innerPoint);
-
-        pointIsGood = pointValid && !pointBlocked;
-
-        if (innerPoint == this->_endPoint) {
-            return;
-        };
-    }
-}
-
-void Map::JankyPrintPath2(MapPoint startPoint) {
-    MapPoint innerPoint = startPoint;
-
-    bool pointBlocked = this->_getBlocked(innerPoint);
-    bool pointValid = this->_validatePoint(innerPoint);
-
-    bool pointIsGood = pointValid && !pointBlocked;
-
-    MapPoint lastPoint = innerPoint;
-
-    int distanceTolerance = 10;
-    int squaredDistTolerance = distanceTolerance * distanceTolerance;
-
-    this->_jankyPrintPoint(lastPoint);
-    while (pointIsGood) {
-        uint8_t direction = this->_getDirection(innerPoint);
-        MapPoint localNextPoint = this->_localNeighbors[direction];
-
-        innerPoint += localNextPoint;
-
-        if (innerPoint.squaredDistanceTo(lastPoint) > squaredDistTolerance) {
-            lastPoint = innerPoint;
-            this->_jankyPrintPoint(lastPoint);
-        }
-
-        pointBlocked = this->_getBlocked(innerPoint);
-        pointValid = this->_validatePoint(innerPoint);
-
-        pointIsGood = pointValid && !pointBlocked;
-
-        if (innerPoint == this->_endPoint) {
-            return;
-        };
-    }
-}
-
-void Map::JankyPrintBlockData() {
+void Map::sendOverSerial() {
     for (int index = 0; index < this->_dimension; index++) {
         int x = index % this->_width;
         int y = index / this->_width;
 
         MapPoint scanPoint = {x, y};
 
-        if (this->_getBlocked(scanPoint)) {
-            this->_jankyPrintPoint(scanPoint, 12);
-        }
-    }
-}
+        if (this->_validatePoint(scanPoint)) {
+            Bundle binaryBundle;
 
-void Map::printDataToCSV(int samplingInterval) {
-    Serial.println(
-        "x,y,sampling_interval,isBlocked,Direction,DistanceToGoal,"
-        "DistanceToWall");
-    for (int y = 0; y < this->_height; y += samplingInterval) {
-        for (int x = 0; x < this->_width; x += samplingInterval) {
-            MapPoint scanPoint = {x, y};
+            binaryBundle.x = x;
+            binaryBundle.y = y;
+            binaryBundle.data = this->_mapData[y][x];
 
-            if (this->_validatePoint(scanPoint)) {
-                Serial.print(scanPoint.x);
-                Serial.print(",");
-                Serial.print(scanPoint.y);
-                Serial.print(",");
-                Serial.print(samplingInterval);
-                Serial.print(",");
-                Serial.print(this->_getBlocked(scanPoint));
-                Serial.print(",");
-                Serial.print(this->_getDirection(scanPoint));
-                Serial.print(",");
-                Serial.print(this->_getDistanceToGoal(scanPoint));
-                Serial.print(",");
-                Serial.print(this->_getDistanceToWall(scanPoint));
-                Serial.println();
-            }
-        }
-    }
-}
+            uint8_t* dataToSend = (uint8_t*)&binaryBundle;
 
-struct __attribute__((packed)) Bundle {
-    uint8_t x;
-    uint8_t y;
-    uint8_t samplingInterval;
-    MapItem data;
-};
-
-void Map::printDataToBIN(int samplingInterval) {
-    for (int y = 0; y < this->_height; y += samplingInterval) {
-        for (int x = 0; x < this->_width; x += samplingInterval) {
-            MapPoint scanPoint = {x, y};
-
-            if (this->_validatePoint(scanPoint)) {
-                MapItem itemToSend = this->_mapData[y][x];
-
-                Bundle binaryBundle;
-
-                binaryBundle.x = x;
-                binaryBundle.y = y;
-                binaryBundle.samplingInterval = samplingInterval;
-                binaryBundle.data = itemToSend;
-
-                uint8_t* dataToSend = (uint8_t*)&binaryBundle;
-
-                Serial.write(dataToSend, sizeof(Bundle));
-            }
+            Serial.write(dataToSend, sizeof(Bundle));
         }
     }
 }
@@ -340,44 +337,46 @@ void Map::_populateDirections() {
             ;
         }
 
+        // TODO come back and refactor all this.
         uint16_t innerValue = this->_getDistanceToGoal(scanPoint);
 
         uint16_t LowestValue = innerValue;
+        uint8_t lowestDistanceToWall = 0;
         uint8_t directionOfLowest = 0;
 
         for (uint8_t direction = 0; direction < 8; direction++) {
             MapPoint outerPoint = scanPoint + this->_localNeighbors[direction];
-            uint16_t outerValue = this->_getDistanceToGoal(outerPoint);
+
+            bool goingDiag = direction & 1;
+
+            int localDistanceIncrease =
+                (goingDiag) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
+
+            int directionPathLength =
+                this->_getDistanceToGoal(outerPoint) + localDistanceIncrease;
 
             bool outerIsValid = this->_validatePoint(outerPoint);
             bool outerNotBlocked = !(this->_getBlocked(outerPoint));
-            bool outerLessThanLowest = outerValue < LowestValue;
+            bool newPathEqualOrLower = directionPathLength <= LowestValue;
 
-            //             Serial.print(" scanPoint:");
-            //             Serial.print(scanPoint.toString());
-            //             Serial.print(" innerValue:");
-            //             Serial.print(innerValue);
-            //             Serial.print(" outerValue:");
-            //             Serial.print(outerValue);
-            //
-            //             Serial.print(" outerLessThanLowest:");
-            //             Serial.print(outerLessThanLowest);
-            //             Serial.print(" outerIsValid:");
-            //             Serial.print(outerIsValid);
-            //             Serial.print(" outerNotBlocked:");
-            //             Serial.println(outerNotBlocked);
+            // if the outer point is bad, break the loop.
+            if (!(outerIsValid && outerNotBlocked)) {
+                continue;
+            }
 
-            if (outerIsValid && outerNotBlocked && outerLessThanLowest) {
-                LowestValue = outerValue;
-                directionOfLowest = direction;
-                // Serial.print("Lower - ");
-                // Serial.println(directionOfLowest);
+            if (newPathEqualOrLower) {
+                int newPointDistanceTOWall =
+                    this->_getDistanceToWall(outerPoint);
+                if (newPointDistanceTOWall > lowestDistanceToWall) {
+                    LowestValue = directionPathLength;
+                    directionOfLowest = direction;
+                    lowestDistanceToWall = this->_getDistanceToWall(outerPoint);
+                }
             }
         }
         this->_setDirection(scanPoint, directionOfLowest);
     }
 }
-
 bool Map::_validatePoint(MapPoint pointToTest) {
     bool withinLowerXRange = (pointToTest.x >= 0);
     bool withinUpperXRange = (pointToTest.x < this->_width);
@@ -420,27 +419,27 @@ void Map::_setDistanceToWall(MapPoint point, uint8_t newIncrease) {
     this->_mapData[point.y][point.x].distanceToWall = newIncrease;
 }
 
-void Map::jankyPrintPosition(Position position, int extra) {
-    MapPoint point = {0, 0};
-
-    point.x = (position.x / 10);
-    point.y = (position.y / 10);
-
-    this->_jankyPrintPoint(point, extra);
-}
-
-void Map::_jankyPrintPoint(MapPoint point, int extra) {
-    Serial.print("        self.coordsToPoint(");
-    Serial.print(point.x);
-    Serial.print(", ");
-    Serial.print(point.y);
-
-    if (extra != -1) {
-        Serial.print(", ");
-        Serial.print(extra);
-    }
-    Serial.println(")");
-}
+// void Map::jankyPrintPosition(Position position, int extra) {
+//     MapPoint point = {0, 0};
+//
+//     point.x = (position.x / 10);
+//     point.y = (position.y / 10);
+//
+//     this->_jankyPrintPoint(point, extra);
+// }
+//
+// void Map::_jankyPrintPoint(MapPoint point, int extra) {
+//     Serial.print("        self.coordsToPoint(");
+//     Serial.print(point.x);
+//     Serial.print(", ");
+//     Serial.print(point.y);
+//
+//     if (extra != -1) {
+//         Serial.print(", ");
+//         Serial.print(extra);
+//     }
+//     Serial.println(")");
+// }
 
 void Map::_resetData() {
     for (int index = 0; index < this->_dimension; index++) {

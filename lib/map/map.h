@@ -6,19 +6,22 @@
 #define MAP_WIDTH 150
 #define MAP_HEIGHT 200
 
-// Forwards declaration of BrickList class.
+// Forwards declaration of BrickList, Position and Angle class.
 class BrickList;
 class Position;
+class Angle;
 
 struct MapPoint {
     int x;
     int y;
 
-    MapPoint(int x, int y);
+    MapPoint(int x = 0, int y = 0);
 
     int squaredDistanceTo(MapPoint otherPoint);
 
     Position toPosition() const;
+    void setFromPosition(Position position);
+
     String toString() const;
 
     MapPoint operator+(const MapPoint& PointToAdd) const;
@@ -39,21 +42,20 @@ class Map {
    public:
     Map();
 
-    void fillFromBrickList(BrickList brickList);
-    void solve(MapPoint endPoint);
+    void solve(BrickList brickList, MapPoint endPoint);
 
-    void print();
-    void printDir();
-    void printJank();
+    void maybeUpdateAngle(Position robotPosition, Angle* angleToUpdatePtr);
 
-    void JankyPrintPath(MapPoint startPoint);
-    void JankyPrintPath2(MapPoint startPoint);
-    void JankyPrintBlockData();
+    //     void print();
+    //     void printDir();
+    //     void printJank();
+    //
+    //     void JankyPrintPath(MapPoint startPoint);
+    //     void JankyPrintPath2(MapPoint startPoint);
+    //     void JankyPrintBlockData();
+    //     void jankyPrintPosition(Position position, int extra = -1);
 
-    void jankyPrintPosition(Position position, int extra = -1);
-
-    void printDataToCSV(int samplingInterval = 10);
-    void printDataToBIN(int samplingInterval = 10);
+    void sendOverSerial();
 
    private:
     MapItem _mapData[MAP_HEIGHT][MAP_WIDTH];
@@ -66,6 +68,8 @@ class Map {
 
     const MapPoint _localNeighbors[8] = {{1, 0},  {1, 1},   {0, 1},  {-1, 1},
                                          {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+
+    void _primeFromBrickList(BrickList brickList);
 
     void _populateDirections();
 
@@ -83,7 +87,7 @@ class Map {
     uint8_t _getDistanceToWall(MapPoint point);
     void _setDistanceToWall(MapPoint point, uint8_t newIncrease);
 
-    void _jankyPrintPoint(MapPoint point, int extraVal = -1);
+    // void _jankyPrintPoint(MapPoint point, int extraVal = -1);
     void _resetData();
 
     int _countBlocks();
