@@ -113,7 +113,7 @@ void Navigator::hitBumper(byte bumperData) {
         } else if (frontRightPressed) {
             this->_simpleGoTo(-25, -50, true);
         } else {
-            this->_simpleGoTo(-25, -50, false);
+            this->_simpleGoTo(25, -50, false);
         }
 
     } else if (backPressed) {
@@ -127,20 +127,20 @@ void Navigator::hitBumper(byte bumperData) {
 
     } else if (leftPressed) {
         if (frontLeftPressed) {
-            this->_simpleGoTo(50, -1, true);
+            this->_simpleGoTo(50, -10, true);
         } else if (backLeftPressed) {
-            this->_simpleGoTo(50, 1, true);
+            this->_simpleGoTo(50, 10, true);
         } else {
-            this->_simpleGoTo(50, 0, false);
+            this->_simpleGoTo(50, -10, false);
         }
 
     } else if (rightPressed) {
         if (frontRightPressed) {
-            this->_simpleGoTo(-50, -1, true);
+            this->_simpleGoTo(-50, -10, true);
         } else if (backRightPressed) {
-            this->_simpleGoTo(-50, 1, true);
+            this->_simpleGoTo(-50, 10, true);
         } else {
-            this->_simpleGoTo(-50, 0, false);
+            this->_simpleGoTo(-50, -10, false);
         }
     } else if (frontLeftPressed) {
         this->_simpleGoTo(100, -50, true);
@@ -205,7 +205,8 @@ bool Navigator::_goToPosition(Position positionToGoTo) {
     }
 
     Angle currentAngle = this->_motionTrackerPtr->getAngle();
-    Angle globalAngleToTarget = currentPosition.calculateAngleTo(positionToGoTo);
+    Angle globalAngleToTarget =
+        currentPosition.calculateAngleTo(positionToGoTo);
     Angle angleToTurn = globalAngleToTarget - currentAngle;
     bool drivingForwards = true;
 

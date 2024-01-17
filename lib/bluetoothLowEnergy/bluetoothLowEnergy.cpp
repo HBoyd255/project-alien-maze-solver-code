@@ -19,7 +19,7 @@ void blePeripheralConnectHandler(BLEDevice central) {
  * This struct is designed to simplify sending data over bluetooth, as it is
  * just 6 bytes that can be interpreted easily on the other end.
  */
-struct CompressedPoseStruct {
+struct __attribute__((packed)) CompressedPoseStruct {
     int16_t x;      // X position in millimeters.
     int16_t y;      // Y position in millimeters.
     int16_t angle;  // The angle in degrees.
@@ -32,6 +32,12 @@ struct CompressedBrickStruct {
     uint8_t brickNumber;
 };
 
+struct __attribute__((packed)) CompressedCornerStruct {
+    int16_t x;      // X position in millimeters.
+    int16_t y;      // Y position in millimeters.
+    uint8_t index;  // The angle in degrees.
+};
+
 // BLERead and BLENotify are bitmask flags, the logical or combines them into
 // one flag, for conciseness.
 #define BLE_READ_NOTIFY BLERead | BLENotify
@@ -40,14 +46,17 @@ BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                                        const char* mainServiceUUID,
                                        const char* robotPoseUUID,
                                        const char* brickUUID,
-                                       const char* needyUUID)
+                                       const char* needyUUID,
+                                       const char* cornerUUID)
     : _errorIndicatorPtr(errorIndicatorPtr),
       _mainService(mainServiceUUID),
       _robotPoseCharacteristic(robotPoseUUID, BLE_READ_NOTIFY,
                                sizeof(CompressedPoseStruct)),
       _brickCharacteristic(brickUUID, BLE_READ_NOTIFY,
                            sizeof(CompressedBrickStruct)),
-      _needyCharacteristic(needyUUID, BLEWrite, sizeof(byte)) {}
+      _needyCharacteristic(needyUUID, BLEWrite, sizeof(byte)),
+      _cornerCharacteristic(cornerUUID, BLE_READ_NOTIFY,
+                            sizeof(CompressedCornerStruct)) {}
 
 void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     // Set a boolean indicating if the error indicator object is available
@@ -80,6 +89,7 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
         BLEWritten, BluetoothLowEnergy::_onNeedsData);
 
     this->_mainService.addCharacteristic(this->_robotPoseCharacteristic);
+    this->_mainService.addCharacteristic(this->_cornerCharacteristic);
     this->_mainService.addCharacteristic(this->_brickCharacteristic);
     this->_mainService.addCharacteristic(this->_needyCharacteristic);
 
@@ -126,6 +136,19 @@ void BluetoothLowEnergy::sendBrickList(BrickList brickListToSend) {
     for (int i = 0; i < brickCount; i++) {
         this->sendBrick(brickListToSend.getBrick(i), i);
     }
+}
+
+void BluetoothLowEnergy::sendCorner(Position cornerPosition, uint8_t index) {
+    CompressedCornerStruct compressedCorner;
+
+    compressedCorner.x = (int16_t)cornerPosition.x;
+    compressedCorner.y = (int16_t)cornerPosition.y;
+    compressedCorner.index = index;
+
+    uint8_t* dataToSend = (uint8_t*)&compressedCorner;
+
+    this->_cornerCharacteristic.writeValue(dataToSend,
+                                           sizeof(CompressedCornerStruct));
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }

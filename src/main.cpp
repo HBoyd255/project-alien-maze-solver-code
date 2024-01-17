@@ -48,9 +48,10 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
               BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN,
               BUMPER_ROTATION_OFFSET);
 
+// TODO decide which order the uuids go
 BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
                                       ROBOT_POSE_UUID, BRICK_UUID,
-                                      NEEDS_DATA_UUID);
+                                      NEEDS_DATA_UUID, CORNER_UUID);
 
 MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
                             &frontRightInfrared);
@@ -59,67 +60,7 @@ Navigator navigator(&motionTracker, &drive);
 
 BrickList brickList;
 
-Angle globalTargetAngle = 0;
-
 Map gridMap;
-
-// void updateFollowAngle(Pose currentPose) {
-//     Point directions[8] = {{1, 0},  {1, 1},   {0, 1},  {-1, 1},
-//                            {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
-//
-//     if (brickList.nearDeadzone(currentPose.position)) {
-//         return;
-//     }
-//
-//     int currentXCM = (currentPose.position.x / 10);
-//     int currentYCM = (currentPose.position.y / 10);
-//
-//     Point innerPoint = {currentXCM, currentYCM};
-//
-//     int16_t innerValue = map[innerPoint.y][innerPoint.x];
-//     int16_t LowestValue = INT16_MAX;
-//     int lowestIndex = -1;
-//     // Serial.print("Inner");
-//     // Serial.print(innerValue);
-//     // Serial.println(",");
-//     // Serial.print("LowestValue");
-//     // Serial.print(LowestValue);
-//     // Serial.println(",");
-//
-//     for (int D = 0; D < 8; D++) {
-//         Point outerPoint = innerPoint + directions[D];
-//
-//         int16_t outerValue = map[outerPoint.y][outerPoint.x];
-//         // Serial.print(outerValue);
-//         // Serial.print(",");
-//
-//         bool isValid = validatePoint(outerPoint);
-//         bool notWall = (map[outerPoint.y][outerPoint.x] != -1);
-//         bool lessThanInner = outerValue < innerValue;
-//         bool lessThanLowest = outerValue < LowestValue;
-//         // Serial.print(" isValid:");
-//         // Serial.print(isValid);
-//         // Serial.print(" notWall:");
-//         // Serial.print(notWall);
-//         // Serial.print(" lessThanInner:");
-//         // Serial.print(lessThanInner);
-//         // Serial.print(" lessThanLowest:");
-//         // Serial.print(lessThanLowest);
-//
-//         if (isValid && notWall && lessThanInner && lessThanLowest) {
-//             LowestValue = outerValue;
-//             lowestIndex = D;
-//             // Serial.print("New LowestValue");
-//             // Serial.print(LowestValue);
-//         }
-//         // Serial.println(" END");
-//     }
-//
-//     if (lowestIndex != -1) {
-//         Angle newAngle = (45 * lowestIndex);
-//         globalTargetAngle = newAngle;
-//     }
-// }
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
@@ -143,6 +84,10 @@ void setup() {
     bumper.setup([]() { bumper.isr(); });
 
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
+
+    brickList.TEMP_fillWithTestData();
+
+    gridMap.solve(brickList, {130, 180});
 }
 
 void polls() {
@@ -190,7 +135,7 @@ void printState(SystemState stateToPrint) {
     Serial.print("Current State:");
     Serial.println(SystemStateString[(int)stateToPrint]);
 }
-const SystemState startingSystemState = Mazing;
+const SystemState startingSystemState = DriveTaxi;
 SystemState systemState = startingSystemState;
 
 bool readyToGo = false;
@@ -263,12 +208,21 @@ void lineToBlock(Position startPoint, Position endPoint,
     }
 }
 
+#include <queue>
+
+struct Corner {
+    Position position;
+    uint8_t index;
+};
+
+std::queue<Corner> cornerQueue;
+
 void stopAndSend() {
     // return;  // TODO remove
 
     drive.stop();
 
-    delay(100);
+    delay(1000);
 
     Pose robotPose = motionTracker.getPose();
 
@@ -278,6 +232,15 @@ void stopAndSend() {
     bluetoothLowEnergy.sendRobotPose(robotPose);
 
     bluetoothLowEnergy.sendBrickList(brickList);
+
+    while (!cornerQueue.empty()) {
+        Corner cornerToSend = cornerQueue.front();
+
+        bluetoothLowEnergy.sendCorner(cornerToSend.position,
+                                      cornerToSend.index);
+
+        cornerQueue.pop();
+    }
 }
 
 Position realWorldCoords(Pose robotPose, Pose localSensorPose,
@@ -307,8 +270,8 @@ void runAwayFromBumper(byte bumperData) {
     }
 }
 
-Position leftStatingCorner;
-Position leftEndingCorner;
+Position leftStatingCorner_Global;
+Position leftEndingCorner_Global;
 
 void setStatingPosition() {
     // Serial.print(" Usonic Wall:");
@@ -435,8 +398,14 @@ void driveTaxi() {
         // Serial.print(distanceToWall);
         // Serial.println(" cm away.");
 
-        leftStatingCorner = {-(distanceToWall), 0};
-        leftStatingCorner.transformByPose(robotPose);
+        Position leftStatingCorner_Local = {-(distanceToWall), 0};
+        leftStatingCorner_Local.transformByPose(robotPose);
+
+        Corner cornerToAdd;
+        cornerToAdd.position = leftStatingCorner_Local;
+        cornerToAdd.index = 0;
+
+        cornerQueue.push(cornerToAdd);
     };
 
     if (leftInfrared.brickDisappeared(150, 50)) {
@@ -445,14 +414,53 @@ void driveTaxi() {
         // Serial.print(distanceToWall);
         // Serial.println(" cm away.");
 
-        leftEndingCorner = {-(distanceToWall), 0};
-        leftEndingCorner.transformByPose(robotPose);
+        Position leftEndingCorner_Local = {-(distanceToWall), 0};
+        leftEndingCorner_Local.transformByPose(robotPose);
 
-        lineToBlock(leftStatingCorner, leftEndingCorner, robotPose.position);
+        Corner cornerToAdd;
+        cornerToAdd.position = leftEndingCorner_Local;
+        cornerToAdd.index = 1;
+
+        cornerQueue.push(cornerToAdd);
+
+        // lineToBlock(leftStatingCorner_Global, leftEndingCorner_Global,
+        //             robotPose.position);
         stopAndSend();
 
         navigator.turnLeft(150);
         systemState = FollowingPath;
+    }
+
+    if (rightInfrared.brickAppeared(150, 50)) {
+        float distanceToWall = rightInfrared.readFromRobotCenter(false);
+        // Serial.print("Wall appeared ");
+        // Serial.print(distanceToWall);
+        // Serial.println(" cm away.");
+
+        Position rightStatingCorner_Local = {(distanceToWall), 0};
+        rightStatingCorner_Local.transformByPose(robotPose);
+
+        Corner cornerToAdd;
+        cornerToAdd.position = rightStatingCorner_Local;
+        cornerToAdd.index = 2;
+
+        cornerQueue.push(cornerToAdd);
+    };
+
+    if (rightInfrared.brickDisappeared(150, 50)) {
+        float distanceToWall = rightInfrared.readFromRobotCenter(true);
+        // Serial.print("Wall disappeared ");
+        // Serial.print(distanceToWall);
+        // Serial.println(" cm away.");
+
+        Position rightEndingCorner_Local = {(distanceToWall), 0};
+        rightEndingCorner_Local.transformByPose(robotPose);
+
+        Corner cornerToAdd;
+        cornerToAdd.position = rightEndingCorner_Local;
+        cornerToAdd.index = 3;
+
+        cornerQueue.push(cornerToAdd);
     }
 
     // if a wall is there
@@ -509,25 +517,22 @@ void ready() {
     }
 }
 
+Angle angleToDrive = 90;
+
 void doMaze() {
-    //     Pose currentPose = motionTracker.getPose();
-    //
-    //     updateFollowAngle(currentPose);
-    //
-    //     Serial.print(" Angle:");
-    //     Serial.println(globalTargetAngle);
-    //
-    //     Angle angleToTurn = globalTargetAngle - currentPose.angle;
-    //
-    //     if (angleToTurn > 45) {
-    //         drive.turnLeft();
-    //     } else if (angleToTurn < -45) {
-    //         drive.turnRight();
-    //     } else {
-    //         int angleInt = (int)angleToTurn;
-    //         int offest = constrain(angleInt, -10, 10);
-    //         drive.forwards(offest);
-    //     }
+    Pose currentPose = motionTracker.getPose();
+
+    gridMap.maybeUpdateAngle(currentPose.position, &angleToDrive);
+
+    Angle angleToTurn = angleToDrive - currentPose.angle;
+
+    int distanceToEndMM = gridMap.getDistanceToEndMM(currentPose.position);
+
+    drive.forwards(angleToTurn);
+    if (distanceToEndMM < 100) {
+        pixels.setAll(255, 255, 0);
+        drive.stop();
+    }
 }
 
 void doState(SystemState stateToExecute) {
@@ -565,102 +570,34 @@ void doState(SystemState stateToExecute) {
     }
 }
 
-// void findEdges() {
-//     Point directions[8] = {{1, 0},  {1, 1},   {0, 1},  {-1, 1},
-//                            {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
-//
-//     for (int y = 0; y < MAX_Y; y++) {
-//         for (int x = 0; x < MAX_X; x++) {
-//             Point iterativePoint = {x, y};
-//
-//             bool isDeadZone = (map[iterativePoint.y][iterativePoint.x] ==
-//             -1);
-//
-//             if (isDeadZone) {
-//                 for (int D = 0; D < 8; D++) {
-//                     Point newPoint = iterativePoint + directions[D];
-//                     int outerValue = map[newPoint.y][newPoint.x];
-//
-//                     if (outerValue != -1) {
-//                         // Serial.println(outerValue);
-//                         Serial.print("self.coordsToPoint(");
-//                         Serial.print(iterativePoint.x);
-//                         Serial.print(", ");
-//                         Serial.print(iterativePoint.y);
-//                         Serial.println(")");
-//                         break;
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
-
 PassiveSchedule five(5000);
 
 void loop() {
     polls();
 
-    // if (eachSecond.isReadyToRun()) {
-    //     Serial.print(" Pose:");
-    //     Serial.println(motionTracker.getPose());
+    // if (five.isReadyToRun()) {
+    //     // findEdges();
     // }
 
-    // Serial.println(brickList.toString());
-
-    if (five.isReadyToRun()) {
-        // findEdges();
+    byte bumperValue = bumper.read();
+    if (bumperValue && readyToGo) {
+        runAwayFromBumper(bumperValue);
     }
-
-    // byte bumperValue = bumper.read();
-    // if (bumperValue && readyToGo) {
-    //     runAwayFromBumper(bumperValue);
-    // }
 
     // if (second.isReadyToRun()) {
     //     Serial.println(motionTracker.getPose());
     // }
 
     pixels.clear();
-    //
-    //     if (readyToGo) {
-    //         doState(systemState);
-    //     } else {
-    //         setStatingPosition();
-    //     }
 
-    pixels.clear();
+    if (readyToGo) {
+        doState(systemState);
+    } else {
+        setStatingPosition();
+    }
+
+    // pixels.clear();
     pixels.show();
-
-    // if (five.isReadyToRun()) {
-    //     Brick brick = brickList.getBrick(0);
-
-    //         for (int i = 0; i < 40; i++) {
-    //             for (int j = 0; j < 60; j++) {
-    //                 int y = (i * 10) + 100;
-    //                 int x = (j * 10) + 200;
-    //
-    //                 Position scanPosition = {x, y};
-    //
-    //                 int distance = brick.squaredDistanceTo(scanPosition);
-    //
-    //                 distance = sqrt(distance);
-    //
-    //                 distance = constrain(distance, 0, 100);
-    //
-    //                 gridMap.jankyPrintPosition(scanPosition, distance);
-    //             }
-    //         }
-
-    //         Serial.println("Here1");
-    //
-
-    //         // gridMap.print();
-    //         // gridMap.printDir();
-    //
-    //         // gridMap.JankyPrintPath2({5, 5});
-    //         Serial.println("Here6");
-    // }
 
     if (Serial.available() > 0) {
         String data = Serial.readString();
@@ -677,31 +614,8 @@ void loop() {
             foundArgs++;
         }
 
-        if (args[0] == "get-csv") {
-            brickList.TEMP_fillWithTestData();
-
-            gridMap.fillFromBrickList(brickList);
-
-            gridMap.solve({12, 180});
-
-            int samplingInterval = 5;
-            if (foundArgs > 1) {
-                samplingInterval = args[1].toInt();
-            }
-            gridMap.printDataToCSV(samplingInterval);
-        }
-        if (args[0] == "get-bin") {
-            brickList.TEMP_fillWithTestData();
-
-            gridMap.fillFromBrickList(brickList);
-
-            gridMap.solve({12, 180});
-
-            int samplingInterval = 5;
-            if (foundArgs > 1) {
-                samplingInterval = args[1].toInt();
-            }
-            gridMap.printDataToBIN(samplingInterval);
+        if (args[0] == "get-map") {
+            gridMap.sendOverSerial();
         }
     }
 }
@@ -712,33 +626,17 @@ void loop() {
 
 // TODO swap distance comparison for squared length comparison.
 
-//
-//  if (Serial.available() > 0) {
-//         // This part was stolen from gpt
-//         String inputString = "";
-//         // Read the incoming string until newline character
-//         inputString = Serial.readStringUntil('\n');
-//
-//         // If you want to parse two integers separated by a comma
-//         int commaIndex =
-//             inputString.indexOf(',');  // Find the position of the coma
-//         if (commaIndex != -1) {        // Check if a comma was found
-//             float firstNumber = inputString.substring(0, commaIndex)
-//                                     .toInt();  // Extract first number
-//             float secondNumber = inputString.substring(commaIndex + 1)
-//                                      .toInt();  // Extract second number
-//
-//             Serial.println("Here1");
-//
-//             gridMap.fillFromBrickList(brickList);
-//
-//             gridMap.solve({15, 15});
-//             gridMap.print();
-//             Serial.println();
-//
-//             gridMap.printDir();
-//
-//             gridMap.JankyPrintPath({5, 5});
-//             Serial.println("Here6");
-//         }
-//     }
+/*
+Blocking Rules
+
+if a
+
+
+
+
+
+
+
+
+
+*/

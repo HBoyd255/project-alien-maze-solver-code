@@ -28,7 +28,7 @@
 #define ROBOT_POSE_UUID "0d9d01ba-f4e5-4cbc-896e-e391c9b7ae74"
 #define BRICK_UUID "3aa898fd-58bb-42f8-b126-d2f31bbc6c5b"
 #define NEEDS_DATA_UUID "e233e08c-ab7b-4e73-95b3-e77236dde767"
-
+#define CORNER_UUID "0c3a4c84-c610-4119-914c-9b98a708dece"
 
 // Serial
 #define SERIAL_BAUD_RATE 230400

@@ -22,6 +22,9 @@ enum Zone {
 struct Brick {
     Position position = {0, 0};
 
+    int length = BRICK_LENGTH;
+    int width = BRICK_WIDTH;
+
     bool isVertical = 0;
 
     Position getBottomLeft();
@@ -29,7 +32,7 @@ struct Brick {
 
     Zone calculateZone(Position testPosition);
 
-    int squaredDistanceTo(Position testPosition);
+    int squaredDistanceTo(Position testPosition, int* zoneIndexPrt = nullptr);
 
     operator String() const;
 };
@@ -50,9 +53,10 @@ class BrickList {
     void TEMP_fillWithTestData();
 
    private:
-    Brick _brickArray[BRICK_COUNT];
+
+    Brick _brickArray[BRICK_COUNT + 4];
     int _brickCount = 0;
-    
+
     // bool _inZone(Position positionToTest, int radius);
 };
 

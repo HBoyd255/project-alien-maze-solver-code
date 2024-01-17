@@ -45,15 +45,7 @@ class Map {
     void solve(BrickList brickList, MapPoint endPoint);
 
     void maybeUpdateAngle(Position robotPosition, Angle* angleToUpdatePtr);
-
-    //     void print();
-    //     void printDir();
-    //     void printJank();
-    //
-    //     void JankyPrintPath(MapPoint startPoint);
-    //     void JankyPrintPath2(MapPoint startPoint);
-    //     void JankyPrintBlockData();
-    //     void jankyPrintPosition(Position position, int extra = -1);
+    int getDistanceToEndMM(Position robotPosition);
 
     void sendOverSerial();
 
