@@ -16,7 +16,7 @@ class MotionTracker {
    public:
     MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
                   Infrared* frontLeftInfraredPtr,
-                  Infrared* frontRightInfraredPtr);
+                  Infrared* frontRightInfraredPtr, Angle statingAngle);
 
     Angle angleFromOdometry();
 
@@ -24,15 +24,14 @@ class MotionTracker {
     bool updatePosition();
     bool poll();
 
-    void umActually();
-
-    void setInitialX(int initialX);
-
-    void setInitialY(int initialY);
+    int umActually(int frontDistance, int leftDistance);
 
     Angle getAngle();
     Position getPosition();
     Pose getPose();
+
+    // TODO make PRivate
+    Position _currentPosition;
 
    private:
     Motor* _leftMotorPtr;
@@ -40,7 +39,7 @@ class MotionTracker {
     Infrared* _frontLeftInfraredPtr;
     Infrared* _frontRightInfraredPtr;
 
-    Position _currentPosition;
+    const Angle _statingAngle;
     Angle _currentAngle = 90;
     Angle _angleCalibration = 0;
 

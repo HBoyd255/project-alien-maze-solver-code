@@ -26,7 +26,7 @@ bool Navigator::hasNoPath() { return this->_pathQueue.empty(); }
 
 void Navigator::_simpleGoTo(int localX, int localY, bool goBack) {
     Angle angleToPoint =
-        this->_motionTrackerPtr->getAngle().toClosestRightAngle();
+        this->_motionTrackerPtr->getAngle().closestOrthogonal();
 
     // Destructively search the que fro an angle
     while (!this->_pathQueue.empty()) {
@@ -62,7 +62,7 @@ void Navigator::turn(Angle localAngleToTurn, int distanceToDriveBeforeTurning) {
 
     Angle currentAngle = this->_motionTrackerPtr->getAngle();
     Angle angleToPointTo =
-        currentAngle.toClosestRightAngle() + localAngleToTurn;
+        currentAngle.closestOrthogonal() + localAngleToTurn;
 
     this->_pushAngle(angleToPointTo);
 }

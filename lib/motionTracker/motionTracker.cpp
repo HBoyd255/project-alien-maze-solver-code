@@ -1,7 +1,5 @@
 #include "motionTracker.h"
 
-// TODO calibrate this
-// This value also changes depending on the surface for some reason.
 #define STEPS_PER_ROTATION 855
 
 // The period to wait between updating the angle and position.
@@ -9,11 +7,13 @@
 
 MotionTracker::MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
                              Infrared* frontLeftInfraredPtr,
-                             Infrared* frontRightInfraredPtr)
+                             Infrared* frontRightInfraredPtr,
+                             Angle statingAngle)
     : _leftMotorPtr(leftMotorPtr),
       _rightMotorPtr(rightMotorPtr),
       _frontLeftInfraredPtr(frontLeftInfraredPtr),
-      _frontRightInfraredPtr(frontRightInfraredPtr) {}
+      _frontRightInfraredPtr(frontRightInfraredPtr),
+      _statingAngle(statingAngle) {}
 
 // TODO Check if the vales of distance traveled has changes before doing all
 // that maths
@@ -56,7 +56,8 @@ Angle MotionTracker::angleFromOdometry() {
 //  }
 
 bool MotionTracker::updateAngle() {
-    Angle newAngle = 90 + this->angleFromOdometry() + this->_angleCalibration;
+    Angle newAngle = this->_statingAngle + this->angleFromOdometry() +
+                     this->_angleCalibration;
 
     bool hasMoved = false;
     if (this->_currentAngle != newAngle) {
@@ -110,23 +111,89 @@ bool MotionTracker::poll() {
 }
 
 // ☝️🤓
-void MotionTracker::umActually() {
+int MotionTracker::umActually(int frontDistance, int leftDistance) {
     // TODO fix this
-    Angle currentAngle = this->_currentAngle;
-    Angle closest90 = currentAngle.toClosestRightAngle();
+    int closeThreshold = 200;
 
-    Angle angleDrift = closest90 - currentAngle;
+    const int mazeWidth = 1500;
+    const int mazeHeight = 2000;
+
+    Angle angleDrift = this->_currentAngle.OrthogonalOffset();
 
     this->_angleCalibration += angleDrift;
     this->updateAngle();
-}
 
-void MotionTracker::setInitialX(int initialX) {
-    this->_currentPosition.x = initialX;
-}
+    // TODO refactor this.
+    bool facingBottom = (this->_currentAngle == -90);
+    bool facingLeft = (this->_currentAngle == 180);
+    bool facingTop = (this->_currentAngle == 90);
+    bool facingRight = (this->_currentAngle == 0);
 
-void MotionTracker::setInitialY(int initialY) {
-    this->_currentPosition.y = initialY;
+    Position currentPosition = this->getPosition();
+
+    bool closeToBottomWall = currentPosition.y < closeThreshold;
+    bool closeToLeftWall = currentPosition.x < closeThreshold;
+    bool closeToTopWall = currentPosition.y > (mazeHeight - closeThreshold);
+    bool closeToRightWall = currentPosition.x > (mazeWidth - closeThreshold);
+
+    //     Serial.print(" facingRight:");
+    //     Serial.print(facingRight);
+    //     Serial.print(" facingTop:");
+    //     Serial.print(facingTop);
+    //     Serial.print(" facingLeft:");
+    //     Serial.print(facingLeft);
+    //     Serial.print(" facingBottom:");
+    //     Serial.print(facingBottom);
+    //
+    //     Serial.print(" closeToRightWall:");
+    //     Serial.print(closeToRightWall);
+    //     Serial.print(" closeToTopWall:");
+    //     Serial.print(closeToTopWall);
+    //     Serial.print(" closeToLeftWall:");
+    //     Serial.print(closeToLeftWall);
+    //     Serial.print(" closeToBottomWall:");
+    //     Serial.println(closeToBottomWall);
+
+    bool leftDistanceValid = (leftDistance != -1);
+
+    if ((facingBottom) && (closeToBottomWall)) {
+        this->_currentPosition.y = frontDistance;
+
+        if (closeToRightWall && leftDistanceValid) {
+            this->_currentPosition.x = mazeWidth - leftDistance;
+            return 2;
+        }
+        return 1;
+
+    } else if ((facingLeft) && (closeToLeftWall)) {
+        this->_currentPosition.x = frontDistance;
+
+        if (closeToBottomWall && leftDistanceValid) {
+            this->_currentPosition.y = leftDistance;
+            return 2;
+        }
+        return 1;
+
+    } else if ((facingTop) && (closeToTopWall)) {
+        this->_currentPosition.y = mazeHeight - frontDistance;
+
+        if (closeToLeftWall && leftDistanceValid) {
+            this->_currentPosition.x = leftDistance;
+            return 2;
+        }
+        return 1;
+
+    } else if ((facingRight) && (closeToRightWall)) {
+        this->_currentPosition.x = mazeWidth - frontDistance;
+
+        if (closeToTopWall && leftDistanceValid) {
+            this->_currentPosition.y = mazeHeight - leftDistance;
+            return 2;
+        }
+        return 1;
+    }
+
+    return 0;
 }
 
 Angle MotionTracker::getAngle() { return this->_currentAngle; }

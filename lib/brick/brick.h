@@ -4,7 +4,18 @@
 #include "angleAndPosition.h"
 #include "mazeConstants.h"
 
-#define BRICK_COUNT 15
+// 15 bricks + 4 walls
+// Better to have too many bricks than not enough
+#define MAX_BRICK_COUNT 40
+
+//TODO remove
+enum OrthogonalDirection {
+    OrthogonalDown,
+    OrthogonalLeft,
+    OrthogonalUp,
+    OrthogonalRight,
+    OrthogonalCount
+};
 
 enum Zone {
     CentreZone,
@@ -15,7 +26,7 @@ enum Zone {
     LeftZone,
     BottomLeftZone,
     BottomZone,
-    BottomRightZone
+    BottomRightZone,
 };
 
 // TODO Turn Brick into a class.
@@ -27,14 +38,17 @@ struct Brick {
 
     bool isVertical = 0;
 
+    Brick(int x = 0, int y = 0, bool isVertical = 0);
+
     Position getBottomLeft();
     Position getTopRight();
 
     Zone calculateZone(Position testPosition);
 
+    int distanceTo(Position testPosition);
     int squaredDistanceTo(Position testPosition, int* zoneIndexPrt = nullptr);
 
-    operator String() const;
+    String toString();
 };
 
 class BrickList {
@@ -46,18 +60,26 @@ class BrickList {
 
     String toString();
 
-    // bool inDeadzone(Position positionToTest);
-    // bool nearDeadzone(Position positionToTest);
+    void attemptAppendBrick(Brick brickToAdd);
 
-    void TEMP_addBrick(Brick brickToAdd, int index);
-    void TEMP_fillWithTestData();
+    void setPreprogrammedMazeData();
+
+    int compare(Position robotPose, Angle angleOfSensor, int measuredDistance);
+
+    void setBrickFromApproximation(Position brickEdgePosition, Angle angleOfSensor);
+
+    int lowestDistance(Position testPosition,
+                       int* indexOfClosestBrickPrt = nullptr,
+                       int* zoneFromClosestBrickPrt = nullptr);
 
    private:
-
-    Brick _brickArray[BRICK_COUNT + 4];
+    Brick _brickArray[MAX_BRICK_COUNT];
     int _brickCount = 0;
 
-    // bool _inZone(Position positionToTest, int radius);
+    void _getOrthogonalBrickIndicies(Position robotPosition, int* bottom_IP,
+                                     int* left_IP, int* top_IP, int* right_IP);
+    void _appendBrick(Brick brickToAdd);
+    void _addWalls();
 };
 
 #endif  // BRICK_H

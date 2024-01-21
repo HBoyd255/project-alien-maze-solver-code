@@ -7,7 +7,7 @@
 #include "angleAndPosition.h"
 #include "brick.h"
 
-#define UINT12_MAX (0xfff)
+#define UINT11_MAX (0x7ff)
 
 #define ROBOT_RADIUS 120
 
@@ -16,6 +16,12 @@
 
 #define SQUARED_ROBOT_RADIUS ROBOT_RADIUS* ROBOT_RADIUS
 
+/**
+ * @brief Construct a new Map Point object
+ *
+ * @param x The x coordinate in centimeters.
+ * @param y The y coordinate in centimeters.
+ */
 MapPoint::MapPoint(int x, int y) : x(x), y(y) {}
 
 int MapPoint::squaredDistanceTo(MapPoint otherPoint) {
@@ -75,32 +81,13 @@ void Map::_primeFromBrickList(BrickList brickList) {
         int x = index % this->_width;
         int y = index / this->_width;
 
-        MapPoint scanPoint = {x, y};
+        MapPoint scanPoint = MapPoint(x, y);
         Position scanPosition = scanPoint.toPosition();
-
-
-        int lowestSquaredDistance = INT32_MAX;
 
         int lowestZone = 0;
 
-
-        int brickCount = brickList.getBrickCount();
-
-        for (int i = 0; i < brickCount; i++) {
-            Brick brick = brickList.getBrick(i);
-
-            int zoneIndex = 0;
-
-            int squaredDistanceToBrick =
-                brick.squaredDistanceTo(scanPosition, &zoneIndex);
-
-            if (squaredDistanceToBrick < lowestSquaredDistance) {
-                lowestSquaredDistance = squaredDistanceToBrick;
-                lowestZone = zoneIndex;
-            }
-        }
-
-        int lowestDistance = sqrt(lowestSquaredDistance);
+        int lowestDistance =
+            brickList.lowestDistance(scanPosition, nullptr, &lowestZone);
 
         lowestDistance = constrain(lowestDistance, 0, UINT8_MAX);
         bool pointIsBlocked = (lowestDistance < ROBOT_RADIUS);
@@ -110,11 +97,14 @@ void Map::_primeFromBrickList(BrickList brickList) {
         this->_setBlocked(scanPoint, pointIsBlocked);
         this->_setDirection(scanPoint, initialDirection);
         this->_setDistanceToWall(scanPoint, lowestDistance);
-        this->_setDistanceToGoal(scanPoint, UINT12_MAX);
+        this->_setDistanceToGoal(scanPoint, UINT11_MAX);
     }
 }
 
-void Map::solve(BrickList brickList, MapPoint endPoint) {
+void Map::solve(BrickList brickList, Position endPosition) {
+    MapPoint endPoint;
+    endPoint.setFromPosition(endPosition);
+
     this->_primeFromBrickList(brickList);
 
     if (!_validatePoint(endPoint)) {
@@ -134,17 +124,17 @@ void Map::solve(BrickList brickList, MapPoint endPoint) {
 
         pointQueue.pop();
 
-        for (int D = 0; D < 8; D++) {
+        for (int direction_I = 0; direction_I < 8; direction_I++) {
             // TODO make this better
-            bool goingDiag = D & 1;
+            bool goingDiagonal = direction_I & 1;
 
-            MapPoint outerPoint = innerPoint + this->_localNeighbors[D];
+            MapPoint outerPoint = innerPoint + this->_neighbors[direction_I];
             uint16_t existingOuterValue = this->_getDistanceToGoal(outerPoint);
 
-            int localDistanceIncrease =
-                (goingDiag) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
+            int distanceToOuterPoint =
+                (goingDiagonal) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
 
-            int newOuterValue = innerValue + localDistanceIncrease;
+            int newOuterValue = innerValue + distanceToOuterPoint;
 
             bool outerIsValid = this->_validatePoint(outerPoint);
             bool outerNotBlocked = !(this->_getBlocked(outerPoint));
@@ -159,35 +149,31 @@ void Map::solve(BrickList brickList, MapPoint endPoint) {
     this->_populateDirections();
 }
 
-void Map::maybeUpdateAngle(Position robotPosition, Angle* angleToUpdatePtr) {
-    MapPoint currentPoint;
+void Map::getAngle(Position robotPosition, Angle* angleToUpdate_P) {
+    MapPoint robotPoint;
+    robotPoint.setFromPosition(robotPosition);
 
-    currentPoint.setFromPosition(robotPosition);
-
-    if (this->_getBlocked(currentPoint)) {
+    if (this->_getBlocked(robotPoint)) {
         return;
     }
-    if (!this->_validatePoint(currentPoint)) {
+    if (!this->_validatePoint(robotPoint)) {
         return;
     }
 
-    int directionIndex = this->_getDirection(currentPoint);
+    int direction_I = this->_getDirection(robotPoint);
 
-    Angle angleToDrive = directionIndex * 45;
-
-    *angleToUpdatePtr = angleToDrive;
+    *angleToUpdate_P = direction_I * 45;
 }
-int Map::getDistanceToEndMM(Position robotPosition) {
-    MapPoint currentPoint;
 
-    currentPoint.setFromPosition(robotPosition);
+float Map::getEuclideanDistanceToEnd(Position robotPosition) {
+    MapPoint robotPoint;
+    robotPoint.setFromPosition(robotPosition);
 
-    int squaredCM = currentPoint.squaredDistanceTo(this->_endPoint);
+    int squaredDistanceInCentimeters =
+        robotPoint.squaredDistanceTo(this->_endPoint);
 
-    int distCM = sqrt(squaredCM);
-    int distMM = distCM * 10;
-
-    return distMM;
+    //
+    return sqrt(squaredDistanceInCentimeters) * 10;
 }
 
 struct __attribute__((packed)) Bundle {
@@ -201,7 +187,7 @@ void Map::sendOverSerial() {
         int x = index % this->_width;
         int y = index / this->_width;
 
-        MapPoint scanPoint = {x, y};
+        MapPoint scanPoint = MapPoint(x, y);
 
         if (this->_validatePoint(scanPoint)) {
             Bundle binaryBundle;
@@ -217,13 +203,98 @@ void Map::sendOverSerial() {
     }
 }
 
+void Map::primeForTracking() {
+    for (int index = 0; index < this->_dimension; index++) {
+        int x = index % this->_width;
+        int y = index / this->_width;
+
+        MapPoint scanPoint = MapPoint(x, y);
+
+        this->_setBeen(scanPoint, false);
+    }
+}
+
+void Map::TEMP_cutMagicLine() {
+    for (int index = 0; index < this->_dimension; index++) {
+        int x = index % this->_width;
+        int y = index / this->_width;
+        MapPoint scanPoint = MapPoint(x, y);
+
+        if ((y > 80) && (y < 90)) {
+            this->_setBlocked(scanPoint, false);
+        }
+        if ((x > 60) && (x < 70)) {
+            this->_setBlocked(scanPoint, false);
+        }
+    }
+}
+
+void Map::snowPlow(Position robotPosition) {
+    MapPoint robotCentrePoint;
+    robotCentrePoint.setFromPosition(robotPosition);
+
+    const int circlePointCount = 8;
+
+    const MapPoint circlePoints[circlePointCount]{{10, 0},  {-10, 0}, {0, 10},
+                                                  {0, -10}, {7, 7},   {-7, 7},
+                                                  {7, -7},  {-7, -7}};
+
+    for (int i = 0; i < circlePointCount; i++) {
+        MapPoint iterativeCirclePoint = robotCentrePoint + circlePoints[i];
+
+        if (this->_validatePoint(iterativeCirclePoint)) {
+            this->_setBeen(iterativeCirclePoint, true);
+        }
+    }
+}
+
+bool Map::safeForBrick(Position positionA, Position positionB,
+                       bool* hitWall_P) {
+    bool hitWall_L = false;
+
+    MapPoint pointA;
+    pointA.setFromPosition(positionA);
+
+    MapPoint pointB;
+    pointB.setFromPosition(positionB);
+
+    int minX = min(pointA.x, pointB.x);
+    int maxX = max(pointA.x, pointB.x);
+
+    int minY = min(pointA.y, pointB.y);
+    int maxY = max(pointA.y, pointB.y);
+
+    bool safeForBrick = true;
+
+    for (int y = minY; y < maxY; y++) {
+        for (int x = minX; x < maxX; x++) {
+            MapPoint scanPoint = MapPoint(x, y);
+
+            bool pointOutOfRange = !this->_validatePoint(scanPoint);
+            bool hasBeenToPoint = this->_getBeen(scanPoint);
+
+            if (pointOutOfRange) {
+                hitWall_L = true;
+            }
+
+            if (pointOutOfRange || hasBeenToPoint) {
+                safeForBrick = false;
+                return safeForBrick;
+            }
+        }
+    }
+
+    *hitWall_P = hitWall_L;
+
+    return safeForBrick;
+}
 // TODO refactor this function
 void Map::_populateDirections() {
     for (int index = 0; index < this->_dimension; index++) {
         int x = index % this->_width;
         int y = index / this->_width;
 
-        MapPoint scanPoint = {x, y};
+        MapPoint scanPoint = MapPoint(x, y);
 
         if (this->_getBlocked(scanPoint)) {
             continue;
@@ -238,16 +309,16 @@ void Map::_populateDirections() {
             scanPoint.squaredDistanceTo(this->_endPoint);
         uint8_t directionOfLowest = 0;
 
-        for (uint8_t direction = 0; direction < 8; direction++) {
-            MapPoint outerPoint = scanPoint + this->_localNeighbors[direction];
+        for (uint8_t direction_I = 0; direction_I < 8; direction_I++) {
+            MapPoint outerPoint = scanPoint + this->_neighbors[direction_I];
 
-            bool goingDiag = direction & 1;
+            bool goingDiagonal = direction_I & 1;
 
-            int localDistanceIncrease =
-                (goingDiag) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
+            int distanceToOuterPoint =
+                (goingDiagonal) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
 
             int directionPathLength =
-                this->_getDistanceToGoal(outerPoint) + localDistanceIncrease;
+                this->_getDistanceToGoal(outerPoint) + distanceToOuterPoint;
 
             bool outerIsValid = this->_validatePoint(outerPoint);
             bool outerNotBlocked = !(this->_getBlocked(outerPoint));
@@ -258,12 +329,13 @@ void Map::_populateDirections() {
                 continue;
             }
 
+            // TODO refactor this when I have more brain power.
             if (newPathEqualOrLower) {
                 int newPointDistanceToWall =
                     this->_getDistanceToWall(outerPoint);
                 if (newPointDistanceToWall > lowestDistanceToWall) {
                     LowestValue = directionPathLength;
-                    directionOfLowest = direction;
+                    directionOfLowest = direction_I;
                     lowestDistanceToWall = this->_getDistanceToWall(outerPoint);
                     lowestSquaredDistToEnd =
                         scanPoint.squaredDistanceTo(this->_endPoint);
@@ -273,7 +345,7 @@ void Map::_populateDirections() {
 
                     if (newSquaredDistToEnd < lowestSquaredDistToEnd) {
                         LowestValue = directionPathLength;
-                        directionOfLowest = direction;
+                        directionOfLowest = direction_I;
                         lowestDistanceToWall =
                             this->_getDistanceToWall(outerPoint);
                         lowestSquaredDistToEnd =
@@ -300,32 +372,84 @@ bool Map::_validatePoint(MapPoint pointToTest) {
     return pointIsValid;
 }
 
+bool Map::_getBeen(MapPoint point) {
+    if (this->_validatePoint(point)) {
+        return this->_mapData[point.y][point.x].been;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+        return 0;
+    }
+}
+void Map::_setBeen(MapPoint point, bool beenStatus) {
+    if (this->_validatePoint(point)) {
+        this->_mapData[point.y][point.x].been = beenStatus;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+    }
+}
+
 bool Map::_getBlocked(MapPoint point) {
-    return this->_mapData[point.y][point.x].isBlocked;
+    if (this->_validatePoint(point)) {
+        return this->_mapData[point.y][point.x].blocked;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+        return 0;
+    }
 }
 void Map::_setBlocked(MapPoint point, bool blockedStatus) {
-    this->_mapData[point.y][point.x].isBlocked = blockedStatus;
+    if (this->_validatePoint(point)) {
+        this->_mapData[point.y][point.x].blocked = blockedStatus;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+    }
 }
 
 uint8_t Map::_getDirection(MapPoint point) {
-    return this->_mapData[point.y][point.x].direction;
+    if (this->_validatePoint(point)) {
+        return this->_mapData[point.y][point.x].direction;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+        return 0;
+    }
 }
 void Map::_setDirection(MapPoint point, uint8_t newDirection) {
-    this->_mapData[point.y][point.x].direction = newDirection;
+    if (this->_validatePoint(point)) {
+        this->_mapData[point.y][point.x].direction = newDirection;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+    }
 }
 
 uint16_t Map::_getDistanceToGoal(MapPoint point) {
-    return this->_mapData[point.y][point.x].distanceToGoal;
+    if (this->_validatePoint(point)) {
+        return this->_mapData[point.y][point.x].distanceToGoal;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+        return 0;
+    }
 }
 void Map::_setDistanceToGoal(MapPoint point, uint16_t newValue) {
-    this->_mapData[point.y][point.x].distanceToGoal = newValue;
+    if (this->_validatePoint(point)) {
+        this->_mapData[point.y][point.x].distanceToGoal = newValue;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+    }
 }
 
 uint8_t Map::_getDistanceToWall(MapPoint point) {
-    return this->_mapData[point.y][point.x].distanceToWall;
+    if (this->_validatePoint(point)) {
+        return this->_mapData[point.y][point.x].distanceToWall;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+        return 0;
+    }
 }
 void Map::_setDistanceToWall(MapPoint point, uint8_t newIncrease) {
-    this->_mapData[point.y][point.x].distanceToWall = newIncrease;
+    if (this->_validatePoint(point)) {
+        this->_mapData[point.y][point.x].distanceToWall = newIncrease;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+    }
 }
 
 void Map::_resetData() {
@@ -335,25 +459,10 @@ void Map::_resetData() {
 
         MapPoint scanPoint = {x, y};
 
+        this->_setBeen(scanPoint, 0);
         this->_setBlocked(scanPoint, 0);
         this->_setDirection(scanPoint, 0);
-        this->_setDistanceToGoal(scanPoint, UINT12_MAX);
+        this->_setDistanceToGoal(scanPoint, UINT11_MAX);
         this->_setDistanceToWall(scanPoint, 0);
     }
-}
-
-int Map::_countBlocks() {
-    int count = 0;
-
-    for (int index = 0; index < this->_dimension; index++) {
-        int x = index % this->_width;
-        int y = index / this->_width;
-
-        MapPoint scanPoint = {x, y};
-
-        if (this->_getBlocked(scanPoint)) {
-            count++;
-        }
-    }
-    return count;
 }

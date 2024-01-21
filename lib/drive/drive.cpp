@@ -99,7 +99,7 @@ void Drive::turnLeft() {
     if (timeSinceLastMove > 100) {
         rotationSpeed = 100;
     }
-    this->setVelocity(0, rotationSpeed);
+    this->setVelocity(linearSpeed, rotationSpeed);
 }
 
 /**
@@ -118,7 +118,7 @@ void Drive::turnRight() {
     if (timeSinceLastMove > 100) {
         rotationSpeed = 100;
     }
-    this->setVelocity(0, -rotationSpeed);
+    this->setVelocity(linearSpeed, -rotationSpeed);
 }
 
 /**

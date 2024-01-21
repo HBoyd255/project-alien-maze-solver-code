@@ -46,26 +46,27 @@ BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
                                        const char* mainServiceUUID,
                                        const char* robotPoseUUID,
                                        const char* brickUUID,
-                                       const char* needyUUID,
                                        const char* cornerUUID)
-    : _errorIndicatorPtr(errorIndicatorPtr),
+    : _errorIndicator_P(errorIndicatorPtr),
       _mainService(mainServiceUUID),
       _robotPoseCharacteristic(robotPoseUUID, BLE_READ_NOTIFY,
                                sizeof(CompressedPoseStruct)),
       _brickCharacteristic(brickUUID, BLE_READ_NOTIFY,
                            sizeof(CompressedBrickStruct)),
-      _needyCharacteristic(needyUUID, BLEWrite, sizeof(byte)),
       _cornerCharacteristic(cornerUUID, BLE_READ_NOTIFY,
                             sizeof(CompressedCornerStruct)) {}
 
 void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
+    // _connectFunction_P = connectFunction_P;
+    // _disconnectFunction_P = disconnectFunction_P;
+
     // Set a boolean indicating if the error indicator object is available
-    bool errorIndicatorAvailable = (this->_errorIndicatorPtr != NULL);
+    bool errorIndicatorAvailable = (this->_errorIndicator_P != NULL);
 
     if (!BLE.begin()) {
         if (errorIndicatorAvailable) {
             String errorMessage = "BLE initialisation has failed.";
-            _errorIndicatorPtr->errorOccurred(errorMessage);
+            _errorIndicator_P->errorOccurred(errorMessage);
         }
     }
 
@@ -77,7 +78,7 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
                 "BLE_MAC_ADDRESS in systemInfo.h to " +
                 String(BLE.address()) + ".";
 
-            _errorIndicatorPtr->errorOccurred(errorMessage);
+            _errorIndicator_P->errorOccurred(errorMessage);
         }
     }
 
@@ -85,22 +86,15 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     BLE.setDeviceName(deviceName);
     BLE.setLocalName(deviceName);
 
-    this->_needyCharacteristic.setEventHandler(
-        BLEWritten, BluetoothLowEnergy::_onNeedsData);
-
     this->_mainService.addCharacteristic(this->_robotPoseCharacteristic);
     this->_mainService.addCharacteristic(this->_cornerCharacteristic);
     this->_mainService.addCharacteristic(this->_brickCharacteristic);
-    this->_mainService.addCharacteristic(this->_needyCharacteristic);
 
     BLE.addService(this->_mainService);
     BLE.setAdvertisedService(this->_mainService);
 
     // Start advertising
     BLE.advertise();
-
-    BLE.setEventHandler(BLEConnected, BluetoothLowEnergy::_onConnect);
-    BLE.setEventHandler(BLEDisconnected, BluetoothLowEnergy::_onDisconnect);
 }
 
 void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {
@@ -152,36 +146,3 @@ void BluetoothLowEnergy::sendCorner(Position cornerPosition, uint8_t index) {
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }
-
-bool BluetoothLowEnergy::newlyConnected() {
-    if (newlyConnectedFlag) {
-        newlyConnectedFlag = false;
-        return true;
-    }
-    return false;
-}
-bool BluetoothLowEnergy::newlyDisconnected() {
-    if (newlyDisconnectedFlag) {
-        newlyDisconnectedFlag = false;
-        return true;
-    }
-    return false;
-}
-bool BluetoothLowEnergy::needsData() {
-    if (needsDataFlag) {
-        needsDataFlag = false;
-        return true;
-    }
-    return false;
-}
-
-void BluetoothLowEnergy::_onConnect(BLEDevice central) {
-    newlyConnectedFlag = true;
-}
-void BluetoothLowEnergy::_onDisconnect(BLEDevice central) {
-    newlyDisconnectedFlag = true;
-}
-void BluetoothLowEnergy::_onNeedsData(BLEDevice central,
-                                      BLECharacteristic characteristic) {
-    needsDataFlag = true;
-}

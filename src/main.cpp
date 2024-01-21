@@ -50,11 +50,10 @@ Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
 
 // TODO decide which order the uuids go
 BluetoothLowEnergy bluetoothLowEnergy(&errorIndicator, MAIN_SERVICE_UUID,
-                                      ROBOT_POSE_UUID, BRICK_UUID,
-                                      NEEDS_DATA_UUID, CORNER_UUID);
+                                      ROBOT_POSE_UUID, BRICK_UUID, CORNER_UUID);
 
 MotionTracker motionTracker(&leftMotor, &rightMotor, &frontLeftInfrared,
-                            &frontRightInfrared);
+                            &frontRightInfrared, -90);
 
 Navigator navigator(&motionTracker, &drive);
 
@@ -85,10 +84,16 @@ void setup() {
 
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 
-    brickList.TEMP_fillWithTestData();
+    gridMap.primeForTracking();
 
-    gridMap.solve(brickList, {130, 180});
+    // motionTracker._currentPosition = {750, 200};
+
+    // gridMap.TEMP_cutMagicLine();
+
+    // gridMap.solve(brickList, {130, 180});
 }
+
+bool readyToGo = true;
 
 void polls() {
     frontLeftInfrared.poll();
@@ -103,52 +108,111 @@ void polls() {
     motionTracker.poll();
 
     bluetoothLowEnergy.poll();
-
-    if (bluetoothLowEnergy.newlyConnected()) {
-        Serial.println("Connected");
-    }
-
-    if (bluetoothLowEnergy.needsData()) {
-        Serial.println("Sending all Data");
-    }
-
-    if (bluetoothLowEnergy.newlyDisconnected()) {
-        Serial.println("Disconnected");
-    }
 }
 
-PassiveSchedule eachSecond(1000);
+// Forward declaration of states.
+void followingLeftWall_S();
+void aligningWithWall_S();
+void stopped_S();
+void followingMaze_S();
+void celebrating_S();
 
-enum SystemState {
-    DriveTaxi,
-    WallsInMyFace,
-    FollowingPath,
-    Chilling,
-    Ready,
-    Mazing
+void UseMazeToGoTo(Position);
+
+const voidFuncPtr startingState_GCP = stopped_S;
+voidFuncPtr nextState_GP = startingState_GCP;
+// TODO add a default state basest on currentGoal
+
+enum Goal {
+    NoGoal,
+    MapOuter,
+    Launch1,
+    DriveToEndMaybe,
+    MapInner,
+    DriveToStart,
+    DriveToEnd,
+    Won,
+
 };
-const String SystemStateString[] = {"DriveTaxi",     "WallsInMyFace",
-                                    "FollowingPath", "Chilling",
-                                    "Ready",         "Mazing"};
 
-void printState(SystemState stateToPrint) {
-    Serial.print("Current State:");
-    Serial.println(SystemStateString[(int)stateToPrint]);
-}
-const SystemState startingSystemState = DriveTaxi;
-SystemState systemState = startingSystemState;
-
-bool readyToGo = false;
-
+Goal currentGoal_G = MapOuter;
 ////--------------------
+
+#include <queue>
 
 #include "mazeConstants.h"
 
-// TODO finish this code
-void lineToBlock(Position startPoint, Position endPoint,
-                 Position robotPosition) {
-    int tolerance = 20;
+struct Corner {
+    Position position;
+    uint8_t index;
 
+    Corner(Position position = {0, 0}, int index = 0)
+        : position(position), index(index){};
+};
+
+std::queue<Corner> cornerQueue;
+
+void sendData() {
+    Pose robotPose = motionTracker.getPose();
+    bluetoothLowEnergy.sendRobotPose(robotPose);
+
+    bluetoothLowEnergy.sendBrickList(brickList);
+
+    while (!cornerQueue.empty()) {
+        // Corner cornerToSend = cornerQueue.front();
+        // bluetoothLowEnergy.sendCorner(cornerToSend.position,
+        //                               cornerToSend.index);
+        cornerQueue.pop();
+    }
+}
+
+void maybePlonkAgainstWall(Position startPoint) {
+    bool onBottomWall = (startPoint.y < 150);
+    bool onLeftWall = (startPoint.x < 150);
+    bool onTopWall = (startPoint.y > 1850);
+    bool onRightWall = (startPoint.x > 1350);
+
+    if (onBottomWall) {
+        Brick brickToAdd;
+
+        brickToAdd.position.x = startPoint.x - 125;
+        brickToAdd.position.y = 45;
+        brickToAdd.isVertical = false;
+
+        brickList.attemptAppendBrick(brickToAdd);
+    }
+    if (onLeftWall) {
+        Brick brickToAdd;
+
+        brickToAdd.position.x = 45;
+        brickToAdd.position.y = startPoint.y + 125;
+        brickToAdd.isVertical = true;
+
+        brickList.attemptAppendBrick(brickToAdd);
+    }
+    if (onTopWall) {
+        Brick brickToAdd;
+
+        brickToAdd.position.x = startPoint.x + 125;
+        brickToAdd.position.y = 1955;
+        brickToAdd.isVertical = false;
+
+        brickList.attemptAppendBrick(brickToAdd);
+    }
+    if (onRightWall) {
+        Brick brickToAdd;
+
+        brickToAdd.position.x = 1455;
+        brickToAdd.position.y = startPoint.y - 125;
+        brickToAdd.isVertical = true;
+
+        brickList.attemptAppendBrick(brickToAdd);
+    }
+}
+
+// TODO finish this code
+void twoCornersToBrick(Position robotPosition, Position startPoint,
+                       Position endPoint) {
     float xLength = abs(startPoint.x - endPoint.x);
     float yLength = abs(startPoint.y - endPoint.y);
 
@@ -156,34 +220,43 @@ void lineToBlock(Position startPoint, Position endPoint,
     lineCentrePoint.x = (startPoint.x + endPoint.x) / 2;
     lineCentrePoint.y = (startPoint.y + endPoint.y) / 2;
 
-    // Serial.print(" Start:");
-    // Serial.println(startPoint);
-    // Serial.print(" End:");
-    // Serial.println(endPoint);
-    // Serial.print(" LinePont:");
-    // Serial.println(lineCentrePoint);
-
     float drift = min(xLength, yLength);
     float length = max(xLength, yLength);
+    //
+    //     Serial.print(" Start:");
+    //     Serial.print(startPoint);
+    //     Serial.print(" End:");
+    //     Serial.print(endPoint);
+    //     Serial.print(" LinePont:");
+    //     Serial.println(lineCentrePoint);
+    //     Serial.print(" length:");
+    //     Serial.println(length);
+    //     Serial.print(" drift:");
+    //     Serial.println(drift);
 
-    if (drift > tolerance) {
-        Serial.println("Wonky Ass line");
+    // Tolerance of about 14 degrees
+    // USE trig. dont calculate on fly
+    // calculator.net/triangle-calculator.html
+    if ((drift * 4) > length) {
+        // Serial.println("Wonky Ass line");
+
         return;
     }
 
     bool robotIsLeftOfLine = (robotPosition.x < lineCentrePoint.x);
-
     bool robotIsBelowLine = (robotPosition.y < lineCentrePoint.y);
 
     bool lineInVertical = (yLength > xLength);
 
-    if (lineInVertical) {
-        Serial.print("Vertical Line ");
-        Serial.print(length);
-        Serial.println(" Long.");
+    bool hasSentABrickOff = false;
 
-        if ((length > 35) && (length < 90)) {
-            Serial.println("SHORT SIDE OF BRICK");
+    if (lineInVertical) {
+        // Serial.print("Vertical Line ");
+        // Serial.print(length);
+        // Serial.println(" Long.");
+
+        if ((length > 40) && (length < 120)) {
+            // Serial.println("SHORT SIDE OF BRICK");
 
             Brick brickToAdd;
 
@@ -195,282 +268,369 @@ void lineToBlock(Position startPoint, Position endPoint,
             } else {
                 brickToAdd.position.x = lineCentrePoint.x - (BRICK_LENGTH / 2);
             }
-            brickList.TEMP_addBrick(brickToAdd, 1);
-
-            brickToAdd.position.x -= 250;
-
-            brickList.TEMP_addBrick(brickToAdd, 0);
+            brickList.attemptAppendBrick(brickToAdd);
+            hasSentABrickOff = true;
         }
-    } else {
+        if ((length > 210) && (length < 290)) {
+            // Serial.println("LONG SIDE OF BRICK");
+
+            Brick brickToAdd;
+
+            brickToAdd.position.y = lineCentrePoint.y;
+            brickToAdd.isVertical = true;
+
+            if (robotIsLeftOfLine) {
+                brickToAdd.position.x = lineCentrePoint.x + (BRICK_WIDTH / 2);
+            } else {
+                brickToAdd.position.x = lineCentrePoint.x - (BRICK_WIDTH / 2);
+            }
+            brickList.attemptAppendBrick(brickToAdd);
+            hasSentABrickOff = true;
+        }
+
+    } else {  // Horizontal Line
         // Serial.print("Horizontal Line ");
         // Serial.print(length);
         // Serial.println(" Long.");
-    }
-}
 
-#include <queue>
+        if ((length > 40) && (length < 120)) {
+            // Serial.println("SHORT SIDE OF BRICK");
 
-struct Corner {
-    Position position;
-    uint8_t index;
-};
+            Brick brickToAdd;
 
-std::queue<Corner> cornerQueue;
+            brickToAdd.position.x = lineCentrePoint.x;
+            brickToAdd.isVertical = true;
 
-void stopAndSend() {
-    // return;  // TODO remove
-
-    drive.stop();
-
-    delay(1000);
-
-    Pose robotPose = motionTracker.getPose();
-
-    Serial.print("Sending :");
-    Serial.println(robotPose);
-
-    bluetoothLowEnergy.sendRobotPose(robotPose);
-
-    bluetoothLowEnergy.sendBrickList(brickList);
-
-    while (!cornerQueue.empty()) {
-        Corner cornerToSend = cornerQueue.front();
-
-        bluetoothLowEnergy.sendCorner(cornerToSend.position,
-                                      cornerToSend.index);
-
-        cornerQueue.pop();
-    }
-}
-
-Position realWorldCoords(Pose robotPose, Pose localSensorPose,
-                         int sensorDistance) {
-    Position positionToReturn;
-
-    // Set the position of the detected obstacle relative to the
-    // sensor.
-    positionToReturn.y = sensorDistance;
-
-    // Transform the position from being relative to the sensor, to
-    // being relative to the robot.
-    positionToReturn.transformByPose(localSensorPose);
-
-    // Transform the position from being relative to the robot, to
-    // being relative to the global coordinate system.
-    positionToReturn.transformByPose(robotPose);
-
-    return positionToReturn;
-}
-
-// TODO fix this lol
-void runAwayFromBumper(byte bumperData) {
-    if (bumperData) {
-        navigator.hitBumper(bumperData);
-        systemState = FollowingPath;
-    }
-}
-
-Position leftStatingCorner_Global;
-Position leftEndingCorner_Global;
-
-void setStatingPosition() {
-    // Serial.print(" Usonic Wall:");
-    // Serial.print(ultrasonic.readFromRobotCenter());
-    // Serial.print(" :");
-    // Serial.println();
-
-    // This code is about the be written really badly
-    // But why bother refactoring when this code is only ran during startup.
-    // Its not like were working with GTA 5 Loading times here, theres not much
-    // need for optimization at this stage.
-
-    static int innerStage = 0;
-    // 1 - turn 90, to 180°
-    // 2 - Alight with the left wall, this is the wall where x = 0;
-    // 3 - read the distance from the wall, and set that to the robots x
-    // position
-    // 4 - turn 90, to -90°
-    // 5 - Alight with the Back wall, where y = 0;
-    // 6 - Set the robots Y position from the ultrasonic reading.
-    // 7  - turn 180, to 90°
-    // Then start the program
-
-    pixels.setAll(0, 255, 255);
-
-    int FLDist;
-    int FRDist;
-
-    switch (innerStage) {
-        case 0:
-            navigator.turnLeft();
-            innerStage++;
-            break;
-        case 1:
-            navigator.moveToTarget();
-            if (navigator.hasNoPath()) {
-                innerStage++;
-            }
-            break;
-        case 2:
-            pixels.setAll(0, 0, 255);
-
-            // TODO add the bit to catch misalignment.
-            FLDist = frontLeftInfrared.readSafe();
-            FRDist = frontRightInfrared.readSafe();
-
-            if (FLDist < FRDist) {
-                drive.turnLeft();
-            } else if (FLDist > FRDist) {
-                drive.turnRight();
+            if (robotIsBelowLine) {
+                brickToAdd.position.y = lineCentrePoint.y + (BRICK_LENGTH / 2);
             } else {
-                drive.stop();
-                motionTracker.umActually();
-                innerStage++;
+                brickToAdd.position.y = lineCentrePoint.y - (BRICK_LENGTH / 2);
             }
+            brickList.attemptAppendBrick(brickToAdd);
+            hasSentABrickOff = true;
+        }
+        if ((length > 210) && (length < 290)) {
+            // Serial.println("LONG SIDE OF BRICK");
 
-            break;
+            Brick brickToAdd;
 
-        case 3:
+            brickToAdd.position.x = lineCentrePoint.x;
+            brickToAdd.isVertical = false;
 
-            motionTracker.setInitialX(ultrasonic.readFromRobotCenter());
-
-            navigator.turnLeft();
-            innerStage++;
-
-            break;
-
-        case 4:
-            navigator.moveToTarget();
-            if (navigator.hasNoPath()) {
-                innerStage++;
-            }
-            break;
-
-        case 5:
-            pixels.setAll(0, 0, 255);
-
-            // TODO add the bit to catch misalignment.
-            FLDist = frontLeftInfrared.readSafe();
-            FRDist = frontRightInfrared.readSafe();
-
-            if (FLDist < FRDist) {
-                drive.turnLeft();
-            } else if (FLDist > FRDist) {
-                drive.turnRight();
+            if (robotIsBelowLine) {
+                brickToAdd.position.y = lineCentrePoint.y + (BRICK_WIDTH / 2);
             } else {
-                drive.stop();
-                motionTracker.umActually();
-                innerStage++;
+                brickToAdd.position.y = lineCentrePoint.y - (BRICK_WIDTH / 2);
             }
-
-            break;
-
-        case 6:
-            motionTracker.setInitialY(ultrasonic.readFromRobotCenter());
-
-            navigator.turn(180);
-            innerStage++;
-
-            break;
-
-        case 7:
-            navigator.moveToTarget();
-            if (navigator.hasNoPath()) {
-                readyToGo = true;
-            }
-            break;
+            brickList.attemptAppendBrick(brickToAdd);
+            hasSentABrickOff = true;
+        }
+    }
+    if (hasSentABrickOff) {
+        sendData();
     }
 }
 
-void driveTaxi() {
+// TODO rename
+bool blockyBlockBlock(Position robotPosition, Angle angleOfSensor,
+                      int measuredDistance) {
+    bool needsRecalibration = false;
+
+    if (!angleOfSensor.isOrthogonal()) {
+        // This function only works with orthogonal angles
+        return false;
+    }
+
+    // if the thing is octagonally upwards.
+
+    bool pointingDown = angleOfSensor.isOrthogonallyDown();
+    bool pointingLeft = angleOfSensor.isOrthogonallyLeft();
+    bool pointingUp = angleOfSensor.isOrthogonallyUp();
+    bool pointingRight = angleOfSensor.isOrthogonallyRight();
+
+    Position brickEdgePosition;
+
+    if (pointingDown) {
+        brickEdgePosition = {0, -(float)measuredDistance};
+    } else if (pointingLeft) {
+        brickEdgePosition = {-(float)measuredDistance, 0};
+    } else if (pointingUp) {
+        brickEdgePosition = {0, (float)measuredDistance};
+    } else if (pointingRight) {
+        brickEdgePosition = {(float)measuredDistance, 0};
+    }
+
+    brickEdgePosition += robotPosition;
+
+    int comparison =
+        brickList.compare(robotPosition, angleOfSensor, measuredDistance);
+
+    if (comparison == 1) {
+        // Serial.println("Comp 1");
+
+        Position positionA;
+        Position positionB;
+
+        Position positionC;
+        Position positionD;
+
+        if (pointingDown) {
+            if (brickEdgePosition.y < 250) {
+                return false;
+            }
+
+            positionA.x = brickEdgePosition.x + BRICK_WIDTH / 2;
+            positionA.y = brickEdgePosition.y;
+            positionB.x = brickEdgePosition.x - BRICK_WIDTH / 2;
+            positionB.y = brickEdgePosition.y - BRICK_LENGTH;
+
+            positionC.x = brickEdgePosition.x + BRICK_LENGTH / 2;
+            positionC.y = brickEdgePosition.y;
+            positionD.x = brickEdgePosition.x - BRICK_LENGTH / 2;
+            positionD.y = brickEdgePosition.y - BRICK_WIDTH;
+        }
+
+        if (pointingLeft) {
+            if (brickEdgePosition.x < 250) {
+                return false;
+            }
+            positionA.x = brickEdgePosition.x;
+            positionA.y = brickEdgePosition.y - BRICK_WIDTH / 2;
+            positionB.x = brickEdgePosition.x - BRICK_LENGTH;
+            positionB.y = brickEdgePosition.y + BRICK_WIDTH / 2;
+
+            positionC.x = brickEdgePosition.x;
+            positionC.y = brickEdgePosition.y - BRICK_LENGTH / 2;
+            positionD.x = brickEdgePosition.x - BRICK_WIDTH;
+            positionD.y = brickEdgePosition.y + BRICK_LENGTH / 2;
+        }
+        if (pointingUp) {
+            if (brickEdgePosition.y > 1750) {
+                return false;
+            }
+            positionA.x = brickEdgePosition.x - BRICK_WIDTH / 2;
+            positionA.y = brickEdgePosition.y;
+            positionB.x = brickEdgePosition.x + BRICK_WIDTH / 2;
+            positionB.y = brickEdgePosition.y + BRICK_LENGTH;
+
+            positionC.x = brickEdgePosition.x - BRICK_LENGTH / 2;
+            positionC.y = brickEdgePosition.y;
+            positionD.x = brickEdgePosition.x + BRICK_LENGTH / 2;
+            positionD.y = brickEdgePosition.y + BRICK_WIDTH;
+        }
+        if (pointingRight) {
+            if (brickEdgePosition.x > 1250) {
+                return false;
+            }
+            positionA.x = brickEdgePosition.x;
+            positionA.y = brickEdgePosition.y + BRICK_WIDTH / 2;
+            positionB.x = brickEdgePosition.x + BRICK_LENGTH;
+            positionB.y = brickEdgePosition.y - BRICK_WIDTH / 2;
+
+            positionC.x = brickEdgePosition.x;
+            positionC.y = brickEdgePosition.y + BRICK_LENGTH / 2;
+            positionD.x = brickEdgePosition.x + BRICK_WIDTH;
+            positionD.y = brickEdgePosition.y - BRICK_LENGTH / 2;
+        }
+
+        bool hasRanOffMaze = false;
+        bool brickCouldBeVert =
+            gridMap.safeForBrick(positionA, positionB, &hasRanOffMaze);
+
+        // disregard any values that are too close to the edge.
+        if (hasRanOffMaze) {
+            return false;
+        }
+        bool brickCouldBeHor =
+            gridMap.safeForBrick(positionC, positionD, &hasRanOffMaze);
+
+        if (hasRanOffMaze) {
+            return false;
+        }
+
+        if (brickCouldBeVert) {
+        } else if (brickCouldBeHor) {
+            brickList.setBrickFromApproximation(brickEdgePosition,
+                                                angleOfSensor);
+        }
+    } else if (comparison == -1) {
+        needsRecalibration = true;
+    }
+    return needsRecalibration;
+}
+
+void followingLeftWall_S() {
     Pose robotPose = motionTracker.getPose();
+    Position robotPosition = motionTracker.getPosition();
+    Angle robotAngle = motionTracker.getAngle();
 
-    Angle closest90 = robotPose.angle.toClosestRightAngle();
-    int taxiOffsetAngle = closest90 - robotPose.angle;
+    static Goal lastGoal = NoGoal;
+    bool goalChanged = lastGoal != currentGoal_G;
+    lastGoal = currentGoal_G;
 
-    drive.forwards(taxiOffsetAngle);
+    static Position otherSideOfMaze;
 
-    int frontUSDistance = ultrasonic.read();
+    static int halfLaps;
+
+    static Position innerStartPosition;
+    static bool innerBeenFarEnough;
+
+    if (goalChanged) {
+        if (currentGoal_G == MapOuter) {
+            otherSideOfMaze = {1300, 1800};
+            halfLaps = 0;
+        }
+        if (currentGoal_G == MapInner) {
+            innerStartPosition = robotPosition;
+            innerBeenFarEnough = false;
+        }
+    }
+
+    static Position leftStatingCorner;
+    static Position leftEndingCorner;
+    static Position rightStatingCorner;
+    static Position rightEndingCorner;
+
+    if (currentGoal_G == MapOuter) {
+        const int targetTolerance_C = 200;
+
+        // TODO refactor
+        int squaredDistTotherSide =
+            robotPosition.calculateSquaredDistanceTo(otherSideOfMaze);
+
+        if (squaredDistTotherSide < (targetTolerance_C * targetTolerance_C)) {
+            halfLaps += 1;
+            bool halfLapsIsOdd = halfLaps & 1;
+            if (halfLapsIsOdd) {
+                otherSideOfMaze = {200, 200};
+            } else {
+                otherSideOfMaze = {1300, 1800};
+            }
+
+            if (halfLaps == 2) {
+                currentGoal_G = Launch1;
+            }
+        }
+    }
+    if (currentGoal_G == MapInner) {
+        // TODO refactor
+
+        bool doneInnerLap = false;
+
+        const int innerOuterTolerance = 150;
+        const int innerInnerTolerance = 75;
+
+        int squaredDistFromInnerStart =
+            robotPosition.calculateSquaredDistanceTo(innerStartPosition);
+
+        if (squaredDistFromInnerStart >
+            (innerOuterTolerance * innerOuterTolerance)) {
+            innerBeenFarEnough = true;
+        }
+
+        if (squaredDistFromInnerStart <
+            (innerInnerTolerance * innerInnerTolerance)) {
+            if (innerBeenFarEnough) {
+                doneInnerLap = true;
+            }
+        }
+        if (doneInnerLap) {
+            currentGoal_G = DriveToStart;
+            UseMazeToGoTo({200, 200});
+        }
+    }
+
+    int orthogonalOffset = robotAngle.OrthogonalOffset();
+    drive.forwards(orthogonalOffset);
+
+    int frontUSDistance = ultrasonic.readFromRobotCenter();
+
+    if (abs(robotAngle.isOrthogonal()) <= 2) {
+        Angle roundedRobotAngle = robotAngle.closestOrthogonal();
+
+        static PassiveSchedule RENAME_ME(100);
+
+        static int ALSO_RENAME_ME = 0;
+
+        if (RENAME_ME.isReadyToRun()) {
+            int leftIRDistance = leftInfrared.readFromRobotCenter();
+            // int rightIRDistance = rightInfrared.readFromRobotCenter();
+
+            if ((ALSO_RENAME_ME == 0) && (frontUSDistance > 120)) {
+                blockyBlockBlock(robotPosition, roundedRobotAngle,
+                                 frontUSDistance);
+            } else if ((ALSO_RENAME_ME == 1) && (leftIRDistance > 120)) {
+                bool needsCalibrating = blockyBlockBlock(
+                    robotPosition, roundedRobotAngle + 90, leftIRDistance);
+
+                if (needsCalibrating) {
+                    // navigator.turnLeft();
+                }
+            }
+
+            // else if ((ALSO_RENAME_ME == 2) && (rightIRDistance > 120)) {
+            //     blockyBlockBlock(robotPosition, robotAngle - 90,
+            //                      rightIRDistance);
+            // }
+
+            ALSO_RENAME_ME++;
+            ALSO_RENAME_ME %= 2;
+        }
+    }
 
     if (leftInfrared.brickAppeared(150, 50)) {
         float distanceToWall = leftInfrared.readFromRobotCenter(false);
-        // Serial.print("Wall appeared ");
-        // Serial.print(distanceToWall);
-        // Serial.println(" cm away.");
 
-        Position leftStatingCorner_Local = {-(distanceToWall), 0};
-        leftStatingCorner_Local.transformByPose(robotPose);
+        leftStatingCorner = {-(distanceToWall), -40};
+        leftStatingCorner.transformByPose(robotPose);
 
-        Corner cornerToAdd;
-        cornerToAdd.position = leftStatingCorner_Local;
-        cornerToAdd.index = 0;
-
-        cornerQueue.push(cornerToAdd);
+        maybePlonkAgainstWall(leftStatingCorner);
     };
 
     if (leftInfrared.brickDisappeared(150, 50)) {
         float distanceToWall = leftInfrared.readFromRobotCenter(true);
-        // Serial.print("Wall disappeared ");
-        // Serial.print(distanceToWall);
-        // Serial.println(" cm away.");
 
-        Position leftEndingCorner_Local = {-(distanceToWall), 0};
-        leftEndingCorner_Local.transformByPose(robotPose);
+        leftEndingCorner = {-(distanceToWall), 0};
+        leftEndingCorner.transformByPose(robotPose);
 
-        Corner cornerToAdd;
-        cornerToAdd.position = leftEndingCorner_Local;
-        cornerToAdd.index = 1;
+        twoCornersToBrick(robotPosition, leftStatingCorner, leftEndingCorner);
 
-        cornerQueue.push(cornerToAdd);
+        if (currentGoal_G == Launch1) {
+            currentGoal_G = DriveToEndMaybe;
+            UseMazeToGoTo({1300, 1800});
+        } else {
+            drive.stop();
+            sendData();
 
-        // lineToBlock(leftStatingCorner_Global, leftEndingCorner_Global,
-        //             robotPose.position);
-        stopAndSend();
-
-        navigator.turnLeft(150);
-        systemState = FollowingPath;
+            navigator.turnLeft(150);
+        }
     }
 
     if (rightInfrared.brickAppeared(150, 50)) {
         float distanceToWall = rightInfrared.readFromRobotCenter(false);
-        // Serial.print("Wall appeared ");
-        // Serial.print(distanceToWall);
-        // Serial.println(" cm away.");
-
-        Position rightStatingCorner_Local = {(distanceToWall), 0};
-        rightStatingCorner_Local.transformByPose(robotPose);
-
-        Corner cornerToAdd;
-        cornerToAdd.position = rightStatingCorner_Local;
-        cornerToAdd.index = 2;
-
-        cornerQueue.push(cornerToAdd);
-    };
+        rightStatingCorner = {(distanceToWall), 0};
+        rightStatingCorner.transformByPose(robotPose);
+    }
 
     if (rightInfrared.brickDisappeared(150, 50)) {
         float distanceToWall = rightInfrared.readFromRobotCenter(true);
-        // Serial.print("Wall disappeared ");
-        // Serial.print(distanceToWall);
-        // Serial.println(" cm away.");
 
-        Position rightEndingCorner_Local = {(distanceToWall), 0};
-        rightEndingCorner_Local.transformByPose(robotPose);
+        rightEndingCorner = {(distanceToWall), 0};
+        rightEndingCorner.transformByPose(robotPose);
 
-        Corner cornerToAdd;
-        cornerToAdd.position = rightEndingCorner_Local;
-        cornerToAdd.index = 3;
-
-        cornerQueue.push(cornerToAdd);
+        twoCornersToBrick(robotPosition, rightStatingCorner, rightEndingCorner);
     }
 
     // if a wall is there
-    if (frontUSDistance < 100 && frontUSDistance != -1) {
-        stopAndSend();
-        systemState = WallsInMyFace;
+    if (frontUSDistance < 185 && frontUSDistance != -1) {
+        nextState_GP = aligningWithWall_S;
+
+        drive.stop();
+        sendData();
     }
 }
 
-void aligning() {
+void aligningWithWall_S() {
     int FLDist = frontLeftInfrared.readSafe();
     int FRDist = frontRightInfrared.readSafe();
 
@@ -481,7 +641,7 @@ void aligning() {
         Serial.println("I cant read this");
 
         navigator.turnRight();
-        systemState = FollowingPath;
+        nextState_GP = followingLeftWall_S;
         return;
     }
 
@@ -492,85 +652,101 @@ void aligning() {
     } else {  // is aligned
         drive.stop();
 
-        motionTracker.umActually();  // Sets the current angle to the closest 90
+        int frontDistance = ultrasonic.readFromRobotCenter();
+
+        int leftDistance = leftInfrared.readFromRobotCenter();
+
+        // Sets the current angle to the closest 90
+        int thingy = motionTracker.umActually(frontDistance, leftDistance);
+
+        if (thingy == 1) {
+            pixels.setAll(255, 0, 0, true);
+            // TODO remove
+            delay(100);
+        }
+        if (thingy == 2) {
+            pixels.setAll(255, 87, 51, true);
+            // TODO remove
+            delay(100);
+        }
+
+        sendData();
 
         navigator.turnRight();
-        systemState = FollowingPath;
+        nextState_GP = followingLeftWall_S;
     }
 }
 
-void followPath() {
-    if (navigator.hasNoPath()) {
-        systemState = startingSystemState;
-    } else {
-        navigator.moveToTarget();
-    }
-}
-
-void chilling() { drive.stop(); }
-
-void ready() {
+void stopped_S() {
     drive.stop();
 
-    if (ultrasonic.read() < 200) {
-        systemState = DriveTaxi;
-    }
+    pixels.setAll(255, 255, 255);
 }
 
-Angle angleToDrive = 90;
+void UseMazeToGoTo(Position positionToGoTo) {
+    drive.stop();
+    pixels.setAll(255, 87, 51, true);
+    // TODO add something to show that it is loading
+    gridMap.solve(brickList, positionToGoTo);
 
-void doMaze() {
-    Pose currentPose = motionTracker.getPose();
+    nextState_GP = followingMaze_S;
+}
 
-    gridMap.maybeUpdateAngle(currentPose.position, &angleToDrive);
+void followingMaze_S() {
+    static Angle angleToDrive = 90;
 
-    Angle angleToTurn = angleToDrive - currentPose.angle;
+    const int range = 100;
 
-    int distanceToEndMM = gridMap.getDistanceToEndMM(currentPose.position);
+    Position robotPosition = motionTracker.getPosition();
+    Angle robotAngle = motionTracker.getAngle();
+
+    gridMap.getAngle(robotPosition, &angleToDrive);
+
+    Angle angleToTurn = angleToDrive - robotAngle;
 
     drive.forwards(angleToTurn);
-    if (distanceToEndMM < 100) {
+
+    // TODO refactor this with Squared Method.
+    int distanceToEndMM = gridMap.getEuclideanDistanceToEnd(robotPosition);
+
+    if (distanceToEndMM < range) {
+        if (currentGoal_G == DriveToEndMaybe) {
+            nextState_GP = celebrating_S;
+            currentGoal_G = Won;
+        }
+        if (currentGoal_G == DriveToStart) {
+            UseMazeToGoTo({1300, 1800});
+        }
+        if (currentGoal_G == DriveToEnd) {
+            nextState_GP = celebrating_S;
+            currentGoal_G = Won;
+        }
+    }
+}
+
+void celebrating_S() {
+    drive.stop();
+    pixels.setAll(255, 255, 0);
+}
+
+void colourCodeState(voidFuncPtr currentState_P) {
+    if (currentState_P == followingLeftWall_S) {
+        pixels.setAll(255, 255, 255);
+    } else if (currentState_P == aligningWithWall_S) {
+        pixels.setAll(0, 0, 255);
+    } else if (currentState_P == stopped_S) {
+        pixels.setAll(255, 105, 180);
+    } else if (currentState_P == followingMaze_S) {
+        pixels.setAll(255, 0, 255);
+    } else if (currentState_P == celebrating_S) {
         pixels.setAll(255, 255, 0);
-        drive.stop();
     }
 }
 
-void doState(SystemState stateToExecute) {
-    // printState(stateToExecute);
+PassiveSchedule oneSecond(1000);
+PassiveSchedule fiveSecond(5000);
 
-    switch (stateToExecute) {
-        case DriveTaxi:
-            pixels.setAll(255, 255, 255);
-            driveTaxi();
-            break;
-
-        case WallsInMyFace:
-            pixels.setAll(0, 0, 255);
-            aligning();
-            break;
-
-        case FollowingPath:
-            pixels.setAll(0, 255, 0);
-            followPath();
-            break;
-
-        case Chilling:
-            pixels.setAll(255, 105, 180);
-            chilling();
-            break;
-        case Ready:
-            pixels.setAll(105, 105, 0);
-            ready();
-
-            break;
-        case Mazing:
-            pixels.setAll(255, 0, 255);
-            doMaze();
-            break;
-    }
-}
-
-PassiveSchedule five(5000);
+void followPathInstead() {}
 
 void loop() {
     polls();
@@ -579,34 +755,71 @@ void loop() {
     //     // findEdges();
     // }
 
-    byte bumperValue = bumper.read();
-    if (bumperValue && readyToGo) {
-        runAwayFromBumper(bumperValue);
+    byte bumperData = bumper.read();
+    if (bumperData) {
+        readyToGo = true;
+        navigator.hitBumper(bumperData);
+
+        bool isDriveToEndMaybe = (currentGoal_G == DriveToEndMaybe);
+
+        Position robotPosition = motionTracker.getPosition();
+
+        // Get the position of the crash point.
+
+        bool inFromLeft = (robotPosition.x > 300);
+        bool inFromRight = (robotPosition.x < 1200);
+        bool inFromBottom = (robotPosition.y > 600);
+        bool inFromTop = (robotPosition.y < 1400);
+
+        bool inMiddle =
+            (inFromLeft && inFromRight && inFromBottom && inFromTop);
+
+        Serial.print(" isDriveToEndMaybe:");
+        Serial.print(isDriveToEndMaybe);
+        Serial.print(" inFromLeft:");
+        Serial.print(inFromLeft);
+        Serial.print(" inFromRight:");
+        Serial.print(inFromRight);
+        Serial.print(" inFromBottom:");
+        Serial.print(inFromBottom);
+        Serial.print(" inFromTop:");
+        Serial.println(inFromTop);
+
+        if ((isDriveToEndMaybe) && (inMiddle)) {
+            Serial.println("MApping Inner");
+            currentGoal_G = MapInner;
+            nextState_GP = followingLeftWall_S;
+        }
     }
 
-    // if (second.isReadyToRun()) {
-    //     Serial.println(motionTracker.getPose());
-    // }
+    if (oneSecond.isReadyToRun()) {
+        Position robotPosition = motionTracker.getPosition();
 
-    pixels.clear();
+        gridMap.snowPlow(robotPosition);
+    }
+
+    colourCodeState(nextState_GP);
 
     if (readyToGo) {
-        doState(systemState);
-    } else {
-        setStatingPosition();
+        if (!navigator.hasNoPath()) {
+            // pixels.setAll(0, 255, 0);
+            navigator.moveToTarget();
+        } else {
+            nextState_GP();
+        }
     }
 
-    // pixels.clear();
+    pixels.clear();
     pixels.show();
 
     if (Serial.available() > 0) {
         String data = Serial.readString();
-        const int maxArgs = 10;
-        String args[maxArgs];
+        const int maxArgs_C = 10;
+        String args[maxArgs_C];
         int foundArgs = 0;
         int spaceIndex = 0;
 
-        while ((data.length() > 0) && (foundArgs < maxArgs) &&
+        while ((data.length() > 0) && (foundArgs < maxArgs_C) &&
                (spaceIndex != -1)) {
             spaceIndex = data.indexOf(" ");
             args[foundArgs] = data.substring(0, spaceIndex);
@@ -620,23 +833,41 @@ void loop() {
     }
 }
 
-// Short Sides are looking like 56,49
-// Long side looks like 222,228
-// Readings are seeming to be like 20-30 mm shy
-
-// TODO swap distance comparison for squared length comparison.
-
 /*
-Blocking Rules
 
-if a
+Do 2 laps of the maze, this maps out most of the blocks
 
+Solve the maize to goto the centre of the map, if anything is hit
 
+point towards the centre, then do a left wall follow,
 
+once 2 laps are done,
 
+Solve the maze to goto the Start of the map,
 
+,solve the maze to go to the end,
+
+set the colour to purple and traverse the maze,
+
+//end State.
 
 
 
 
 */
+
+// TODO list
+//  standardize a new naming convention
+//   _G = global
+//   _L = local version of a global or pointer
+//   _C = constant
+//   _T = test variable
+//   _P = pointer
+//   _S = state
+//   _I = index
+
+// Tick off all TODOs.
+
+// Give everting a sensible name.
+
+// DOcument all code.

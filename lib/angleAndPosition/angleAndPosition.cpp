@@ -81,7 +81,7 @@ Angle Angle::operator-=(int16_t valueToSub) {
  */
 double Angle::toRadians() { return radians(this->_value); }
 
-Angle Angle::toClosestRightAngle() {
+Angle Angle::closestOrthogonal() {
     int tempValue = this->_get360();
 
     tempValue += 45;
@@ -93,6 +93,34 @@ Angle Angle::toClosestRightAngle() {
     Angle angleToReturn = (Angle)closest90;
 
     return angleToReturn;
+}
+
+Angle Angle::OrthogonalOffset() {
+    Angle OrthogonalOffset = this->closestOrthogonal() - *this;
+    return OrthogonalOffset;
+}
+
+bool Angle::isOrthogonal() {
+    bool isOrthogonal = (this->OrthogonalOffset() == 0);
+
+    return isOrthogonal;
+}
+
+bool Angle::isOrthogonallyDown() {
+    bool isOrthogonallyDown = (*this == -90);
+    return isOrthogonallyDown;
+}
+bool Angle::isOrthogonallyLeft() {
+    bool isOrthogonallyLeft = (*this == 180);
+    return isOrthogonallyLeft;
+}
+bool Angle::isOrthogonallyUp() {
+    bool isOrthogonallyUp = (*this == 90);
+    return isOrthogonallyUp;
+}
+bool Angle::isOrthogonallyRight() {
+    bool isOrthogonallyRight = (*this == 0);
+    return isOrthogonallyRight;
 }
 
 /**

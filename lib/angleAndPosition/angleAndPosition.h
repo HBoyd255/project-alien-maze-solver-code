@@ -84,7 +84,16 @@ class Angle {
     double toRadians();
 
     // TODO document
-    Angle toClosestRightAngle();
+    Angle closestOrthogonal();
+
+    Angle OrthogonalOffset();
+
+    bool isOrthogonal();
+
+    bool isOrthogonallyDown();
+    bool isOrthogonallyLeft();
+    bool isOrthogonallyUp();
+    bool isOrthogonallyRight();
 
     /**
      * @brief Returns the index of the segments at the current angle.
