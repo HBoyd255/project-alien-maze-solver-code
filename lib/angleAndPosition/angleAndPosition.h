@@ -88,12 +88,12 @@ class Angle {
 
     Angle OrthogonalOffset();
 
-    bool isOrthogonal();
+    bool isOrthogonal(int tolerance = 0);
 
-    bool isOrthogonallyDown();
-    bool isOrthogonallyLeft();
-    bool isOrthogonallyUp();
-    bool isOrthogonallyRight();
+    bool isOrthogonallyDown(int tolerance = 0);
+    bool isOrthogonallyLeft(int tolerance = 0);
+    bool isOrthogonallyUp(int tolerance = 0);
+    bool isOrthogonallyRight(int tolerance = 0);
 
     /**
      * @brief Returns the index of the segments at the current angle.

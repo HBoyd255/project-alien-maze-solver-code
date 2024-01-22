@@ -101,11 +101,118 @@ void Map::_primeFromBrickList(BrickList brickList) {
     }
 }
 
+void Map::_snowPlow2(MapPoint innerPoint) {
+    MapPoint circlePoints[120] = {
+        {-4, -11}, {-3, -11}, {-2, -11}, {-1, -11}, {0, -11},  {1, -11},
+        {2, -11},  {3, -11},  {4, -11},  {-6, -10}, {-5, -10}, {-4, -10},
+        {-3, -10}, {-2, -10}, {-1, -10}, {1, -10},  {2, -10},  {3, -10},
+        {4, -10},  {5, -10},  {6, -10},  {-7, -9},  {-6, -9},  {-5, -9},
+        {5, -9},   {6, -9},   {7, -9},   {-8, -8},  {-7, -8},  {7, -8},
+        {8, -8},   {-9, -7},  {-8, -7},  {8, -7},   {9, -7},   {-10, -6},
+        {-9, -6},  {9, -6},   {10, -6},  {-10, -5}, {-9, -5},  {9, -5},
+        {10, -5},  {-11, -4}, {-10, -4}, {10, -4},  {11, -4},  {-11, -3},
+        {-10, -3}, {10, -3},  {11, -3},  {-11, -2}, {-10, -2}, {10, -2},
+        {11, -2},  {-11, -1}, {-10, -1}, {10, -1},  {11, -1},  {-11, 0},
+        {11, 0},   {-11, 1},  {-10, 1},  {10, 1},   {11, 1},   {-11, 2},
+        {-10, 2},  {10, 2},   {11, 2},   {-11, 3},  {-10, 3},  {10, 3},
+        {11, 3},   {-11, 4},  {-10, 4},  {10, 4},   {11, 4},   {-10, 5},
+        {-9, 5},   {9, 5},    {10, 5},   {-10, 6},  {-9, 6},   {9, 6},
+        {10, 6},   {-9, 7},   {-8, 7},   {8, 7},    {9, 7},    {-8, 8},
+        {-7, 8},   {7, 8},    {8, 8},    {-7, 9},   {-6, 9},   {-5, 9},
+        {5, 9},    {6, 9},    {7, 9},    {-6, 10},  {-5, 10},  {-4, 10},
+        {-3, 10},  {-2, 10},  {-1, 10},  {1, 10},   {2, 10},   {3, 10},
+        {4, 10},   {5, 10},   {6, 10},   {-4, 11},  {-3, 11},  {-2, 11},
+        {-1, 11},  {0, 11},   {1, 11},   {2, 11},   {3, 11},   {4, 11}};
+
+    for (int i = 0; i < 120; i++) {
+        MapPoint outerPoint = innerPoint + circlePoints[i];
+
+        bool outerIsValid = this->_validatePoint(outerPoint);
+
+        if (outerIsValid) {
+            this->_setBlocked(outerPoint, true);
+        }
+    }
+}
+
+void Map::_primeFromSeen() {
+    for (int index = 0; index < this->_dimension; index++) {
+        int x = index % this->_width;
+        int y = index / this->_width;
+        MapPoint scanPoint = MapPoint(x, y);
+
+        if (x <= 12) {
+            this->_setBlocked(scanPoint, true);
+        }
+        if (x >= 138) {
+            this->_setBlocked(scanPoint, true);
+        }
+        if (y <= 12) {
+            this->_setBlocked(scanPoint, true);
+        }
+        if (y >= 188) {
+            this->_setBlocked(scanPoint, true);
+        }
+
+        if (this->_getSeen(scanPoint)) {
+            this->_snowPlow2(scanPoint);
+        }
+    }
+}
+
 void Map::solve(BrickList brickList, Position endPosition) {
     MapPoint endPoint;
     endPoint.setFromPosition(endPosition);
 
     this->_primeFromBrickList(brickList);
+
+    if (!_validatePoint(endPoint)) {
+        Serial.println("Point out of bounds.");
+
+        return;
+    }
+    std::queue<MapPoint> pointQueue;
+    pointQueue.push(endPoint);
+    this->_setDistanceToGoal(endPoint, 0);
+
+    this->_endPoint = endPoint;
+
+    while (!pointQueue.empty()) {
+        MapPoint innerPoint = pointQueue.front();
+        uint16_t innerValue = this->_getDistanceToGoal(innerPoint);
+
+        pointQueue.pop();
+
+        for (int direction_I = 0; direction_I < 8; direction_I++) {
+            // TODO make this better
+            bool goingDiagonal = direction_I & 1;
+
+            MapPoint outerPoint = innerPoint + this->_neighbors[direction_I];
+            uint16_t existingOuterValue = this->_getDistanceToGoal(outerPoint);
+
+            int distanceToOuterPoint =
+                (goingDiagonal) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
+
+            int newOuterValue = innerValue + distanceToOuterPoint;
+
+            bool outerIsValid = this->_validatePoint(outerPoint);
+            bool outerNotBlocked = !(this->_getBlocked(outerPoint));
+            bool newOuterIsSmaller = newOuterValue < existingOuterValue;
+
+            if (outerIsValid && outerNotBlocked && newOuterIsSmaller) {
+                this->_setDistanceToGoal(outerPoint, newOuterValue);
+                pointQueue.push(outerPoint);
+            }
+        }
+    }
+    this->_populateDirections();
+}
+
+void Map::solveFromSeen(Position endPosition) {
+    MapPoint endPoint;
+    endPoint.setFromPosition(endPosition);
+
+    this->_primeFromSeen();
 
     if (!_validatePoint(endPoint)) {
         Serial.println("Point out of bounds.");
@@ -211,6 +318,7 @@ void Map::primeForTracking() {
         MapPoint scanPoint = MapPoint(x, y);
 
         this->_setBeen(scanPoint, false);
+        this->_setSeen(scanPoint, false);
     }
 }
 
@@ -288,6 +396,14 @@ bool Map::safeForBrick(Position positionA, Position positionB,
 
     return safeForBrick;
 }
+
+void Map::seenPosition(Position seenPosition) {
+    MapPoint seenPoint;
+    seenPoint.setFromPosition(seenPosition);
+
+    this->_setSeen(seenPoint, true);
+}
+
 // TODO refactor this function
 void Map::_populateDirections() {
     for (int index = 0; index < this->_dimension; index++) {
@@ -447,6 +563,22 @@ uint8_t Map::_getDistanceToWall(MapPoint point) {
 void Map::_setDistanceToWall(MapPoint point, uint8_t newIncrease) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].distanceToWall = newIncrease;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+    }
+}
+
+bool Map::_getSeen(MapPoint point) {
+    if (this->_validatePoint(point)) {
+        return this->_mapData[point.y][point.x].seen;
+    } else {
+        Serial.println("Out of range");  // TODO handle this error properly.
+        return 0;
+    }
+}
+void Map::_setSeen(MapPoint point, bool seenStatus) {
+    if (this->_validatePoint(point)) {
+        this->_mapData[point.y][point.x].seen = seenStatus;
     } else {
         Serial.println("Out of range");  // TODO handle this error properly.
     }

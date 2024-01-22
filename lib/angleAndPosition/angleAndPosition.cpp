@@ -100,27 +100,47 @@ Angle Angle::OrthogonalOffset() {
     return OrthogonalOffset;
 }
 
-bool Angle::isOrthogonal() {
-    bool isOrthogonal = (this->OrthogonalOffset() == 0);
+bool Angle::isOrthogonal(int tolerance) {
+    bool isOrthogonal = (abs((int)this->OrthogonalOffset()) <= tolerance);
 
     return isOrthogonal;
 }
 
-bool Angle::isOrthogonallyDown() {
-    bool isOrthogonallyDown = (*this == -90);
-    return isOrthogonallyDown;
+bool Angle::isOrthogonallyDown(int tolerance) {
+    const int targetAngle = -90;
+
+    bool isOrthogonal = this->isOrthogonal(tolerance);
+
+    bool pointingDown = this->closestOrthogonal() == targetAngle;
+
+    return isOrthogonal && pointingDown;
 }
-bool Angle::isOrthogonallyLeft() {
-    bool isOrthogonallyLeft = (*this == 180);
-    return isOrthogonallyLeft;
+bool Angle::isOrthogonallyLeft(int tolerance) {
+    const int targetAngle = 180;
+
+    bool isOrthogonal = this->isOrthogonal(tolerance);
+
+    bool pointingLeft = this->closestOrthogonal() == targetAngle;
+
+    return isOrthogonal && pointingLeft;
 }
-bool Angle::isOrthogonallyUp() {
-    bool isOrthogonallyUp = (*this == 90);
-    return isOrthogonallyUp;
+bool Angle::isOrthogonallyUp(int tolerance) {
+    const int targetAngle = 90;
+
+    bool isOrthogonal = this->isOrthogonal(tolerance);
+
+    bool pointingUp = this->closestOrthogonal() == targetAngle;
+
+    return isOrthogonal && pointingUp;
 }
-bool Angle::isOrthogonallyRight() {
-    bool isOrthogonallyRight = (*this == 0);
-    return isOrthogonallyRight;
+bool Angle::isOrthogonallyRight(int tolerance) {
+    const int targetAngle = 0;
+
+    bool isOrthogonal = this->isOrthogonal(tolerance);
+
+    bool pointingRight = this->closestOrthogonal() == targetAngle;
+
+    return isOrthogonal && pointingRight;
 }
 
 /**

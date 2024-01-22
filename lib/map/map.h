@@ -1,8 +1,8 @@
 /**
  * @file map.h
  * @brief Declarations of the Mapping objects, MapPoint, MapItem and Map.
- * Responsible for implementing a modified version of a floodfill algorithm.
- * 
+ * Responsible for implementing a modified version of a flood fill algorithm.
+ *
  * @author Harry Boyd - github.com/HBoyd255
  * @date 2024-01-19
  * @copyright Copyright (c) 2024
@@ -65,6 +65,7 @@ struct __attribute__((packed)) MapItem {
     unsigned int direction : 3;  // degrees / 45
     unsigned int distanceToGoal : 11;
     unsigned int distanceToWall : 8;
+    unsigned int seen : 1;
 };
 
 class Map {
@@ -72,6 +73,7 @@ class Map {
     Map();
 
     void solve(BrickList brickList, Position endPosition);
+    void solveFromSeen(Position endPosition);
 
     void getAngle(Position robotPosition, Angle* angleToUpdatePtr);
     float getEuclideanDistanceToEnd(Position robotPosition);
@@ -88,6 +90,8 @@ class Map {
 
     bool safeForBrick(Position positionA, Position positionB, bool* hitWall_P);
 
+    void seenPosition(Position seenPosition);
+
    private:
     MapItem _mapData[MAP_HEIGHT_CM][MAP_WIDTH_CM];
 
@@ -98,9 +102,13 @@ class Map {
     const int _dimension = MAP_WIDTH_CM * MAP_HEIGHT_CM;
 
     const MapPoint _neighbors[8] = {{1, 0},  {1, 1},   {0, 1},  {-1, 1},
-                                         {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+                                    {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
 
     void _primeFromBrickList(BrickList brickList);
+
+    void _snowPlow2(MapPoint point);
+    void _primeFromSeen();
+
 
     void _populateDirections();
 
@@ -120,6 +128,9 @@ class Map {
 
     uint8_t _getDistanceToWall(MapPoint point);
     void _setDistanceToWall(MapPoint point, uint8_t newIncrease);
+
+    bool _getSeen(MapPoint point);
+    void _setSeen(MapPoint point, bool seenStatus);
 
     // void _jankyPrintPoint(MapPoint point, int extraVal = -1);
     void _resetData();

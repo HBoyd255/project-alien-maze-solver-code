@@ -84,8 +84,6 @@ void setup() {
 
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 
-    gridMap.primeForTracking();
-
     // motionTracker._currentPosition = {750, 200};
 
     // gridMap.TEMP_cutMagicLine();
@@ -119,7 +117,7 @@ void celebrating_S();
 
 void UseMazeToGoTo(Position);
 
-const voidFuncPtr startingState_GCP = stopped_S;
+const voidFuncPtr startingState_GCP = followingLeftWall_S;
 voidFuncPtr nextState_GP = startingState_GCP;
 // TODO add a default state basest on currentGoal
 
@@ -333,20 +331,24 @@ void twoCornersToBrick(Position robotPosition, Position startPoint,
 
 // TODO rename
 bool blockyBlockBlock(Position robotPosition, Angle angleOfSensor,
-                      int measuredDistance) {
+                      int measuredDistance, int tolerance) {
     bool needsRecalibration = false;
 
-    if (!angleOfSensor.isOrthogonal()) {
+    if (!angleOfSensor.isOrthogonal(tolerance)) {
         // This function only works with orthogonal angles
+        return false;
+    }
+
+    if (measuredDistance > 400) {
         return false;
     }
 
     // if the thing is octagonally upwards.
 
-    bool pointingDown = angleOfSensor.isOrthogonallyDown();
-    bool pointingLeft = angleOfSensor.isOrthogonallyLeft();
-    bool pointingUp = angleOfSensor.isOrthogonallyUp();
-    bool pointingRight = angleOfSensor.isOrthogonallyRight();
+    bool pointingDown = angleOfSensor.isOrthogonallyDown(tolerance);
+    bool pointingLeft = angleOfSensor.isOrthogonallyLeft(tolerance);
+    bool pointingUp = angleOfSensor.isOrthogonallyUp(tolerance);
+    bool pointingRight = angleOfSensor.isOrthogonallyRight(tolerance);
 
     Position brickEdgePosition;
 
@@ -361,6 +363,8 @@ bool blockyBlockBlock(Position robotPosition, Angle angleOfSensor,
     }
 
     brickEdgePosition += robotPosition;
+
+    gridMap.seenPosition(brickEdgePosition);
 
     int comparison =
         brickList.compare(robotPosition, angleOfSensor, measuredDistance);
@@ -545,7 +549,9 @@ void followingLeftWall_S() {
 
     int frontUSDistance = ultrasonic.readFromRobotCenter();
 
-    if (abs(robotAngle.isOrthogonal()) <= 2) {
+    const int orthTolerance = 2;
+
+    if (robotAngle.isOrthogonal(orthTolerance)) {
         Angle roundedRobotAngle = robotAngle.closestOrthogonal();
 
         static PassiveSchedule RENAME_ME(100);
@@ -554,27 +560,28 @@ void followingLeftWall_S() {
 
         if (RENAME_ME.isReadyToRun()) {
             int leftIRDistance = leftInfrared.readFromRobotCenter();
-            // int rightIRDistance = rightInfrared.readFromRobotCenter();
+            int rightIRDistance = rightInfrared.readFromRobotCenter();
 
             if ((ALSO_RENAME_ME == 0) && (frontUSDistance > 120)) {
                 blockyBlockBlock(robotPosition, roundedRobotAngle,
-                                 frontUSDistance);
+                                 frontUSDistance, orthTolerance);
             } else if ((ALSO_RENAME_ME == 1) && (leftIRDistance > 120)) {
-                bool needsCalibrating = blockyBlockBlock(
-                    robotPosition, roundedRobotAngle + 90, leftIRDistance);
+                bool needsCalibrating =
+                    blockyBlockBlock(robotPosition, roundedRobotAngle + 90,
+                                     leftIRDistance, orthTolerance);
 
                 if (needsCalibrating) {
                     // navigator.turnLeft();
                 }
             }
 
-            // else if ((ALSO_RENAME_ME == 2) && (rightIRDistance > 120)) {
-            //     blockyBlockBlock(robotPosition, robotAngle - 90,
-            //                      rightIRDistance);
-            // }
+            else if ((ALSO_RENAME_ME == 2) && (rightIRDistance > 120)) {
+                blockyBlockBlock(robotPosition, robotAngle - 90,
+                                 rightIRDistance, orthTolerance);
+            }
 
             ALSO_RENAME_ME++;
-            ALSO_RENAME_ME %= 2;
+            ALSO_RENAME_ME %= 3;
         }
     }
 
@@ -687,7 +694,8 @@ void UseMazeToGoTo(Position positionToGoTo) {
     drive.stop();
     pixels.setAll(255, 87, 51, true);
     // TODO add something to show that it is loading
-    gridMap.solve(brickList, positionToGoTo);
+    // gridMap.solve(brickList, positionToGoTo);
+    gridMap.solveFromSeen(positionToGoTo);
 
     nextState_GP = followingMaze_S;
 }
@@ -774,16 +782,16 @@ void loop() {
         bool inMiddle =
             (inFromLeft && inFromRight && inFromBottom && inFromTop);
 
-        Serial.print(" isDriveToEndMaybe:");
-        Serial.print(isDriveToEndMaybe);
-        Serial.print(" inFromLeft:");
-        Serial.print(inFromLeft);
-        Serial.print(" inFromRight:");
-        Serial.print(inFromRight);
-        Serial.print(" inFromBottom:");
-        Serial.print(inFromBottom);
-        Serial.print(" inFromTop:");
-        Serial.println(inFromTop);
+        // Serial.print(" isDriveToEndMaybe:");
+        // Serial.print(isDriveToEndMaybe);
+        // Serial.print(" inFromLeft:");
+        // Serial.print(inFromLeft);
+        // Serial.print(" inFromRight:");
+        // Serial.print(inFromRight);
+        // Serial.print(" inFromBottom:");
+        // Serial.print(inFromBottom);
+        // Serial.print(" inFromTop:");
+        // Serial.println(inFromTop);
 
         if ((isDriveToEndMaybe) && (inMiddle)) {
             Serial.println("MApping Inner");
@@ -809,7 +817,7 @@ void loop() {
         }
     }
 
-    pixels.clear();
+    // pixels.clear();
     pixels.show();
 
     if (Serial.available() > 0) {
@@ -828,6 +836,8 @@ void loop() {
         }
 
         if (args[0] == "get-map") {
+            drive.stop();
+
             gridMap.sendOverSerial();
         }
     }

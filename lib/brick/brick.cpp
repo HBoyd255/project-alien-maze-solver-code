@@ -55,7 +55,7 @@ Zone Brick::calculateZone(Position testPosition) {
     } else if (onTop && onRight) {
         return TopRightZone;
     } else if (onBottom) {
-        return TopZone;
+        return BottomZone;
     } else if (onLeft) {
         return LeftZone;
     } else if (onTop) {
@@ -201,9 +201,9 @@ void BrickList::setPreprogrammedMazeData() {
     this->_appendBrick(Brick(1460, 625, true));
     this->_appendBrick(Brick(1295, 540, false));
     this->_appendBrick(Brick(1130, 455, true));
-    // this->_appendBrick(Brick(460, 1000, true));
-    // this->_appendBrick(Brick(625, 915, false));
-    // this->_appendBrick(Brick(875, 915, false));
+    this->_appendBrick(Brick(460, 1000, true));
+    this->_appendBrick(Brick(625, 915, false));
+    this->_appendBrick(Brick(875, 915, false));
 }
 
 void BrickList::_getOrthogonalBrickIndicies(Position robotPosition,
