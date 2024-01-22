@@ -146,3 +146,5 @@ void BluetoothLowEnergy::sendCorner(Position cornerPosition, uint8_t index) {
 }
 
 void BluetoothLowEnergy::poll() { BLE.poll(); }
+
+bool BluetoothLowEnergy::isConnected() { return BLE.connected(); }

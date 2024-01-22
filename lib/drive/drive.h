@@ -85,6 +85,12 @@ class Drive {
     void turnRight();
 
     /**
+     * @brief Spins the robot clockwise as full speed.
+     * This function should be used sparingly.
+     */
+    void fullSpeedSpinLeft();
+
+    /**
      * @brief Stops the robot by setting both motors to 0% speed.
      */
     void stop();

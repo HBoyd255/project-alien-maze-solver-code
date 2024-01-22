@@ -448,7 +448,7 @@ void BrickList::setBrickFromApproximation(Position brickEdgePosition,
     Brick brickToAdd;
     brickToAdd.position = newBrickPosition;
     brickToAdd.isVertical = isNewBrickVertical;
-    this->_appendBrick(brickToAdd);
+    this->attemptAppendBrick(brickToAdd);
 }
 
 int BrickList::lowestDistance(Position testPosition, int* indexOfClosestBrick_P,

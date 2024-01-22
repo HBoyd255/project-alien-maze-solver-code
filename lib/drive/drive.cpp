@@ -122,6 +122,15 @@ void Drive::turnRight() {
 }
 
 /**
+ * @brief Spins the robot clockwise as full speed.
+ * This function should be used sparingly.
+ */
+void Drive::fullSpeedSpinLeft() {
+    this->_leftMotorPtr->setVelocity(-100);
+    this->_rightMotorPtr->setVelocity(100);
+}
+
+/**
  * @brief Stops the robot by setting both motors to 0% speed.
  */
 void Drive::stop() { this->setVelocity(0); }

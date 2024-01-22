@@ -31,6 +31,8 @@ class BluetoothLowEnergy {
 
     void poll();
 
+    bool isConnected();
+
    private:
     ErrorIndicator* _errorIndicator_P;
     BLEService _mainService;

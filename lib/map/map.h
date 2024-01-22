@@ -65,7 +65,7 @@ struct __attribute__((packed)) MapItem {
     unsigned int direction : 3;  // degrees / 45
     unsigned int distanceToGoal : 11;
     unsigned int distanceToWall : 8;
-    unsigned int seen : 1;
+    unsigned int seen : 8;
 };
 
 class Map {
@@ -109,7 +109,6 @@ class Map {
     void _snowPlow2(MapPoint point);
     void _primeFromSeen();
 
-
     void _populateDirections();
 
     bool _validatePoint(MapPoint pointToTest);
@@ -129,8 +128,8 @@ class Map {
     uint8_t _getDistanceToWall(MapPoint point);
     void _setDistanceToWall(MapPoint point, uint8_t newIncrease);
 
-    bool _getSeen(MapPoint point);
-    void _setSeen(MapPoint point, bool seenStatus);
+    uint8_t _getSeen(MapPoint point);
+    void _setSeen(MapPoint point, uint8_t seenStatus);
 
     // void _jankyPrintPoint(MapPoint point, int extraVal = -1);
     void _resetData();

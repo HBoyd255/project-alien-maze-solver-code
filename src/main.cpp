@@ -91,7 +91,7 @@ void setup() {
     // gridMap.solve(brickList, {130, 180});
 }
 
-bool readyToGo = true;
+bool readyToGo = false;
 
 void polls() {
     frontLeftInfrared.poll();
@@ -350,6 +350,15 @@ bool blockyBlockBlock(Position robotPosition, Angle angleOfSensor,
     bool pointingUp = angleOfSensor.isOrthogonallyUp(tolerance);
     bool pointingRight = angleOfSensor.isOrthogonallyRight(tolerance);
 
+    // Serial.print(" pointingDown:");
+    // Serial.print(pointingDown);
+    // Serial.print(" pointingLeft:");
+    // Serial.print(pointingLeft);
+    // Serial.print(" pointingUp:");
+    // Serial.print(pointingUp);
+    // Serial.print(" pointingRight:");
+    // Serial.println(pointingRight);
+
     Position brickEdgePosition;
 
     if (pointingDown) {
@@ -549,12 +558,12 @@ void followingLeftWall_S() {
 
     int frontUSDistance = ultrasonic.readFromRobotCenter();
 
-    const int orthTolerance = 2;
+    const int orthTolerance = 5;
 
     if (robotAngle.isOrthogonal(orthTolerance)) {
         Angle roundedRobotAngle = robotAngle.closestOrthogonal();
 
-        static PassiveSchedule RENAME_ME(100);
+        static PassiveSchedule RENAME_ME(10);
 
         static int ALSO_RENAME_ME = 0;
 
@@ -566,22 +575,15 @@ void followingLeftWall_S() {
                 blockyBlockBlock(robotPosition, roundedRobotAngle,
                                  frontUSDistance, orthTolerance);
             } else if ((ALSO_RENAME_ME == 1) && (leftIRDistance > 120)) {
-                bool needsCalibrating =
-                    blockyBlockBlock(robotPosition, roundedRobotAngle + 90,
-                                     leftIRDistance, orthTolerance);
-
-                if (needsCalibrating) {
-                    // navigator.turnLeft();
-                }
-            }
-
-            else if ((ALSO_RENAME_ME == 2) && (rightIRDistance > 120)) {
-                blockyBlockBlock(robotPosition, robotAngle - 90,
-                                 rightIRDistance, orthTolerance);
-            }
+                blockyBlockBlock(robotPosition, roundedRobotAngle + 90,
+                                 leftIRDistance, orthTolerance);
+            }  // else if ((ALSO_RENAME_ME == 2) && (rightIRDistance > 120)) {
+            //     blockyBlockBlock(robotPosition, robotAngle - 90,
+            //                      rightIRDistance, orthTolerance);
+            // }
 
             ALSO_RENAME_ME++;
-            ALSO_RENAME_ME %= 3;
+            ALSO_RENAME_ME %= 2;
         }
     }
 
@@ -694,8 +696,8 @@ void UseMazeToGoTo(Position positionToGoTo) {
     drive.stop();
     pixels.setAll(255, 87, 51, true);
     // TODO add something to show that it is loading
-    // gridMap.solve(brickList, positionToGoTo);
-    gridMap.solveFromSeen(positionToGoTo);
+    gridMap.solve(brickList, positionToGoTo);
+    // gridMap.solveFromSeen(positionToGoTo);
 
     nextState_GP = followingMaze_S;
 }
@@ -721,11 +723,10 @@ void followingMaze_S() {
         if (currentGoal_G == DriveToEndMaybe) {
             nextState_GP = celebrating_S;
             currentGoal_G = Won;
-        }
-        if (currentGoal_G == DriveToStart) {
+        } else if (currentGoal_G == DriveToStart) {
+            currentGoal_G = DriveToEnd;
             UseMazeToGoTo({1300, 1800});
-        }
-        if (currentGoal_G == DriveToEnd) {
+        } else if (currentGoal_G == DriveToEnd) {
             nextState_GP = celebrating_S;
             currentGoal_G = Won;
         }
@@ -733,8 +734,27 @@ void followingMaze_S() {
 }
 
 void celebrating_S() {
-    drive.stop();
-    pixels.setAll(255, 255, 0);
+    static int startedCelTime = millis();
+
+    int celDuration = millis() - startedCelTime;
+
+    if (celDuration < 50) {
+        drive.stop();
+    } else if (celDuration < 2000) {
+        drive.fullSpeedSpinLeft();
+    } else {
+        drive.stop();
+    }
+
+    // Flash the LEDS
+    uint16_t ledCount = pixels.getLedCount();
+    pixels.clear();
+
+    bool ledToggle = (millis() >> 10) & 1;
+    for (int i = 0; i < (ledCount / 2); i++) {
+        pixels.setPixel((i * 2) + ledToggle, 255, 255, 0);
+    }
+    pixels.show();
 }
 
 void colourCodeState(voidFuncPtr currentState_P) {
@@ -746,8 +766,6 @@ void colourCodeState(voidFuncPtr currentState_P) {
         pixels.setAll(255, 105, 180);
     } else if (currentState_P == followingMaze_S) {
         pixels.setAll(255, 0, 255);
-    } else if (currentState_P == celebrating_S) {
-        pixels.setAll(255, 255, 0);
     }
 }
 
@@ -759,10 +777,6 @@ void followPathInstead() {}
 void loop() {
     polls();
 
-    // if (five.isReadyToRun()) {
-    //     // findEdges();
-    // }
-
     byte bumperData = bumper.read();
     if (bumperData) {
         readyToGo = true;
@@ -772,8 +786,6 @@ void loop() {
 
         Position robotPosition = motionTracker.getPosition();
 
-        // Get the position of the crash point.
-
         bool inFromLeft = (robotPosition.x > 300);
         bool inFromRight = (robotPosition.x < 1200);
         bool inFromBottom = (robotPosition.y > 600);
@@ -782,17 +794,6 @@ void loop() {
         bool inMiddle =
             (inFromLeft && inFromRight && inFromBottom && inFromTop);
 
-        // Serial.print(" isDriveToEndMaybe:");
-        // Serial.print(isDriveToEndMaybe);
-        // Serial.print(" inFromLeft:");
-        // Serial.print(inFromLeft);
-        // Serial.print(" inFromRight:");
-        // Serial.print(inFromRight);
-        // Serial.print(" inFromBottom:");
-        // Serial.print(inFromBottom);
-        // Serial.print(" inFromTop:");
-        // Serial.println(inFromTop);
-
         if ((isDriveToEndMaybe) && (inMiddle)) {
             Serial.println("MApping Inner");
             currentGoal_G = MapInner;
@@ -800,21 +801,22 @@ void loop() {
         }
     }
 
-    if (oneSecond.isReadyToRun()) {
-        Position robotPosition = motionTracker.getPosition();
-
-        gridMap.snowPlow(robotPosition);
-    }
-
-    colourCodeState(nextState_GP);
-
     if (readyToGo) {
+        if (oneSecond.isReadyToRun()) {
+            Position robotPosition = motionTracker.getPosition();
+            gridMap.snowPlow(robotPosition);
+        }
+
+        colourCodeState(nextState_GP);
         if (!navigator.hasNoPath()) {
-            // pixels.setAll(0, 255, 0);
+            pixels.setAll(0, 255, 0);
             navigator.moveToTarget();
         } else {
             nextState_GP();
         }
+    } else {
+        // Start if bluetooth is connected.
+        readyToGo = bluetoothLowEnergy.isConnected();
     }
 
     // pixels.clear();

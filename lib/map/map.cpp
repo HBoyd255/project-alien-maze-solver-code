@@ -9,7 +9,9 @@
 
 #define UINT11_MAX (0x7ff)
 
-#define ROBOT_RADIUS 120
+
+//TODO set this back to 120
+#define ROBOT_RADIUS 110
 
 #define DIAGONAL_DISTANCE 3
 #define ORTHOGONAL_DISTANCE 2
@@ -154,7 +156,7 @@ void Map::_primeFromSeen() {
             this->_setBlocked(scanPoint, true);
         }
 
-        if (this->_getSeen(scanPoint)) {
+        if (this->_getSeen(scanPoint) > 1) {
             this->_snowPlow2(scanPoint);
         }
     }
@@ -401,7 +403,11 @@ void Map::seenPosition(Position seenPosition) {
     MapPoint seenPoint;
     seenPoint.setFromPosition(seenPosition);
 
-    this->_setSeen(seenPoint, true);
+    int currentVal = this->_getSeen(seenPoint);
+
+    if (currentVal < 255) {
+        this->_setSeen(seenPoint, currentVal + 1);
+    };
 }
 
 // TODO refactor this function
@@ -568,7 +574,7 @@ void Map::_setDistanceToWall(MapPoint point, uint8_t newIncrease) {
     }
 }
 
-bool Map::_getSeen(MapPoint point) {
+uint8_t Map::_getSeen(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].seen;
     } else {
@@ -576,7 +582,7 @@ bool Map::_getSeen(MapPoint point) {
         return 0;
     }
 }
-void Map::_setSeen(MapPoint point, bool seenStatus) {
+void Map::_setSeen(MapPoint point, uint8_t seenStatus) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].seen = seenStatus;
     } else {
