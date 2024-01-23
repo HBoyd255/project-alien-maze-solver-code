@@ -61,6 +61,8 @@ BrickList brickList;
 
 Map gridMap;
 
+#define DEMO_MODE false
+
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
@@ -86,7 +88,7 @@ void setup() {
 
     // motionTracker._currentPosition = {750, 200};
 
-    // gridMap.TEMP_cutMagicLine();
+    gridMap.TEMP_cutMagicLine();
 
     // gridMap.solve(brickList, {130, 180});
 }
@@ -473,6 +475,8 @@ bool blockyBlockBlock(Position robotPosition, Angle angleOfSensor,
 }
 
 void followingLeftWall_S() {
+    bool TEMP_FIX_FLAG = true;
+
     Pose robotPose = motionTracker.getPose();
     Position robotPosition = motionTracker.getPosition();
     Angle robotAngle = motionTracker.getAngle();
@@ -550,6 +554,7 @@ void followingLeftWall_S() {
         if (doneInnerLap) {
             currentGoal_G = DriveToStart;
             UseMazeToGoTo({200, 200});
+            TEMP_FIX_FLAG = false;
         }
     }
 
@@ -632,10 +637,12 @@ void followingLeftWall_S() {
 
     // if a wall is there
     if (frontUSDistance < 185 && frontUSDistance != -1) {
-        nextState_GP = aligningWithWall_S;
+        if (TEMP_FIX_FLAG) {  // TODO refactor.
+            nextState_GP = aligningWithWall_S;
 
-        drive.stop();
-        sendData();
+            drive.stop();
+            sendData();
+        }
     }
 }
 
@@ -677,6 +684,13 @@ void aligningWithWall_S() {
             pixels.setAll(255, 87, 51, true);
             // TODO remove
             delay(100);
+
+            if (DEMO_MODE) {
+                brickList.setPreprogrammedMazeData();
+
+                UseMazeToGoTo({1300, 1800});
+                return;
+            }
         }
 
         sendData();
@@ -840,6 +854,8 @@ void loop() {
         if (args[0] == "get-map") {
             drive.stop();
 
+            gridMap.solve(brickList, {1300, 1800});
+
             gridMap.sendOverSerial();
         }
     }
@@ -883,3 +899,44 @@ set the colour to purple and traverse the maze,
 // Give everting a sensible name.
 
 // DOcument all code.
+
+/* Important Code Bits.
+
+Modularity.
+Custom Scheduling.
+Getting The USONIC and BLE working at the same time.
+DIagram of my state Machine
+Error Handling
+
+
+
+
+*/
+
+/*Part List
+
+1 x HCSR04 - £4
+4 x GP2Y0E02A - 8.51 - £34.04
+https://www.digikey.co.uk/en/products/detail/sharp-socle-technology/GP2Y0E02A/4103877
+
+2 x Motor - 5 - £10
+https://thepihut.com/products/micro-metal-gearmotor?variant=35654648145
+
+2 x encoder - 7.4 - £14.8
+https://thepihut.com/products/pololu-magnetic-encoder-kit-with-side-entry-connector-for-micro-metal-gearmotors-12-cpr-2-7-18v
+
+Wheel pair - £5.7
+https://thepihut.com/search?q=wheel&narrow_by=&sort_by=relevency&page=1
+
+
+Battery - £19.99
+https://www.amazon.co.uk/EAFU-10000mAh-Portable-Flashlight-Compatible/dp/B07Y57CYTF/ref=asc_df_B07Y57CYTF/?tag=googshopuk-21&linkCode=df0&hvadid=394316852066&hvpos=&hvnetw=g&hvrand=14388357702548400730&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9046290&hvtargid=pla-838841694212&psc=1&mcid=efe83383e41f37fcb818d45f4a36f929&tag=&ref=&adgrpid=87233666292&hvpone=&hvptwo=&hvadid=394316852066&hvpos=&hvnetw=g&hvrand=14388357702548400730&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9046290&hvtargid=pla-838841694212
+
+Arduino Nano 33 - £28
+https://thepihut.com/products/arduino-nano-33-ble-with-headers?variant=32106653057086&currency=GBP&utm_medium=product_sync&utm_source=google&utm_content=sag_organic&utm_campaign=sag_organic&gad_source=1
+
+Total
+£116.7
+
+
+*/

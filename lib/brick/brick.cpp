@@ -189,21 +189,41 @@ void BrickList::attemptAppendBrick(Brick brickToAdd) {
 }
 
 void BrickList::setPreprogrammedMazeData() {
-    this->_appendBrick(Brick(125, 460, false));
-    this->_appendBrick(Brick(375, 460, false));
-    this->_appendBrick(Brick(40, 1000, true));
-    this->_appendBrick(Brick(125, 1460, false));
-    this->_appendBrick(Brick(375, 1460, false));
-    this->_appendBrick(Brick(540, 1545, true));
-    this->_appendBrick(Brick(1460, 1545, true));
-    this->_appendBrick(Brick(1295, 1460, false));
-    this->_appendBrick(Brick(1130, 1375, true));
-    this->_appendBrick(Brick(1460, 625, true));
-    this->_appendBrick(Brick(1295, 540, false));
-    this->_appendBrick(Brick(1130, 455, true));
-    this->_appendBrick(Brick(460, 1000, true));
-    this->_appendBrick(Brick(625, 915, false));
-    this->_appendBrick(Brick(875, 915, false));
+    // this->_appendBrick(Brick(125, 460, false));
+    // this->_appendBrick(Brick(375, 460, false));
+    // this->_appendBrick(Brick(40, 1000, true));
+    // this->_appendBrick(Brick(125, 1460, false));
+    // this->_appendBrick(Brick(375, 1460, false));
+    // this->_appendBrick(Brick(540, 1545, true));
+    // this->_appendBrick(Brick(1460, 1545, true));
+    // this->_appendBrick(Brick(1295, 1460, false));
+    // this->_appendBrick(Brick(1130, 1375, true));
+    // this->_appendBrick(Brick(1460, 625, true));
+    // this->_appendBrick(Brick(1295, 540, false));
+    // this->_appendBrick(Brick(1130, 455, true));
+    // this->_appendBrick(Brick(460, 1000, true));
+    // this->_appendBrick(Brick(625, 915, false));
+    // this->_appendBrick(Brick(875, 915, false));
+
+    this->_appendBrick(Brick(125, 590, false));
+    this->_appendBrick(Brick(290, 505, true));
+    this->_appendBrick(Brick(375, 340, false));
+    this->_appendBrick(Brick(625, 340, false));
+    this->_appendBrick(Brick(875, 340, false));
+
+    this->_appendBrick(Brick(125, 1040, false));
+    this->_appendBrick(Brick(125, 1700, false));
+
+    this->_appendBrick(Brick(825, 1700, false));
+    this->_appendBrick(Brick(740, 1535, true));
+    this->_appendBrick(Brick(655, 1370, false));
+
+    this->_appendBrick(Brick(1375, 1620, false));
+
+    this->_appendBrick(Brick(1375, 960, false));
+    this->_appendBrick(Brick(1125, 960, false));
+    this->_appendBrick(Brick(960, 875, true));
+    this->_appendBrick(Brick(795, 960, false));
 }
 
 void BrickList::_getOrthogonalBrickIndicies(Position robotPosition,
