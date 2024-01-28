@@ -58,9 +58,9 @@ class Ultrasonic {
      *
      * This isn't the cleanest workaround but works for the intended purpose.
      *
-     * @param isrPtr The pointer to the interrupt service routine.
+     * @param isr_P The pointer to the interrupt service routine.
      */
-    void setup(voidFuncPtr isrPtr);
+    void setup(voidFuncPtr isr_P);
 
     /**
      * @brief Reads the distance from the sensor to the nearest obstacle by

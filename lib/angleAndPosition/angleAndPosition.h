@@ -62,7 +62,7 @@ class Angle {
      *
      * @param otherAngle The angle (or uint16_t) to subtract from the current
      * angle.
-     * @return The sum of the provided angles.
+     * @return The difference between the provided angles.
      */
     Angle operator-(Angle& otherAngle) const;
 
@@ -81,19 +81,70 @@ class Angle {
      *
      * @return (double) The value of the angle in radians.
      */
-    double toRadians();
+    double getRadians();
 
-    // TODO document
-    Angle closestOrthogonal();
+    /**
+     * @brief returns the closest multiple of 90 of this angle.
+     *
+     * @return (Angle) The closest right angle
+     */
+    Angle closestRightAngle();
 
+    /**
+     * @brief Calculates the difference between the current angle and the
+     * closest right angle.
+     *
+     * @return (Angle) The difference between the current angle and the
+     * closest right angle.
+     */
     Angle OrthogonalOffset();
 
+    /**
+     * @brief Returns if the current angle is at a right angle, or within a
+     * provided tolerance of a right angle.
+     *
+     * @param tolerance the inclusive acceptable tolerance to the closest right
+     * angle.
+     * @return (true) If the absolute offset is higher than the tolerance.
+     * @return (false) If the absolute offset is is lower than the tolerance.
+     */
     bool isOrthogonal(int tolerance = 0);
 
-    bool isOrthogonallyDown(int tolerance = 0);
-    bool isOrthogonallyLeft(int tolerance = 0);
-    bool isOrthogonallyUp(int tolerance = 0);
-    bool isOrthogonallyRight(int tolerance = 0);
+    /**
+     * @brief Returns whether or not the angle is pointing down by checking
+     * if closestRightAngle() is equal to -90°.
+     *
+     * @return (true) if the closest right angle is equal to -90°.
+     * @return (false) if the closest right angle is not equal to -90°.
+     */
+    bool isPointingDown();
+
+    /**
+     * @brief Returns whether or not the angle is pointing left by checking
+     * if closestRightAngle() is equal to 180°.
+     *
+     * @return (true) if the closest right angle is equal to 180°.
+     * @return (false) if the closest right angle is not equal to 180°.
+     */
+    bool isPointingLeft();
+
+    /**
+     * @brief Returns whether  or not the angle is pointing up by checking
+     * if closestRightAngle() is equal to 90°.
+     *
+     * @return (true) if the closest right angle is equal to 90°.
+     * @return (false) if the closest right angle is not equal to 90°.
+     */
+    bool isPointingUp();
+
+    /**
+     * @brief Returns whether  or not the angle is pointing right by checking
+     * if closestRightAngle() is equal to 0°.
+     *
+     * @return (true) if the closest right angle is equal to 0°.
+     * @return (false) if the closest right angle is not equal to 0°.
+     */
+    bool isPointingRight();
 
     /**
      * @brief Returns the index of the segments at the current angle.
@@ -147,51 +198,79 @@ struct Position {
      */
     float x = 0;
     /**
-     * @brief The y  position, measured in millimetres, set to 0 by default.
+     * @brief The y position, measured in millimetres, set to 0 by default.
      */
     float y = 0;
 
     /**
-     * @brief Transforms the position by a given pose, constructed of a position
-     * and an angle.
+     * @brief Construct a new Position object
      *
-     * The Position is first rotated by the given pose's angle, and then offset
-     * by the pose's position.
+     * @param x The x position in millimetres.
+     * @param y The y position in millimetres.
+     */
+    Position(float x = 0, float y = 0);
+
+    /**
+     * @brief Rotates the position around (0,0) by a given angle in degreed.
+     *
+     * @param rotationAngle The angle to rotate by.
+     * @return (Position&) A reference to the modified object.
+     */
+    Position& rotate(Angle rotationAngle);
+
+    /**
+     * @brief Offsets the position around by a given position.
+     *
+     * @param offset The position to offset the current position by
+     * @return (Position&) A reference to the modified object.
+     */
+    Position& offset(Position offset);
+
+    /**
+     * @brief Transforms the position by a given pose, constructed of a
+     * position and an angle.
+     *
+     * The Position is first rotated by the given pose's angle, and then
+     * offset by the pose's position.
      *
      * @param offsetPose (Pose) The pose to transform the position by.
      */
     void transformByPose(Pose offsetPose);
 
     /**
-     * @brief Calculates the euclidean distance between this position and a
-     * provided target position.
-     *
-     * @param target The other position to calculate the distance to.
-     * @return (int) The euclidean distance to the target position in
-     * millimeters.
-     */
-    int calculateDistanceTo(Position target);
-
-    /**
      * @brief Calculates the square of the euclidean distance between this
      * position and a provided target position.
      *
-     * This function uses less computation than calculateDistanceTo(), as no
-     * square root required. For basic comparisons between two distances, this
-     * function will suffice.
+     * This function uses less computation than distanceTo(), as no
+     * square root required. For basic comparisons between two distances,
+     * this function is more efficient.
      *
-     * c * c = a * a + b * b
+     * c * c == a * a + b * b
      * is a lot easier to compute than
      * c = (a * a + b * b) ^ 0.5
      *
-     * @param target The other position to calculate the squared distance to.
-     * @return (int) The square of the euclidean distance to the target position
-     * in millimeters.
+     * @param target The other position to calculate the squared distance
+     * @param dx_P A pointer to return the difference in x positions.
+     * @param dy_P A pointer to return the difference in y positions.
+     * @return (float) The square of the euclidean distance to the target
+     * position in millimeters.
      */
-    int calculateSquaredDistanceTo(Position target);
+    float squaredDistanceTo(Position target, int* dx_P = nullptr,
+                            int* dy_P = nullptr);
 
     /**
-     * @brief Calculates the angle from this position to a given target position
+     * @brief Calculates the euclidean distance between this position and a
+     * provided target position using the pythagorean theorem.
+     *
+     * @param target The other position to calculate the distance to.
+     * @return (float) The euclidean distance to the target position in
+     * millimeters.
+     */
+    float distanceTo(Position target);
+
+    /**
+     * @brief Calculates the angle from this position to a given target
+     * position
      *
      * @param target The other position to calculate the angle to.
      * @return (Angle) The angle in degrees from this position to the target
@@ -207,8 +286,17 @@ struct Position {
     operator String() const;
 
     /**
-     * @brief Overloaded compound addition operator, used to add a Position to
-     * the current Position by summing their x and y components.
+     * @brief Overloaded addition operator, used to add two Positions
+     * together by summing their x and y components.
+     * @param positionToAdd The position on the right hand side of the
+     * operator.
+     * @return The Position created by summing the two provided Positions.
+     */
+    Position operator+(Position& positionToAdd) const;
+
+    /**
+     * @brief Overloaded compound addition operator, used to add a Position
+     * to the current Position by summing their x and y components.
      *
      * @param positionToAdd The Position to add to the current Position.
      * @return reference to the modified Position.
@@ -222,12 +310,13 @@ struct Position {
  */
 struct Pose {
     /**
-     * @brief The position of the Pose,(x and y measured in millimetres), set to
-     * (0,0) by default.
+     * @brief The position of the Pose,(x and y measured in millimetres),
+     * set to (0,0) by default.
      */
     Position position = {0, 0};
     /**
-     * @brief The Angle of the Pose,(measured in degrees), set to 0 by default.
+     * @brief The Angle of the Pose,(measured in degrees), set to 0 by
+     * default.
      */
     Angle angle = 0;
     /**

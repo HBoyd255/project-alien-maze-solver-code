@@ -58,13 +58,13 @@ Ultrasonic::Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout,
  *
  * This isn't the cleanest workaround but works for the intended purpose.
  *
- * @param isrPtr The pointer to the interrupt service routine.
+ * @param isr_P The pointer to the interrupt service routine.
  */
-void Ultrasonic::setup(voidFuncPtr isrPtr) {
+void Ultrasonic::setup(voidFuncPtr isr_P) {
     pinMode(this->_triggerPin, OUTPUT);
     pinMode(this->_echoPin, INPUT);
 
-    attachInterrupt(digitalPinToInterrupt(this->_echoPin), isrPtr, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(this->_echoPin), isr_P, CHANGE);
 }
 
 /**

@@ -22,12 +22,9 @@
 // https://www.uuidgenerator.net/
 // There must all be less than 80 character line length, or the python script
 // breaks.
-// TODO Move these to a json or something, so that my CPP and Python can both
-// properly read from the same file without having to parse a .h file in python.
 #define MAIN_SERVICE_UUID "cbb12285-f4bf-44e3-95e3-f402eb8ccd49"
 #define ROBOT_POSE_UUID "0d9d01ba-f4e5-4cbc-896e-e391c9b7ae74"
 #define BRICK_UUID "3aa898fd-58bb-42f8-b126-d2f31bbc6c5b"
-#define CORNER_UUID "0c3a4c84-c610-4119-914c-9b98a708dece"
 
 // Serial
 #define SERIAL_BAUD_RATE 230400
@@ -59,6 +56,7 @@
 #define RIGHT_MOTOR_ROTATION_INVERTED false
 
 #define DEFAULT_DRIVE_SPEED 35
+#define INITIAL_ANGLE -90
 
 // Bumper
 // Shift register
@@ -78,11 +76,19 @@
 #define ULTRASONIC_TIMEOUT_MICROSECONDS 20000UL
 #define ULTRASONIC_MAX_DISTANCE 1000
 #define ULTRASONIC_DATA_SHELF_LIFE 200
+#define FRONT_ULTRASONIC_FORWARD_DISTANCE 85
 
 // Infrared
 #define LEFT_INFRARED_INDEX 0
+#define LEFT_INFRARED_FORWARD_DISTANCE 85
+
 #define RIGHT_INFRARED_INDEX 1
+#define RIGHT_INFRARED_FORWARD_DISTANCE 85
+
 #define FRONT_LEFT_INFRARED_INDEX 2
+#define FRONT_LEFT_INFRARED_FORWARD_DISTANCE 64
+
 #define FRONT_RIGHT_INFRARED_INDEX 3
+#define FRONT_RIGHT_INFRARED_FORWARD_DISTANCE 64
 
 #endif  // SYSTEM_INFO_H

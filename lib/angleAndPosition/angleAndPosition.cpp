@@ -55,7 +55,7 @@ Angle Angle ::operator+=(int16_t valueToAdd) {
  *
  * @param otherAngle The angle (or uint16_t) to subtract from the current
  * angle.
- * @return The sum of the provided angles.
+ * @return The difference between the provided angles.
  */
 Angle Angle::operator-(Angle& otherAngle) const {
     return Angle(this->_value - otherAngle._value);
@@ -79,9 +79,14 @@ Angle Angle::operator-=(int16_t valueToSub) {
  *
  * @return (double) The value of the angle in radians.
  */
-double Angle::toRadians() { return radians(this->_value); }
+double Angle::getRadians() { return radians(this->_value); }
 
-Angle Angle::closestOrthogonal() {
+/**
+ * @brief returns the closest multiple of 90 of this angle.
+ *
+ * @return (Angle) The closest right angle
+ */
+Angle Angle::closestRightAngle() {
     int tempValue = this->_get360();
 
     tempValue += 45;
@@ -95,53 +100,68 @@ Angle Angle::closestOrthogonal() {
     return angleToReturn;
 }
 
+/**
+ * @brief Calculates the difference between the current angle and the
+ * closest right angle.
+ *
+ * @return (Angle) The difference between the current angle and the
+ * closest right angle.
+ */
 Angle Angle::OrthogonalOffset() {
-    Angle OrthogonalOffset = this->closestOrthogonal() - *this;
+    Angle OrthogonalOffset = this->closestRightAngle() - *this;
     return OrthogonalOffset;
 }
 
+/**
+ * @brief Returns if the current angle is at a right angle, or within a
+ * provided tolerance of a right angle.
+ *
+ * @param tolerance the inclusive acceptable tolerance to the closest right
+ * angle.
+ * @return (true) If the absolute offset is higher than the tolerance.
+ * @return (false) If the absolute offset is is lower than the tolerance.
+ */
 bool Angle::isOrthogonal(int tolerance) {
     bool isOrthogonal = (abs((int)this->OrthogonalOffset()) <= tolerance);
 
     return isOrthogonal;
 }
 
-bool Angle::isOrthogonallyDown(int tolerance) {
-    const int targetAngle = -90;
+/**
+ * @brief Returns whether or not the angle is pointing down by checking
+ * if closestRightAngle() is equal to -90°.
+ *
+ * @return (true) if the closest right angle is equal to -90°.
+ * @return (false) if the closest right angle is not equal to -90°.
+ */
+bool Angle::isPointingDown() { return (this->closestRightAngle() == -90); }
 
-    bool isOrthogonal = this->isOrthogonal(tolerance);
+/**
+ * @brief Returns whether or not the angle is pointing left by checking
+ * if closestRightAngle() is equal to 180°.
+ *
+ * @return (true) if the closest right angle is equal to 180°.
+ * @return (false) if the closest right angle is not equal to 180°.
+ */
+bool Angle::isPointingLeft() { return (this->closestRightAngle() == 180); }
 
-    bool pointingDown = this->closestOrthogonal() == targetAngle;
+/**
+ * @brief Returns whether  or not the angle is pointing up by checking
+ * if closestRightAngle() is equal to 90°.
+ *
+ * @return (true) if the closest right angle is equal to 90°.
+ * @return (false) if the closest right angle is not equal to 90°.
+ */
+bool Angle::isPointingUp() { return (this->closestRightAngle() == 90); }
 
-    return isOrthogonal && pointingDown;
-}
-bool Angle::isOrthogonallyLeft(int tolerance) {
-    const int targetAngle = 180;
-
-    bool isOrthogonal = this->isOrthogonal(tolerance);
-
-    bool pointingLeft = this->closestOrthogonal() == targetAngle;
-
-    return isOrthogonal && pointingLeft;
-}
-bool Angle::isOrthogonallyUp(int tolerance) {
-    const int targetAngle = 90;
-
-    bool isOrthogonal = this->isOrthogonal(tolerance);
-
-    bool pointingUp = this->closestOrthogonal() == targetAngle;
-
-    return isOrthogonal && pointingUp;
-}
-bool Angle::isOrthogonallyRight(int tolerance) {
-    const int targetAngle = 0;
-
-    bool isOrthogonal = this->isOrthogonal(tolerance);
-
-    bool pointingRight = this->closestOrthogonal() == targetAngle;
-
-    return isOrthogonal && pointingRight;
-}
+/**
+ * @brief Returns whether  or not the angle is pointing right by checking
+ * if closestRightAngle() is equal to 0°.
+ *
+ * @return (true) if the closest right angle is equal to 0°.
+ * @return (false) if the closest right angle is not equal to 0°.
+ */
+bool Angle::isPointingRight() { return (this->closestRightAngle() == 0); }
 
 /**
  * @brief Returns the index of the segments at the current angle.
@@ -197,6 +217,44 @@ uint16_t Angle::_get360() {
 }
 
 /**
+ * @brief Construct a new Position object
+ *
+ * @param x The x position in millimetres.
+ * @param y The y position in millimetres.
+ */
+Position::Position(float x, float y) : x(x), y(y) {}
+
+/**
+ * @brief Rotates the position around (0,0) by a given angle in degreed.
+ *
+ * @param rotationAngle The angle to rotate by.
+ * @return Position& returns a reference to the modified object;
+ */
+Position& Position::rotate(Angle rotationAngle) {
+    float sinAngle = sin(rotationAngle.getRadians());
+    float cosAngle = cos(rotationAngle.getRadians());
+
+    float tempX = this->x * cosAngle - this->y * sinAngle;
+    float tempY = this->y * cosAngle + this->x * sinAngle;
+
+    this->x = tempX;
+    this->y = tempY;
+
+    return *this;
+}
+
+/**
+ * @brief Offsets the position around by a given position.
+ *
+ * @param offset The position to offset the current position by
+ * @return (Position&) A reference to the modified object.
+ */
+Position& Position::offset(Position offset) {
+    *this += offset;
+    return *this;
+}
+
+/**
  * @brief Transforms the position by a given pose, constructed of a position
  * and an angle.
  *
@@ -206,56 +264,79 @@ uint16_t Angle::_get360() {
  * @param offsetPose (Pose) The pose to transform the position by.
  */
 void Position::transformByPose(Pose offsetPose) {
-    Angle angleToRotate = offsetPose.angle - 90;
+    this->rotate(offsetPose.angle - 90);
 
-    float sinAngle = sin(angleToRotate.toRadians());
-    float cosAngle = cos(angleToRotate.toRadians());
-
-    float tempX = this->x * cosAngle - this->y * sinAngle;
-    float tempY = this->y * cosAngle + this->x * sinAngle;
-
-    tempX += offsetPose.position.x;
-    tempY += offsetPose.position.y;
-
-    this->x = tempX;
-    this->y = tempY;
-}
-
-/**
- * @brief Calculates the euclidean distance between this position and a
- * provided target position.
- *
- * @param target The other position to calculate the distance to.
- * @return (int) The euclidean distance to the target position in
- * millimeters.
- */
-int Position::calculateDistanceTo(Position target) {
-    return sqrt(this->calculateSquaredDistanceTo(target));
+    this->offset(offsetPose.position);
 }
 
 /**
  * @brief Calculates the square of the euclidean distance between this
  * position and a provided target position.
  *
- * This function uses less computation than calculateDistanceTo(), as no
- * square root required. For basic comparisons between two distances, this
- * function will suffice.
+ * This function uses less computation than distanceTo(), as no
+ * square root required. For basic comparisons between two distances,
+ * this function is more efficient.
  *
- * c * c = a * a + b * b
+ * c * c == a * a + b * b
  * is a lot easier to compute than
  * c = (a * a + b * b) ^ 0.5
  *
- * @param target The other position to calculate the squared distance to.
- * @return (int) The square of the euclidean distance to the target position
- * in millimeters.
+ * @param target The other position to calculate the squared distance
+ * @param dx_P A pointer to return the difference in x positions.
+ * @param dy_P A pointer to return the difference in y positions.
+ * @return (float) The square of the euclidean distance to the target
+ * position in millimeters.
  */
-int Position::calculateSquaredDistanceTo(Position target) {
-    int dx = target.x - this->x;
-    int dy = target.y - this->y;
+float Position::squaredDistanceTo(Position target, int* dx_P, int* dy_P) {
+    float dx = target.x - this->x;
+    float dy = target.y - this->y;
 
-    int squaredDistance = dx * dx + dy * dy;
+    *dx_P = dx;
+    *dy_P = dy;
+
+    float squaredDistance = dx * dx + dy * dy;
 
     return squaredDistance;
+}
+
+/**
+ * @brief Calculates the euclidean distance between this position and a
+ * provided target position using the pythagorean theorem.
+ *
+ * @param target The other position to calculate the distance to.
+ * @return (float) The euclidean distance to the target position in
+ * millimeters.
+ */
+float Position::distanceTo(Position target) {
+    // a, b and cSquared are from the Pythagorean theorem.
+    // A^2 + B^2 = C^2,
+    // If A == 0, C = B
+    // If B == 0, C = A
+
+    int a = -1;  // -1 represents an uninitialized state.
+    int b = -1;
+    int c;
+
+    // calculate the squared distance from this brick to the target, and get the
+    // x and y difference by reference.
+    int cSquared = this->squaredDistanceTo(target, &a, &b);
+
+    // A^2 + B^2 = C^2,
+
+    // If a is 0,(and b is initialized) c is equal to b.
+    if ((a == 0) && (b != -1)) {
+        c = b;
+    }
+    // If b is 0, c is equal to a.
+    else if ((b == 0) && (a != -1)) {
+        c = a;
+    }
+    // If a and b are both not zero, calculate c
+    else {
+        c = sqrt(cSquared);
+    }
+
+    return c;
 }
 
 /**
@@ -286,6 +367,17 @@ Position::operator String() const {
     stringToReturn += (int)this->y;
     stringToReturn += ")";
     return stringToReturn;
+}
+
+/**
+ * @brief Overloaded addition operator, used to add two angles together.
+ *
+ * @param otherAngle The angle (or uint16_t via implicit conversion) to sum
+ * with the current angle.
+ * @return The sum of the provided angles.
+ */
+Position Position::operator+(Position& positionToAdd) const {
+    return Position(this->x + positionToAdd.x, this->y + positionToAdd.y);
 }
 
 /**

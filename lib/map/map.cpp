@@ -9,9 +9,7 @@
 
 #define UINT11_MAX (0x7ff)
 
-
-//TODO set this back to 120
-#define ROBOT_RADIUS 110
+#define ROBOT_RADIUS 120
 
 #define DIAGONAL_DISTANCE 3
 #define ORTHOGONAL_DISTANCE 2
@@ -103,65 +101,6 @@ void Map::_primeFromBrickList(BrickList brickList) {
     }
 }
 
-void Map::_snowPlow2(MapPoint innerPoint) {
-    MapPoint circlePoints[120] = {
-        {-4, -11}, {-3, -11}, {-2, -11}, {-1, -11}, {0, -11},  {1, -11},
-        {2, -11},  {3, -11},  {4, -11},  {-6, -10}, {-5, -10}, {-4, -10},
-        {-3, -10}, {-2, -10}, {-1, -10}, {1, -10},  {2, -10},  {3, -10},
-        {4, -10},  {5, -10},  {6, -10},  {-7, -9},  {-6, -9},  {-5, -9},
-        {5, -9},   {6, -9},   {7, -9},   {-8, -8},  {-7, -8},  {7, -8},
-        {8, -8},   {-9, -7},  {-8, -7},  {8, -7},   {9, -7},   {-10, -6},
-        {-9, -6},  {9, -6},   {10, -6},  {-10, -5}, {-9, -5},  {9, -5},
-        {10, -5},  {-11, -4}, {-10, -4}, {10, -4},  {11, -4},  {-11, -3},
-        {-10, -3}, {10, -3},  {11, -3},  {-11, -2}, {-10, -2}, {10, -2},
-        {11, -2},  {-11, -1}, {-10, -1}, {10, -1},  {11, -1},  {-11, 0},
-        {11, 0},   {-11, 1},  {-10, 1},  {10, 1},   {11, 1},   {-11, 2},
-        {-10, 2},  {10, 2},   {11, 2},   {-11, 3},  {-10, 3},  {10, 3},
-        {11, 3},   {-11, 4},  {-10, 4},  {10, 4},   {11, 4},   {-10, 5},
-        {-9, 5},   {9, 5},    {10, 5},   {-10, 6},  {-9, 6},   {9, 6},
-        {10, 6},   {-9, 7},   {-8, 7},   {8, 7},    {9, 7},    {-8, 8},
-        {-7, 8},   {7, 8},    {8, 8},    {-7, 9},   {-6, 9},   {-5, 9},
-        {5, 9},    {6, 9},    {7, 9},    {-6, 10},  {-5, 10},  {-4, 10},
-        {-3, 10},  {-2, 10},  {-1, 10},  {1, 10},   {2, 10},   {3, 10},
-        {4, 10},   {5, 10},   {6, 10},   {-4, 11},  {-3, 11},  {-2, 11},
-        {-1, 11},  {0, 11},   {1, 11},   {2, 11},   {3, 11},   {4, 11}};
-
-    for (int i = 0; i < 120; i++) {
-        MapPoint outerPoint = innerPoint + circlePoints[i];
-
-        bool outerIsValid = this->_validatePoint(outerPoint);
-
-        if (outerIsValid) {
-            this->_setBlocked(outerPoint, true);
-        }
-    }
-}
-
-void Map::_primeFromSeen() {
-    for (int index = 0; index < this->_dimension; index++) {
-        int x = index % this->_width;
-        int y = index / this->_width;
-        MapPoint scanPoint = MapPoint(x, y);
-
-        if (x <= 12) {
-            this->_setBlocked(scanPoint, true);
-        }
-        if (x >= 138) {
-            this->_setBlocked(scanPoint, true);
-        }
-        if (y <= 12) {
-            this->_setBlocked(scanPoint, true);
-        }
-        if (y >= 188) {
-            this->_setBlocked(scanPoint, true);
-        }
-
-        if (this->_getSeen(scanPoint) > 1) {
-            this->_snowPlow2(scanPoint);
-        }
-    }
-}
-
 void Map::solve(BrickList brickList, Position endPosition) {
     MapPoint endPoint;
     endPoint.setFromPosition(endPosition);
@@ -186,55 +125,6 @@ void Map::solve(BrickList brickList, Position endPosition) {
         pointQueue.pop();
 
         for (int direction_I = 0; direction_I < 8; direction_I++) {
-            // TODO make this better
-            bool goingDiagonal = direction_I & 1;
-
-            MapPoint outerPoint = innerPoint + this->_neighbors[direction_I];
-            uint16_t existingOuterValue = this->_getDistanceToGoal(outerPoint);
-
-            int distanceToOuterPoint =
-                (goingDiagonal) ? DIAGONAL_DISTANCE : ORTHOGONAL_DISTANCE;
-
-            int newOuterValue = innerValue + distanceToOuterPoint;
-
-            bool outerIsValid = this->_validatePoint(outerPoint);
-            bool outerNotBlocked = !(this->_getBlocked(outerPoint));
-            bool newOuterIsSmaller = newOuterValue < existingOuterValue;
-
-            if (outerIsValid && outerNotBlocked && newOuterIsSmaller) {
-                this->_setDistanceToGoal(outerPoint, newOuterValue);
-                pointQueue.push(outerPoint);
-            }
-        }
-    }
-    this->_populateDirections();
-}
-
-void Map::solveFromSeen(Position endPosition) {
-    MapPoint endPoint;
-    endPoint.setFromPosition(endPosition);
-
-    this->_primeFromSeen();
-
-    if (!_validatePoint(endPoint)) {
-        Serial.println("Point out of bounds.");
-
-        return;
-    }
-    std::queue<MapPoint> pointQueue;
-    pointQueue.push(endPoint);
-    this->_setDistanceToGoal(endPoint, 0);
-
-    this->_endPoint = endPoint;
-
-    while (!pointQueue.empty()) {
-        MapPoint innerPoint = pointQueue.front();
-        uint16_t innerValue = this->_getDistanceToGoal(innerPoint);
-
-        pointQueue.pop();
-
-        for (int direction_I = 0; direction_I < 8; direction_I++) {
-            // TODO make this better
             bool goingDiagonal = direction_I & 1;
 
             MapPoint outerPoint = innerPoint + this->_neighbors[direction_I];
@@ -275,14 +165,11 @@ void Map::getAngle(Position robotPosition, Angle* angleToUpdate_P) {
 }
 
 float Map::getEuclideanDistanceToEnd(Position robotPosition) {
-    MapPoint robotPoint;
-    robotPoint.setFromPosition(robotPosition);
+    MapPoint endPoint = this->_endPoint;
 
-    int squaredDistanceInCentimeters =
-        robotPoint.squaredDistanceTo(this->_endPoint);
+    Position endPosition = endPoint.toPosition();
 
-    //
-    return sqrt(squaredDistanceInCentimeters) * 10;
+    return robotPosition.distanceTo(endPosition);
 }
 
 struct __attribute__((packed)) Bundle {
@@ -321,21 +208,6 @@ void Map::primeForTracking() {
 
         this->_setBeen(scanPoint, false);
         this->_setSeen(scanPoint, false);
-    }
-}
-
-void Map::TEMP_cutMagicLine() {
-    for (int index = 0; index < this->_dimension; index++) {
-        int x = index % this->_width;
-        int y = index / this->_width;
-        MapPoint scanPoint = MapPoint(x, y);
-
-        if ((y > 80) && (y < 90)) {
-            this->_setBlocked(scanPoint, false);
-        }
-        if ((x > 60) && (x < 70)) {
-            this->_setBlocked(scanPoint, false);
-        }
     }
 }
 
@@ -410,7 +282,6 @@ void Map::seenPosition(Position seenPosition) {
     };
 }
 
-// TODO refactor this function
 void Map::_populateDirections() {
     for (int index = 0; index < this->_dimension; index++) {
         int x = index % this->_width;
@@ -422,7 +293,6 @@ void Map::_populateDirections() {
             continue;
         }
 
-        // TODO come back and refactor all this.
         uint16_t innerValue = this->_getDistanceToGoal(scanPoint);
 
         uint16_t LowestValue = innerValue;
@@ -451,7 +321,14 @@ void Map::_populateDirections() {
                 continue;
             }
 
-            // TODO refactor this when I have more brain power.
+            // THis is the ugliest code in the entire project but all it does
+            // is,
+
+            // check the neighbors, go for the one that has the lowest path,
+            // If two have the same length, go with the one that is furthest
+            // from the wall, If two are the same distance to the wall, go with
+            // the one that is closest to the wall.
+
             if (newPathEqualOrLower) {
                 int newPointDistanceToWall =
                     this->_getDistanceToWall(outerPoint);
@@ -498,7 +375,7 @@ bool Map::_getBeen(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].been;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
         return 0;
     }
 }
@@ -506,7 +383,7 @@ void Map::_setBeen(MapPoint point, bool beenStatus) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].been = beenStatus;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
     }
 }
 
@@ -514,7 +391,7 @@ bool Map::_getBlocked(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].blocked;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
         return 0;
     }
 }
@@ -522,7 +399,7 @@ void Map::_setBlocked(MapPoint point, bool blockedStatus) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].blocked = blockedStatus;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
     }
 }
 
@@ -530,7 +407,7 @@ uint8_t Map::_getDirection(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].direction;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
         return 0;
     }
 }
@@ -538,7 +415,7 @@ void Map::_setDirection(MapPoint point, uint8_t newDirection) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].direction = newDirection;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
     }
 }
 
@@ -546,7 +423,7 @@ uint16_t Map::_getDistanceToGoal(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].distanceToGoal;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
         return 0;
     }
 }
@@ -554,7 +431,7 @@ void Map::_setDistanceToGoal(MapPoint point, uint16_t newValue) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].distanceToGoal = newValue;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
     }
 }
 
@@ -562,7 +439,7 @@ uint8_t Map::_getDistanceToWall(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].distanceToWall;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
         return 0;
     }
 }
@@ -570,7 +447,7 @@ void Map::_setDistanceToWall(MapPoint point, uint8_t newIncrease) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].distanceToWall = newIncrease;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
     }
 }
 
@@ -578,7 +455,7 @@ uint8_t Map::_getSeen(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].seen;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
         return 0;
     }
 }
@@ -586,7 +463,7 @@ void Map::_setSeen(MapPoint point, uint8_t seenStatus) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].seen = seenStatus;
     } else {
-        Serial.println("Out of range");  // TODO handle this error properly.
+        Serial.println("Out of range");
     }
 }
 

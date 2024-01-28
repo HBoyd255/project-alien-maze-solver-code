@@ -34,20 +34,21 @@ void ErrorIndicator::setup() { pinMode(this->_ledPin, OUTPUT); }
  * @brief Assigns a Pixels object to pointer the class, used for flashing
  * the lights to grab the users attention.
  *
- * @param pixelsPtr (Pixels*) A pointer to a preexisting Pixels class.
+ * @param pixels_P (Pixels*) A pointer to a preexisting Pixels class.
  */
-void ErrorIndicator::assignPixels(Pixels* pixelsPtr) {
-    this->_pixelsPtr = pixelsPtr;
+void ErrorIndicator::assignPixels(Pixels* pixels_P) {
+    this->_pixels_P = pixels_P;
 }
 
 /**
  * @brief Assigns a Pixels object pointer to the class, used for halting the
  * motors when an error occurs.
  *
- * @param drivePtr (Drive*) A pointer to a preexisting Drive class.
+ * @param drive_P (Drive*) A pointer to a preexisting Drive class.
  */
-void ErrorIndicator::assignDrive(Drive* drivePtr) {
-    this->_drivePtr = drivePtr;
+void ErrorIndicator::assignDrive(Drive* drive_P
+) {
+    this->_drive_P = drive_P;
 }
 
 /**
@@ -62,8 +63,8 @@ void ErrorIndicator::assignDrive(Drive* drivePtr) {
  */
 void ErrorIndicator::errorOccurred(String errorMessage) {
     // If a pointer to the drive class has been given, halt the motors.
-    if (this->_drivePtr != NULL) {
-        this->_drivePtr->stop();
+    if (this->_drive_P != NULL) {
+        this->_drive_P->stop();
     }
 
     // Incase serial communication has not been initialized.
@@ -77,7 +78,7 @@ void ErrorIndicator::errorOccurred(String errorMessage) {
     bool oldSerialAvailability = serialAvailability;
 
     // A boolean representing if the pixels class has been provided.
-    bool pixelsAvailability = this->_pixelsPtr != NULL;
+    bool pixelsAvailability = this->_pixels_P != NULL;
 
     // A boolean used for flipping the LED on and off.
     bool ledToggle = false;
@@ -88,23 +89,23 @@ void ErrorIndicator::errorOccurred(String errorMessage) {
         // unavailable.
         if (pixelsAvailability && !serialAvailability) {
             // Clear the LEDs.
-            this->_pixelsPtr->clear();
+            this->_pixels_P->clear();
 
             // Get the number of LEDs that the Pixels class represents.
-            uint16_t ledCount = this->_pixelsPtr->getLedCount();
+            uint16_t ledCount = this->_pixels_P->getLedCount();
 
             // Set every other pixel to bright red, offset by the ledToggle
             // boolean.
             for (int i = 0; i < (ledCount / 2); i++) {
-                this->_pixelsPtr->setPixel((i * 2) + ledToggle, 255, 0, 0);
+                this->_pixels_P->setPixel((i * 2) + ledToggle, 255, 0, 0);
             }
             // Show all the LEDs.
-            this->_pixelsPtr->show();
+            this->_pixels_P->show();
 
             // If the pixels class has been provided and the serial monitor is
             // available, then turn off all the Pixels.
         } else if (pixelsAvailability && serialAvailability) {
-            _pixelsPtr->clear(true);
+            _pixels_P->clear(true);
         }
 
         // if the Serial monitor has only became available since the last loop.

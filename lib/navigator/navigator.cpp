@@ -19,14 +19,13 @@ PathPoint::operator String() const {
     return stringToReturn;
 }
 
-Navigator::Navigator(MotionTracker* motionTrackerPtr, Drive* drivePtr)
-    : _motionTrackerPtr(motionTrackerPtr), _drivePtr(drivePtr) {}
+Navigator::Navigator(MotionTracker* motionTracker_P, Drive* drive_P)
+    : _motionTracker_P(motionTracker_P), _drive_P(drive_P) {}
 
 bool Navigator::hasNoPath() { return this->_pathQueue.empty(); }
 
 void Navigator::_simpleGoTo(int localX, int localY, bool goBack) {
-    Angle angleToPoint =
-        this->_motionTrackerPtr->getAngle().closestOrthogonal();
+    Angle angleToPoint = this->_motionTracker_P->getAngle().closestRightAngle();
 
     // Destructively search the que fro an angle
     while (!this->_pathQueue.empty()) {
@@ -60,9 +59,8 @@ void Navigator::turn(Angle localAngleToTurn, int distanceToDriveBeforeTurning) {
         this->_pushLocalPosition(0, distanceToDriveBeforeTurning);
     }
 
-    Angle currentAngle = this->_motionTrackerPtr->getAngle();
-    Angle angleToPointTo =
-        currentAngle.closestOrthogonal() + localAngleToTurn;
+    Angle currentAngle = this->_motionTracker_P->getAngle();
+    Angle angleToPointTo = currentAngle.closestRightAngle() + localAngleToTurn;
 
     this->_pushAngle(angleToPointTo);
 }
@@ -90,7 +88,7 @@ void Navigator::moveToTarget() {
     }
 
     if (reachedDestination) {
-        this->_drivePtr->stop();
+        this->_drive_P->stop();
         this->_pathQueue.pop();
     }
 }
@@ -155,8 +153,8 @@ void Navigator::hitBumper(byte bumperData) {
 
 void Navigator::goDirection(Angle angleToDrive) {
     const int distanceToDrive = 100;
-    int localX = distanceToDrive * sin(angleToDrive.toRadians());
-    int localY = distanceToDrive * cos(angleToDrive.toRadians());
+    int localX = distanceToDrive * sin(angleToDrive.getRadians());
+    int localY = distanceToDrive * cos(angleToDrive.getRadians());
     this->_pushOffsetPosition(localX, localY);
 }
 
@@ -179,16 +177,16 @@ String Navigator::getPathAsString() {
 }
 
 bool Navigator::_goToAngle(Angle angleToGoTo) {
-    Angle currentAngle = this->_motionTrackerPtr->getAngle();
+    Angle currentAngle = this->_motionTracker_P->getAngle();
     Angle angleToTurn = angleToGoTo - currentAngle;
 
     const int upperAngle = this->_angleTolerance;
     const int lowerAngle = -(this->_angleTolerance);
 
     if (angleToTurn <= lowerAngle) {
-        this->_drivePtr->turnRight();
+        this->_drive_P->turnRight();
     } else if (angleToTurn >= upperAngle) {
-        this->_drivePtr->turnLeft();
+        this->_drive_P->turnLeft();
     } else {
         return true;
     }
@@ -196,15 +194,15 @@ bool Navigator::_goToAngle(Angle angleToGoTo) {
 }
 
 bool Navigator::_goToPosition(Position positionToGoTo) {
-    Position currentPosition = this->_motionTrackerPtr->getPosition();
+    Position currentPosition = this->_motionTracker_P->getPosition();
 
-    int distanceToTarget = currentPosition.calculateDistanceTo(positionToGoTo);
+    int distanceToTarget = currentPosition.distanceTo(positionToGoTo);
     if (distanceToTarget < this->_inRangeTolerance) {
-        this->_drivePtr->stop();
+        this->_drive_P->stop();
         return true;
     }
 
-    Angle currentAngle = this->_motionTrackerPtr->getAngle();
+    Angle currentAngle = this->_motionTracker_P->getAngle();
     Angle globalAngleToTarget =
         currentPosition.calculateAngleTo(positionToGoTo);
     Angle angleToTurn = globalAngleToTarget - currentAngle;
@@ -229,9 +227,9 @@ bool Navigator::_goToPosition(Position positionToGoTo) {
             constrain((int)angleToTurn, lowerAngle, upperAngle);
 
         if (drivingForwards) {
-            this->_drivePtr->forwards(angleAdjustment);
+            this->_drive_P->forwards(angleAdjustment);
         } else {
-            this->_drivePtr->backwards(angleAdjustment);
+            this->_drive_P->backwards(angleAdjustment);
         }
     }
 
@@ -247,17 +245,17 @@ void Navigator::_pushPosition(Position positionToPush) {
     this->_pathQueue.push(pointToPush);
 }
 void Navigator::_pushLocalPosition(float localX, float localY) {
-    Angle currentAngle = this->_motionTrackerPtr->getAngle();
+    Angle currentAngle = this->_motionTracker_P->getAngle();
 
     Angle rotationAngle = currentAngle - 90;
 
-    float sinAngle = sin(rotationAngle.toRadians());
-    float cosAngle = cos(rotationAngle.toRadians());
+    float sinAngle = sin(rotationAngle.getRadians());
+    float cosAngle = cos(rotationAngle.getRadians());
 
     float rotatedLocalX = localX * cosAngle - localY * sinAngle;
     float rotatedLocalY = localY * cosAngle + localX * sinAngle;
 
-    Position currentPosition = this->_motionTrackerPtr->getPosition();
+    Position currentPosition = this->_motionTracker_P->getPosition();
 
     Position newTargetPosition;
     newTargetPosition.x = currentPosition.x + rotatedLocalX;
@@ -267,7 +265,7 @@ void Navigator::_pushLocalPosition(float localX, float localY) {
 }
 
 void Navigator::_pushOffsetPosition(float offsetX, float offsetY) {
-    Position currentPosition = this->_motionTrackerPtr->getPosition();
+    Position currentPosition = this->_motionTracker_P->getPosition();
 
     Position newTargetPosition;
     newTargetPosition.x = currentPosition.x + offsetX;

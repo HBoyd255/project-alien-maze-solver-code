@@ -19,7 +19,7 @@ struct PathPoint {
 
 class Navigator {
    public:
-    Navigator(MotionTracker* motionTrackerPtr, Drive* drivePtr);
+    Navigator(MotionTracker* motionTracker_P, Drive* drive_P);
 
     bool hasNoPath();
 
@@ -37,8 +37,8 @@ class Navigator {
     void goDirection(Angle angleToDrive);
 
    private:
-    MotionTracker* _motionTrackerPtr;
-    Drive* _drivePtr;
+    MotionTracker* _motionTracker_P;
+    Drive* _drive_P;
 
     int _inRangeTolerance = 30;
     int _angleTolerance = 10;

@@ -21,12 +21,12 @@ class Drive {
     /**
      * @brief Construct a new Drive object.
      *
-     * @param leftMotorPtr Pointer to the left motor object.
-     * @param rightMotorPtr Pointer to the right motor object.
+     * @param leftMotor_P Pointer to the left motor object.
+     * @param rightMotor_P Pointer to the right motor object.
      * @param defaultSpeed (int) The percentage of the motor's max speed to use
      * as default.
      */
-    Drive(Motor* leftMotorPtr, Motor* rightMotorPtr, int defaultSpeed);
+    Drive(Motor* leftMotor_P, Motor* rightMotor_P, int defaultSpeed);
 
     /**
      * @brief Sets the speed of both motors based on a bipolar percentage of
@@ -99,11 +99,11 @@ class Drive {
     /**
      * @brief A pointer to the left motor object.
      */
-    Motor* _leftMotorPtr;
+    Motor* _leftMotor_P;
     /**
      * @brief A pointer to the right motor object.
      */
-    Motor* _rightMotorPtr;
+    Motor* _rightMotor_P;
 
     /**
      * @brief The percentage of the motor's max speed to use as default.

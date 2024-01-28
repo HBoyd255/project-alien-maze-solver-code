@@ -33,14 +33,14 @@
 
 #define MAX_IR_RANGE 639
 
-Infrared::Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index,
+Infrared::Infrared(ErrorIndicator* errorIndicator_P, uint8_t index,
                    int distanceFromCentre)
-    : _errorIndicator_P(errorIndicatorPtr),
+    : _errorIndicator_P(errorIndicator_P),
       _index(index),
       _valueHistory(MAX_HISTORY),
       _distanceFromCentre(distanceFromCentre) {}
 
-void Infrared::setup(voidFuncPtr routineFunctionPtr) {
+void Infrared::setup() {
     Wire.begin();
 
     this->_setMultiplexer();
@@ -57,8 +57,6 @@ void Infrared::setup(voidFuncPtr routineFunctionPtr) {
         this->_errorIndicator_P->errorOccurred(errorMessage);
     }
     this->_shiftValue = Wire.read();
-
-    this->_historyUpdater.setup(routineFunctionPtr, POLL_PERIOD);
 }
 
 int16_t Infrared::read() {
@@ -171,14 +169,17 @@ bool Infrared::brickDisappeared(int range, int requiredDistanceChange) {
 
     return justDisappeared;
 }
-void Infrared::routineFunction() {
-    this->_valueHistory.add(this->read());
 
-    this->_secondMostRecentValue = this->_mostRecentValue;
-    this->_mostRecentValue = this->readSafe();
+void Infrared::poll() {
+    static PassiveSchedule historyUpdater(POLL_PERIOD);
+
+    if (historyUpdater.isReadyToRun()) {
+        this->_valueHistory.add(this->read());
+
+        this->_secondMostRecentValue = this->_mostRecentValue;
+        this->_mostRecentValue = this->readSafe();
+    }
 }
-
-void Infrared::poll() { this->_historyUpdater.poll(); }
 
 int16_t Infrared::average() { return this->_valueHistory.getMedian(); }
 

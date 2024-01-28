@@ -14,14 +14,14 @@
 /**
  * @brief Construct a new Drive object.
  *
- * @param leftMotorPtr Pointer to the left motor object.
- * @param rightMotorPtr Pointer to the right motor object.
+ * @param leftMotor_P Pointer to the left motor object.
+ * @param rightMotor_P Pointer to the right motor object.
  * @param defaultSpeed (int) The percentage of the motor's max seed to use
  * as default.
  */
-Drive::Drive(Motor* leftMotorPtr, Motor* rightMotorPtr, int defaultSpeed)
-    : _leftMotorPtr(leftMotorPtr),
-      _rightMotorPtr(rightMotorPtr),
+Drive::Drive(Motor* leftMotor_P, Motor* rightMotor_P, int defaultSpeed)
+    : _leftMotor_P(leftMotor_P),
+      _rightMotor_P(rightMotor_P),
       _defaultSpeed(defaultSpeed) {}
 
 /**
@@ -54,8 +54,8 @@ void Drive::setVelocity(int linearVelocity, int rotationalVelocity) {
     int rightVelocity = linearVelocity + rotationalVelocity;
     rightVelocity = constrain(rightVelocity, -100, 100);
 
-    this->_leftMotorPtr->setVelocity(leftVelocity);
-    this->_rightMotorPtr->setVelocity(rightVelocity);
+    this->_leftMotor_P->setVelocity(leftVelocity);
+    this->_rightMotor_P->setVelocity(rightVelocity);
 }
 
 /**
@@ -88,8 +88,8 @@ void Drive::backwards(int offset) {
  * speed.
  */
 void Drive::turnLeft() {
-    long lastLeft = this->_leftMotorPtr->timeSinceLastMoved();
-    long lestRight = this->_rightMotorPtr->timeSinceLastMoved();
+    long lastLeft = this->_leftMotor_P->timeSinceLastMoved();
+    long lestRight = this->_rightMotor_P->timeSinceLastMoved();
     long timeSinceLastMove = min(lastLeft, lestRight);
 
     int rotationSpeed = this->_defaultSpeed;
@@ -107,8 +107,8 @@ void Drive::turnLeft() {
  * the negative default speed and the left motor to the default speed.
  */
 void Drive::turnRight() {
-    long lastLeft = this->_leftMotorPtr->timeSinceLastMoved();
-    long lestRight = this->_rightMotorPtr->timeSinceLastMoved();
+    long lastLeft = this->_leftMotor_P->timeSinceLastMoved();
+    long lestRight = this->_rightMotor_P->timeSinceLastMoved();
     long timeSinceLastMove = min(lastLeft, lestRight);
 
     int rotationSpeed = this->_defaultSpeed;
@@ -126,8 +126,8 @@ void Drive::turnRight() {
  * This function should be used sparingly.
  */
 void Drive::fullSpeedSpinLeft() {
-    this->_leftMotorPtr->setVelocity(-100);
-    this->_rightMotorPtr->setVelocity(100);
+    this->_leftMotor_P->setVelocity(-100);
+    this->_rightMotor_P->setVelocity(100);
 }
 
 /**

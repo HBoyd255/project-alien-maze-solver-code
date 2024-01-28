@@ -8,15 +8,13 @@
 #include "infrared.h"
 #include "motor.h"
 
-// Forward declaration
+// Forward declaration of the Motor class.
 class Motor;
-class Infrared;
 
 class MotionTracker {
    public:
-    MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
-                  Infrared* frontLeftInfraredPtr,
-                  Infrared* frontRightInfraredPtr, Angle statingAngle);
+    MotionTracker(Motor* leftMotor_P, Motor* rightMotor_P,
+                  Angle statingAngle);
 
     Angle angleFromOdometry();
 
@@ -24,21 +22,17 @@ class MotionTracker {
     bool updatePosition();
     bool poll();
 
-    int umActually(int frontDistance, int leftDistance);
+    int recalibratePosition(int frontDistance, int leftDistance);
 
     Angle getAngle();
     Position getPosition();
     Pose getPose();
 
-    // TODO make PRivate
-    Position _currentPosition;
-
    private:
-    Motor* _leftMotorPtr;
-    Motor* _rightMotorPtr;
-    Infrared* _frontLeftInfraredPtr;
-    Infrared* _frontRightInfraredPtr;
+    Motor* _leftMotor_P;
+    Motor* _rightMotor_P;
 
+    Position _currentPosition;
     const Angle _statingAngle;
     Angle _currentAngle = 90;
     Angle _angleCalibration = 0;

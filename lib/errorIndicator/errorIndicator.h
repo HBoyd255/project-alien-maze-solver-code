@@ -42,17 +42,17 @@ class ErrorIndicator {
      * @brief Assigns a Pixels object to pointer the class, used for flashing
      * the lights to grab the users attention.
      *
-     * @param pixelsPtr (Pixels*) A pointer to a preexisting Pixels class.
+     * @param pixels_P (Pixels*) A pointer to a preexisting Pixels class.
      */
-    void assignPixels(Pixels* pixelsPtr);
+    void assignPixels(Pixels* pixels_P);
 
     /**
      * @brief Assigns a Pixels object pointer to the class, used for halting the
      * motors when an error occurs.
      *
-     * @param drivePtr (Drive*) A pointer to a preexisting Drive class.
+     * @param drive_P (Drive*) A pointer to a preexisting Drive class.
      */
-    void assignDrive(Drive* drivePtr);
+    void assignDrive(Drive* drive_P);
 
     /**
      * @brief Permanently stops the program, flashes the given LED, flashes the
@@ -78,11 +78,11 @@ class ErrorIndicator {
     /**
      * @brief A pointer to a preexisting Pixels class.
      */
-    Pixels* _pixelsPtr = NULL;
+    Pixels* _pixels_P = NULL;
     /**
      * @brief  A pointer to a preexisting Drive class.
      */
-    Drive* _drivePtr = NULL;
+    Drive* _drive_P = NULL;
 };
 
 #endif  // ERROR_INDICATOR_H

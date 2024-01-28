@@ -73,21 +73,20 @@ class Map {
     Map();
 
     void solve(BrickList brickList, Position endPosition);
-    void solveFromSeen(Position endPosition);
 
-    void getAngle(Position robotPosition, Angle* angleToUpdatePtr);
+
+    void getAngle(Position robotPosition, Angle* angleToUpdate_P);
     float getEuclideanDistanceToEnd(Position robotPosition);
 
     void sendOverSerial();
 
     void primeForTracking();
 
-    void TEMP_cutMagicLine();
-
     void snowPlow(Position robotPosition);
 
     int countClearSpaces(Position positionA, Position positionB);
 
+    // TODO use this function to test if a brick can be added to the list
     bool safeForBrick(Position positionA, Position positionB, bool* hitWall_P);
 
     void seenPosition(Position seenPosition);
@@ -105,9 +104,6 @@ class Map {
                                     {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
 
     void _primeFromBrickList(BrickList brickList);
-
-    void _snowPlow2(MapPoint point);
-    void _primeFromSeen();
 
     void _populateDirections();
 
@@ -131,7 +127,6 @@ class Map {
     uint8_t _getSeen(MapPoint point);
     void _setSeen(MapPoint point, uint8_t seenStatus);
 
-    // void _jankyPrintPoint(MapPoint point, int extraVal = -1);
     void _resetData();
 };
 

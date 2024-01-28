@@ -54,14 +54,14 @@ Bumper::Bumper(uint8_t dataPin, uint8_t loadPin, uint8_t clockPin,
  *
  * This isn't the cleanest workaround but works for the intended purpose.
  *
- * @param isrPtr The pointer to the interrupt service routine.
+ * @param isr_P The pointer to the interrupt service routine.
  */
-void Bumper::setup(voidFuncPtr isrPtr) {
+void Bumper::setup(voidFuncPtr isr_P) {
     pinMode(this->_dataPin, INPUT);
     pinMode(this->_loadPin, OUTPUT);
     pinMode(this->_clockPin, OUTPUT);
 
-    attachInterrupt(digitalPinToInterrupt(this->_interruptPin), isrPtr, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(this->_interruptPin), isr_P, CHANGE);
 }
 
 /**

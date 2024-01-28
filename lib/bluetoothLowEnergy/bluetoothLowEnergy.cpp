@@ -5,13 +5,6 @@
 #include "brick.h"
 #include "errorIndicator.h"
 
-void blePeripheralConnectHandler(BLEDevice central) {
-    // BLE device connected
-    Serial.print("Connected event, central: ");
-    Serial.println(central.address());
-    // You can add your custom code here to handle a connection event
-}
-
 /**
  * @brief CompressedPose struct, a slimmed down version of the Pose comprised
  * of 3 16 bit integers.
@@ -25,48 +18,51 @@ struct __attribute__((packed)) CompressedPoseStruct {
     int16_t angle;  // The angle in degrees.
 };
 
-struct CompressedBrickStruct {
+struct __attribute__((packed)) CompressedBrickStruct {
     int16_t x;           // X position in millimeters.
     int16_t y;           // Y position in millimeters.
     uint8_t isVertical;  // The angle in degrees.
     uint8_t brickNumber;
 };
 
-struct __attribute__((packed)) CompressedCornerStruct {
-    int16_t x;      // X position in millimeters.
-    int16_t y;      // Y position in millimeters.
-    uint8_t index;  // The angle in degrees.
-};
-
 // BLERead and BLENotify are bitmask flags, the logical or combines them into
 // one flag, for conciseness.
 #define BLE_READ_NOTIFY BLERead | BLENotify
 
-BluetoothLowEnergy::BluetoothLowEnergy(ErrorIndicator* errorIndicatorPtr,
-                                       const char* mainServiceUUID,
+/**
+ * @brief Construct a new BluetoothLowEnergy object
+ *
+ * @param mainServiceUUID The UUID to attach the main service to.
+ * @param robotPoseUUID  The UUID to attach the robotPose characteristic to.
+ * @param brickUUID The UUID to attach the brick characteristic to.
+ */
+BluetoothLowEnergy::BluetoothLowEnergy(const char* mainServiceUUID,
                                        const char* robotPoseUUID,
-                                       const char* brickUUID,
-                                       const char* cornerUUID)
-    : _errorIndicator_P(errorIndicatorPtr),
-      _mainService(mainServiceUUID),
+                                       const char* brickUUID)
+    : _mainService(mainServiceUUID),
       _robotPoseCharacteristic(robotPoseUUID, BLE_READ_NOTIFY,
                                sizeof(CompressedPoseStruct)),
       _brickCharacteristic(brickUUID, BLE_READ_NOTIFY,
-                           sizeof(CompressedBrickStruct)),
-      _cornerCharacteristic(cornerUUID, BLE_READ_NOTIFY,
-                            sizeof(CompressedCornerStruct)) {}
+                           sizeof(CompressedBrickStruct)) {}
 
-void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
-    // _connectFunction_P = connectFunction_P;
-    // _disconnectFunction_P = disconnectFunction_P;
+/**
+ * @brief Sets up the BLE events.
+ *
+ * @param deviceName The name of the robot to broadcast.
+ * @param macAddress The mac address stored in the source code, to compare
+ * to the one read from the device.
+ * @param errorIndicator_P A pointer to an instance of the ErrorIndicator
+ * class, used to alert the user of errors during the setup proccess.
+ */
+void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress,
+                               ErrorIndicator* errorIndicator_P) {
 
-    // Set a boolean indicating if the error indicator object is available
-    bool errorIndicatorAvailable = (this->_errorIndicator_P != NULL);
+    bool errorIndicatorAvailable = (errorIndicator_P != NULL);
 
     if (!BLE.begin()) {
         if (errorIndicatorAvailable) {
             String errorMessage = "BLE initialisation has failed.";
-            _errorIndicator_P->errorOccurred(errorMessage);
+            errorIndicator_P->errorOccurred(errorMessage);
         }
     }
 
@@ -78,25 +74,33 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
                 "BLE_MAC_ADDRESS in systemInfo.h to " +
                 String(BLE.address()) + ".";
 
-            _errorIndicator_P->errorOccurred(errorMessage);
+            errorIndicator_P->errorOccurred(errorMessage);
         }
     }
 
-    // Name the device
+    // Name the device.
     BLE.setDeviceName(deviceName);
     BLE.setLocalName(deviceName);
 
+    // Add the characteristics to the main service.
     this->_mainService.addCharacteristic(this->_robotPoseCharacteristic);
-    this->_mainService.addCharacteristic(this->_cornerCharacteristic);
     this->_mainService.addCharacteristic(this->_brickCharacteristic);
 
+    // Add the main service to the BLE.
     BLE.addService(this->_mainService);
+
+    // Advertise the main service.
     BLE.setAdvertisedService(this->_mainService);
 
-    // Start advertising
+    // Start advertising.
     BLE.advertise();
 }
 
+/**
+ * @brief Transmits the current pose of the robot over BLE.
+ *
+ * @param robotPose The current pose of the robot.
+ */
 void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {
     CompressedPoseStruct compressedRobotPose;
 
@@ -110,7 +114,38 @@ void BluetoothLowEnergy::sendRobotPose(Pose robotPose) {
                                               sizeof(CompressedPoseStruct));
 }
 
-void BluetoothLowEnergy::sendBrick(Brick brickToSend, int brickNumber) {
+/**
+ * @brief Transmits a list of bricks over BLE, brick by brick.
+ *
+ * @param brickListToSend The list of bricks to send.
+ */
+void BluetoothLowEnergy::sendBrickList(BrickList brickListToSend) {
+    int brickCount = brickListToSend.getBrickCount();
+    for (int i = 0; i < brickCount; i++) {
+        this->_sendBrick(brickListToSend.getBrick(i), i);
+    }
+}
+
+/**
+ * @brief Polls the ble connection.
+ */
+void BluetoothLowEnergy::poll() { BLE.poll(); }
+
+/**
+ * @brief Checks if a central device is currently connected.
+ *
+ * @return (true) If a central device is currently connected.
+ * @return (false) If a central device is not currently connected.
+ */
+bool BluetoothLowEnergy::isConnected() { return BLE.connected(); }
+
+/**
+ * @brief Transmits data about a given brick over BLE.
+ *
+ * @param brickToSend The brick to send over BLE.
+ * @param brickNumber The index of the current brick in the blacklist.
+ */
+void BluetoothLowEnergy::_sendBrick(Brick brickToSend, int brickNumber) {
     CompressedBrickStruct compressedBrick;
 
     compressedBrick.x = (int16_t)brickToSend.position.x;
@@ -123,28 +158,3 @@ void BluetoothLowEnergy::sendBrick(Brick brickToSend, int brickNumber) {
     this->_brickCharacteristic.writeValue(dataToSend,
                                           sizeof(CompressedBrickStruct));
 }
-
-void BluetoothLowEnergy::sendBrickList(BrickList brickListToSend) {
-    int brickCount = brickListToSend.getBrickCount();
-
-    for (int i = 0; i < brickCount; i++) {
-        this->sendBrick(brickListToSend.getBrick(i), i);
-    }
-}
-
-void BluetoothLowEnergy::sendCorner(Position cornerPosition, uint8_t index) {
-    CompressedCornerStruct compressedCorner;
-
-    compressedCorner.x = (int16_t)cornerPosition.x;
-    compressedCorner.y = (int16_t)cornerPosition.y;
-    compressedCorner.index = index;
-
-    uint8_t* dataToSend = (uint8_t*)&compressedCorner;
-
-    this->_cornerCharacteristic.writeValue(dataToSend,
-                                           sizeof(CompressedCornerStruct));
-}
-
-void BluetoothLowEnergy::poll() { BLE.poll(); }
-
-bool BluetoothLowEnergy::isConnected() { return BLE.connected(); }

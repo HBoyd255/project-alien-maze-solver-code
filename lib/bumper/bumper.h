@@ -50,9 +50,9 @@ class Bumper {
      *
      * This isn't the cleanest workaround but works for the intended purpose.
      *
-     * @param isrPtr The pointer to the interrupt service routine.
+     * @param isr_P The pointer to the interrupt service routine.
      */
-    void setup(voidFuncPtr isrPtr);
+    void setup(voidFuncPtr isr_P);
 
     /**
      * @brief Reads the current state of the 8 buttons, as a single byte.

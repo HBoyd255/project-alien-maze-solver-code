@@ -1,25 +1,24 @@
 #include "motionTracker.h"
 
+#include "mazeConstants.h"
+
+// Calibrated value
 #define STEPS_PER_ROTATION 855
 
 // The period to wait between updating the angle and position.
 #define MOTION_TRACKER_POLL_RATE 10
 
-MotionTracker::MotionTracker(Motor* leftMotorPtr, Motor* rightMotorPtr,
-                             Infrared* frontLeftInfraredPtr,
-                             Infrared* frontRightInfraredPtr,
+MotionTracker::MotionTracker(Motor* leftMotor_P, Motor* rightMotor_P,
                              Angle statingAngle)
-    : _leftMotorPtr(leftMotorPtr),
-      _rightMotorPtr(rightMotorPtr),
-      _frontLeftInfraredPtr(frontLeftInfraredPtr),
-      _frontRightInfraredPtr(frontRightInfraredPtr),
+    : _leftMotor_P(leftMotor_P),
+      _rightMotor_P(rightMotor_P),
       _statingAngle(statingAngle) {}
 
 // TODO Check if the vales of distance traveled has changes before doing all
 // that maths
 Angle MotionTracker::angleFromOdometry() {
-    int32_t leftTravelDistance = this->_leftMotorPtr->getDistanceTraveled();
-    int32_t rightTravelDistance = this->_rightMotorPtr->getDistanceTraveled();
+    int32_t leftTravelDistance = this->_leftMotor_P->getDistanceTraveled();
+    int32_t rightTravelDistance = this->_rightMotor_P->getDistanceTraveled();
 
     int16_t motorTravelDifference = rightTravelDistance - leftTravelDistance;
 
@@ -27,33 +26,6 @@ Angle MotionTracker::angleFromOdometry() {
 
     return angle;
 }
-
-// TODO remove this
-//  Angle MotionTracker::angleFromFrontIR() {
-//      // TODO move this into somewhere different
-//      // The measurement was obtained from my cad file.
-//      const uint16_t distanceBetweenSensors = 73;
-//
-//      uint16_t L = _frontLeftInfraredPtr->read();
-//      uint16_t R = _frontRightInfraredPtr->read();
-//
-//      if (L == 639 || R == 639) {
-//          // 91 is just supposed to represent that the angle cannot be
-//          measured.
-//          // Ill fix this later.
-//          return 91;
-//      }
-//
-//      int16_t height = R - L;
-//
-//      Angle angle = (int16_t)degrees(atan2(height, distanceBetweenSensors));
-//
-//      if (angle > 45 || angle < -45) {
-//          return 91;
-//      }
-//
-//      return angle;
-//  }
 
 bool MotionTracker::updateAngle() {
     Angle newAngle = this->_statingAngle + this->angleFromOdometry() +
@@ -82,8 +54,8 @@ bool MotionTracker::updatePosition() {
     if (difference != 0) {
         hasMoved = true;
 
-        float sinAngle = sin(this->_currentAngle.toRadians());
-        float cosAngle = cos(this->_currentAngle.toRadians());
+        float sinAngle = sin(this->_currentAngle.getRadians());
+        float cosAngle = cos(this->_currentAngle.getRadians());
 
         float xDif = difference * cosAngle;
         float yDif = difference * sinAngle;
@@ -110,13 +82,8 @@ bool MotionTracker::poll() {
     return false;
 }
 
-// ☝️🤓
-int MotionTracker::umActually(int frontDistance, int leftDistance) {
-    // TODO fix this
+int MotionTracker::recalibratePosition(int frontDistance, int leftDistance) {
     int closeThreshold = 200;
-
-    const int mazeWidth = 1500;
-    const int mazeHeight = 2000;
 
     Angle angleDrift = this->_currentAngle.OrthogonalOffset();
 
@@ -133,38 +100,22 @@ int MotionTracker::umActually(int frontDistance, int leftDistance) {
 
     bool closeToBottomWall = currentPosition.y < closeThreshold;
     bool closeToLeftWall = currentPosition.x < closeThreshold;
-    bool closeToTopWall = currentPosition.y > (mazeHeight - closeThreshold);
-    bool closeToRightWall = currentPosition.x > (mazeWidth - closeThreshold);
-
-    //     Serial.print(" facingRight:");
-    //     Serial.print(facingRight);
-    //     Serial.print(" facingTop:");
-    //     Serial.print(facingTop);
-    //     Serial.print(" facingLeft:");
-    //     Serial.print(facingLeft);
-    //     Serial.print(" facingBottom:");
-    //     Serial.print(facingBottom);
-    //
-    //     Serial.print(" closeToRightWall:");
-    //     Serial.print(closeToRightWall);
-    //     Serial.print(" closeToTopWall:");
-    //     Serial.print(closeToTopWall);
-    //     Serial.print(" closeToLeftWall:");
-    //     Serial.print(closeToLeftWall);
-    //     Serial.print(" closeToBottomWall:");
-    //     Serial.println(closeToBottomWall);
+    bool closeToTopWall = currentPosition.y > (MAZE_LENGTH - closeThreshold);
+    bool closeToRightWall = currentPosition.x > (MAZE_WIDTH - closeThreshold);
 
     bool leftDistanceValid = (leftDistance != -1);
+
+    // This bit looks messy but all it is doing is returning 1 if it is at a
+    // wall, and returning 2 if it is in a corner.
 
     if ((facingBottom) && (closeToBottomWall)) {
         this->_currentPosition.y = frontDistance;
 
         if (closeToRightWall && leftDistanceValid) {
-            this->_currentPosition.x = mazeWidth - leftDistance;
+            this->_currentPosition.x = MAZE_WIDTH - leftDistance;
             return 2;
         }
         return 1;
-
     } else if ((facingLeft) && (closeToLeftWall)) {
         this->_currentPosition.x = frontDistance;
 
@@ -173,21 +124,19 @@ int MotionTracker::umActually(int frontDistance, int leftDistance) {
             return 2;
         }
         return 1;
-
     } else if ((facingTop) && (closeToTopWall)) {
-        this->_currentPosition.y = mazeHeight - frontDistance;
+        this->_currentPosition.y = MAZE_LENGTH - frontDistance;
 
         if (closeToLeftWall && leftDistanceValid) {
             this->_currentPosition.x = leftDistance;
             return 2;
         }
         return 1;
-
     } else if ((facingRight) && (closeToRightWall)) {
-        this->_currentPosition.x = mazeWidth - frontDistance;
+        this->_currentPosition.x = MAZE_WIDTH - frontDistance;
 
         if (closeToTopWall && leftDistanceValid) {
-            this->_currentPosition.y = mazeHeight - leftDistance;
+            this->_currentPosition.y = MAZE_LENGTH - leftDistance;
             return 2;
         }
         return 1;
@@ -208,8 +157,8 @@ Pose MotionTracker::getPose() {
 }
 
 int32_t MotionTracker::_averageTravelDistance() {
-    int32_t leftTravelDistance = this->_leftMotorPtr->getDistanceTraveled();
-    int32_t rightTravelDistance = this->_rightMotorPtr->getDistanceTraveled();
+    int32_t leftTravelDistance = this->_leftMotor_P->getDistanceTraveled();
+    int32_t rightTravelDistance = this->_rightMotor_P->getDistanceTraveled();
 
     int32_t averageTravelDistance =
         (leftTravelDistance + rightTravelDistance) / 2;

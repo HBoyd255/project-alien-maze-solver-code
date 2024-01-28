@@ -13,63 +13,7 @@
 
 #include <Arduino.h>
 
-/**
- * @brief Schedule class, designed to record the times at which a given function
- * was last called, and to call the function again if a specified amount of time
- * has passed.
- *
- */
-class Schedule {
-   public:
-    /**
-     * @brief Construct a new Schedule object
-     *
-     */
-    Schedule(){};
 
-    /**
-     * @brief Sets up the object by assigning a function to call periodically,
-     * and the period that should be waited between function calls.
-     *
-     * @param periodicFunctionPtr A pointer to the function to execute.
-     * @param period The number of milliseconds that should pass between the end
-     * of the last execution, and the start of the next one.
-     */
-    void setup(voidFuncPtr periodicFunctionPtr, uint32_t period);
-
-    /**
-     * @brief The method that calls the functions and records the execution
-     * time.
-     *
-     */
-    void execute();
-
-    /**
-     * @brief The method that check if enough time has passed to call the
-     * function.
-     *
-     */
-    void poll();
-
-   private:
-    /**
-     * @brief A pointer to the function to execute.
-     *
-     */
-    voidFuncPtr _periodicFunctionPtr;
-
-    /**
-     * @brief The number of milliseconds to wait before calling the function
-     * again
-     */
-    uint32_t _period;
-
-    /**
-     * @brief The time at which the last function was called.
-     *
-     */
-    uint32_t _lastExecutionTime = 0;
-};
 
 /**
  * @brief PassiveSchedule class, Used to keep track of the last time that an

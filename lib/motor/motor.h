@@ -7,7 +7,7 @@ class Motor {
    public:
     Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderChannelA,
           uint8_t encoderChannelB, bool rotationInverted);
-    void setup(voidFuncPtr isrPtr);
+    void setup(voidFuncPtr isr_P);
 
     void setVelocity(int8_t formattedVelocity);
 

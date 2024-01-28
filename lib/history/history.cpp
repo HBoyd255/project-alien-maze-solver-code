@@ -18,6 +18,7 @@
  * the queue before items start getting removed from the front.
  */
 History::History(uint16_t maxValues) : _maxValues(maxValues) {}
+
 /**
  * @brief Implicitly converts the stored values into a string.
  *

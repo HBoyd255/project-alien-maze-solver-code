@@ -11,18 +11,14 @@
 
 class Infrared {
    public:
-    Infrared(ErrorIndicator* errorIndicatorPtr, uint8_t index,
+    Infrared(ErrorIndicator* errorIndicator_P, uint8_t index,
              int distanceFromCentre);
 
-    void setup(voidFuncPtr PTR);
+    void setup();
 
     int16_t read();
     int16_t readSafe();
     int readFromRobotCenter(bool getOldReading = false);
-
-    //     int getMostResentDistance();
-    //     int secMost();
-    //
 
     bool brickAppeared(int range, int requiredDistanceChange);
     bool brickDisappeared(int range, int requiredDistanceChange);
@@ -31,7 +27,6 @@ class Infrared {
     String getValueHistoryAsString();
 
     void poll();
-    void routineFunction();
 
    private:
     ErrorIndicator* _errorIndicator_P;
@@ -42,9 +37,6 @@ class Infrared {
 
     int _mostRecentValue = -1;
     int _secondMostRecentValue = -1;
-
-    // TODO update this to use a passive schedule.
-    Schedule _historyUpdater;
 
     void _setMultiplexer();
 };

@@ -13,15 +13,15 @@ Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderChannelA,
 /**
  * @brief Sets up the motor class by
  *
- * @param isrPtr Pointer to the
+ * @param isr_P Pointer to the
  */
-void Motor::setup(voidFuncPtr isrPtr) {
+void Motor::setup(voidFuncPtr isr_P) {
     pinMode(this->_directionPin, OUTPUT);
     pinMode(this->_speedPin, OUTPUT);
     pinMode(this->_encoderChannelA, INPUT);
     pinMode(this->_encoderChannelB, INPUT);
 
-    attachInterrupt(digitalPinToInterrupt(this->_encoderChannelA), isrPtr,
+    attachInterrupt(digitalPinToInterrupt(this->_encoderChannelA), isr_P,
                     CHANGE);
 }
 
