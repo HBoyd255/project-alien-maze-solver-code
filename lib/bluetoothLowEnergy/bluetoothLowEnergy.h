@@ -24,7 +24,8 @@ class Brick;
 class BrickList;
 
 /**
- * @brief The BluetoothLowEnergy class, responsible for candling all ble events.
+ * @brief A wrapper for the ArduinoBLE class "BLE" tailored to the specific
+ * needs of this project.
  */
 class BluetoothLowEnergy {
    public:
