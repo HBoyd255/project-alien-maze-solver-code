@@ -20,11 +20,24 @@
 /**
  * @brief ErrorIndicator class, responsible for halting operations upon an
  * error, and drawing the user's attention to the serial monitor.
+ *
+ * This class should be used by making calls to the global ErrorIndicator_G
+ * instance.
  */
 class ErrorIndicator {
    public:
+    /**
+     * @brief Construct a new Error Indicator object
+     */
     ErrorIndicator();
 
+    /**
+     * @brief Initialises the Error Indicator object, by setting the pin number
+     * of led to flash and the baud rate of the serial monitor.
+     *
+     * @param ledPin The pin number of led to flash.
+     * @param serialBaudRate The baud rate of the serial monitor.
+     */
     void begin(uint8_t ledPin, uint32_t serialBaudRate);
 
     /**
@@ -56,6 +69,10 @@ class ErrorIndicator {
     void errorOccurred(String errorMessage);
 
    private:
+    /**
+     * @brief A boolean to keep track of wether this instance has been
+     * initialised uring ErrorIndicator::begin().
+     */
     bool _hasBegun;
 
     /**

@@ -9,13 +9,14 @@
  * @copyright Copyright (c) 2023
  */
 
-// TODO reconfirm this documentation.
-
 #include "errorIndicator.h"
 
 // The period to wait while flashing the leds
 #define ERROR_INDICATOR_DELAY 500
 
+/**
+ * @brief Construct a new Error Indicator object
+ */
 ErrorIndicator::ErrorIndicator() : _hasBegun(false) {}
 
 /**
