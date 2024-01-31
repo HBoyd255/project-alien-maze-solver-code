@@ -1,7 +1,7 @@
 /**
  * @file history.cpp
  * @brief Definitions of the History class, a class responsible for storing a
- * queue of values, and calculating their median.
+ * queue of uint16_t values, and calculating their median.
  *
  * @author Harry Boyd - github.com/HBoyd255
  * @date 2023-12-20

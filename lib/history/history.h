@@ -1,7 +1,7 @@
 /**
  * @file history.h
  * @brief Declaration of the History class, a class responsible for storing a
- * queue of values, and calculating their median.
+ * queue of uint16_t values, and calculating their median.
  *
  * @author Harry Boyd - github.com/HBoyd255
  * @date 2023-12-20
@@ -19,10 +19,8 @@
  * @brief History Class, Used for storing a queue of values repressing the
  * history of signed 16 bit integer.
  *
- *
  * This class acts as a wrapper for the vector, with the ability to get the
  * median and automatically pop the last values from the queue.
- *
  */
 class History {
    public:
