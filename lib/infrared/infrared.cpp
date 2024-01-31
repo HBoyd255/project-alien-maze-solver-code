@@ -1,6 +1,7 @@
 
 
 #include "infrared.h"
+#include "errorIndicator.h"
 
 // Multiplexer
 // https://www.nxp.com/docs/en/data-sheet/PCA9846.pdf
@@ -33,11 +34,10 @@
 
 #define MAX_IR_RANGE 639
 
-Infrared::Infrared(ErrorIndicator* errorIndicator_P, uint8_t index,
-                   int distanceFromCentre)
-    : _errorIndicator_P(errorIndicator_P),
-      _index(index),
+Infrared::Infrared(uint8_t index, int distanceFromCentre)
+    : _index(index),
       _valueHistory(MAX_HISTORY),
+      _historyUpdater(POLL_PERIOD),
       _distanceFromCentre(distanceFromCentre) {}
 
 void Infrared::setup() {
@@ -53,8 +53,8 @@ void Infrared::setup() {
 
     if (!Wire.available()) {
         String errorMessage =
-            "Cannot read sensor at index " + String(this->_index) + ".";
-        this->_errorIndicator_P->errorOccurred(errorMessage);
+            "Cannot initialize IR sensor " + String(this->_index) + ".";
+        ErrorIndicator_G.errorOccurred(errorMessage);
     }
     this->_shiftValue = Wire.read();
 }
@@ -70,10 +70,9 @@ int16_t Infrared::read() {
 
     // TODO add a timeout and a call to the errorIndicator.
     if (Wire.available() < 2) {
-        this->_errorIndicator_P->errorOccurred("NO CAN READ");
-        // Serial.print("Cannot read from sensor ");
-        // Serial.print(this->_index);
-        // Serial.println(".");
+        String errorMessage =
+            "Cannot read IR sensor " + String(this->_index) + ".";
+        ErrorIndicator_G.errorOccurred(errorMessage);
     }
 
     uint8_t high = Wire.read();
@@ -105,16 +104,6 @@ int Infrared::readFromRobotCenter(bool getOldReading) {
     } else {
         measuredDistance = this->_mostRecentValue;
     }
-    //
-    //     Serial.print(" new:");
-    //     Serial.print(this->_mostRecentValue);
-    //     Serial.print(" Old:");
-    //     Serial.print(this->_secondMostRecentValue);
-    //     Serial.print(" and you wanted:");
-    //     String newOld[2] = {"new", "old"};
-    //     Serial.print(newOld[(int)getOldReading]);
-    //     Serial.print(" Here:");
-    //     Serial.print(measuredDistance);
 
     if (measuredDistance == -1) {
         return -1;
@@ -171,9 +160,7 @@ bool Infrared::brickDisappeared(int range, int requiredDistanceChange) {
 }
 
 void Infrared::poll() {
-    static PassiveSchedule historyUpdater(POLL_PERIOD);
-
-    if (historyUpdater.isReadyToRun()) {
+    if (this->_historyUpdater.isReadyToRun()) {
         this->_valueHistory.add(this->read());
 
         this->_secondMostRecentValue = this->_mostRecentValue;

@@ -1,6 +1,6 @@
 /**
  * @file errorIndicator.cpp
- * @brief DDefinitions for the ErrorIndicator class, responsible for halting
+ * @brief Definitions for the ErrorIndicator class, responsible for halting
  * operations upon an error, and drawing the users attention to the serial
  * monitor.
  *
@@ -9,26 +9,26 @@
  * @copyright Copyright (c) 2023
  */
 
+// TODO reconfirm this documentation.
+
 #include "errorIndicator.h"
 
 // The period to wait while flashing the leds
 #define ERROR_INDICATOR_DELAY 500
 
-/**
- * @brief Construct a new Error Indicator object
- *
- * @param ledPin (uint8_t) The pin of the LED to flash upon error, typically
- * the built in led.
- * @param serialBaudRate (uint32_t) the baud rate of the serial monitor, so
- * that the class can reopen the serial monitor if needed.
- */
-ErrorIndicator::ErrorIndicator(uint8_t ledPin, uint32_t serialBaudRate)
-    : _ledPin(ledPin), _serialBaudRate(serialBaudRate) {}
+ErrorIndicator::ErrorIndicator() : _hasBegun(false) {}
 
 /**
  * @brief Sets up the class by setting the led pin to output.
  */
-void ErrorIndicator::setup() { pinMode(this->_ledPin, OUTPUT); }
+void ErrorIndicator::begin(uint8_t ledPin, uint32_t serialBaudRate) {
+    this->_ledPin = ledPin;
+    this->_serialBaudRate = serialBaudRate;
+
+    pinMode(this->_ledPin, OUTPUT);
+
+    this->_hasBegun = true;
+}
 
 /**
  * @brief Assigns a Pixels object to pointer the class, used for flashing
@@ -46,10 +46,7 @@ void ErrorIndicator::assignPixels(Pixels* pixels_P) {
  *
  * @param drive_P (Drive*) A pointer to a preexisting Drive class.
  */
-void ErrorIndicator::assignDrive(Drive* drive_P
-) {
-    this->_drive_P = drive_P;
-}
+void ErrorIndicator::assignDrive(Drive* drive_P) { this->_drive_P = drive_P; }
 
 /**
  * @brief Permanently stops the program, flashes the given LED, flashes the
@@ -62,12 +59,26 @@ void ErrorIndicator::assignDrive(Drive* drive_P
  * monitor.
  */
 void ErrorIndicator::errorOccurred(String errorMessage) {
+    // If this instance has not been initialised using ErrorIndicator::begin,
+    // Hope that the Serial Post has been initialised and spam the received
+    // error message to it. This case should be avoided as this will lead to the
+    // motors not being halted, no LEDs being enabled to draw the users
+    // attention and a hard to read wall of text being printed to the serial
+    // monitor, if one is even connected at all.
+    if (!this->_hasBegun) {
+        while (true) {
+            Serial.println("ErrorIndicator Not initialised, Error");
+            Serial.println(errorMessage);
+            Serial.println();
+        }
+    }
+
     // If a pointer to the drive class has been given, halt the motors.
     if (this->_drive_P != NULL) {
         this->_drive_P->stop();
     }
 
-    // Incase serial communication has not been initialized.
+    // Initialise serial communication, if not already initialized.
     Serial.begin(this->_serialBaudRate);
 
     // A boolean representing if the serial motor is connected.
@@ -75,7 +86,7 @@ void ErrorIndicator::errorOccurred(String errorMessage) {
     // A boolean representing is last state of the serialAvailability boolean,
     // used for detecting the point at which the serial monitor becomes
     // available.
-    bool oldSerialAvailability = serialAvailability;
+    bool oldSerialAvailability = false;
 
     // A boolean representing if the pixels class has been provided.
     bool pixelsAvailability = this->_pixels_P != NULL;
@@ -113,6 +124,7 @@ void ErrorIndicator::errorOccurred(String errorMessage) {
             // Display the error message to the serial monitor.
             Serial.println("Error Occurred!");
             Serial.println(errorMessage);
+            Serial.println("Please address this issue and reset the program.");
         }
 
         // Toggle the LED, regardless of if the serial monitor is available.
@@ -129,3 +141,6 @@ void ErrorIndicator::errorOccurred(String errorMessage) {
         serialAvailability = (bool)Serial;
     }
 }
+
+// Definition of the global ErrorIndicator instance.
+ErrorIndicator ErrorIndicator_G;

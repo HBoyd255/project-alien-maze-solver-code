@@ -23,24 +23,13 @@
  */
 class ErrorIndicator {
    public:
-    /**
-     * @brief Construct a new Error Indicator object
-     *
-     * @param ledPin (uint8_t) The pin of the LED to flash upon error, typically
-     * the built in led.
-     * @param serialBaudRate (uint32_t) the baud rate of the serial monitor, so
-     * that the class can reopen the serial monitor if needed.
-     */
-    ErrorIndicator(uint8_t ledPin, uint32_t serialBaudRate);
+    ErrorIndicator();
+
+    void begin(uint8_t ledPin, uint32_t serialBaudRate);
 
     /**
-     * @brief Sets up the class.
-     */
-    void setup();
-
-    /**
-     * @brief Assigns a Pixels object to pointer the class, used for flashing
-     * the lights to grab the users attention.
+     * @brief Assigns a Pixels object to pointer the class, used for
+     * flashing the lights to grab the users attention.
      *
      * @param pixels_P (Pixels*) A pointer to a preexisting Pixels class.
      */
@@ -67,6 +56,8 @@ class ErrorIndicator {
     void errorOccurred(String errorMessage);
 
    private:
+    bool _hasBegun;
+
     /**
      * @brief The  pin of the LED to flash upon error.
      */
@@ -84,5 +75,8 @@ class ErrorIndicator {
      */
     Drive* _drive_P = NULL;
 };
+
+// Declaration of the global ErrorIndicator instance.
+extern ErrorIndicator ErrorIndicator_G;
 
 #endif  // ERROR_INDICATOR_H

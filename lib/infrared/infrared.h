@@ -5,14 +5,16 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#include "errorIndicator.h"
+// TODO swap this for forward declaration
 #include "history.h"
 #include "schedule.h"
 
+// FD
+class PassiveSchedule;
+
 class Infrared {
    public:
-    Infrared(ErrorIndicator* errorIndicator_P, uint8_t index,
-             int distanceFromCentre);
+    Infrared(uint8_t index, int distanceFromCentre);
 
     void setup();
 
@@ -29,9 +31,9 @@ class Infrared {
     void poll();
 
    private:
-    ErrorIndicator* _errorIndicator_P;
     uint8_t _index;  // The index of the infrared sensor
     History _valueHistory;
+    PassiveSchedule _historyUpdater;
     int _distanceFromCentre;
     uint8_t _shiftValue;  // The shift value of the infrared sensor
 

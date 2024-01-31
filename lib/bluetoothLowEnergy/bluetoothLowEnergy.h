@@ -17,9 +17,8 @@
 // https://www.arduino.cc/reference/en/libraries/arduinoble/
 #include <ArduinoBLE.h>
 
-// Forward declaration for the ErrorIndicator, Pose, Brick and BrickList
+// Forward declaration for the Pose, Brick and BrickList
 // classes.
-class ErrorIndicator;
 class Pose;
 class Brick;
 class BrickList;
@@ -45,11 +44,8 @@ class BluetoothLowEnergy {
      * @param deviceName The name of the robot to broadcast.
      * @param macAddress The mac address stored in the source code, to compare
      * to the one read from the device.
-     * @param errorIndicator_P A pointer to an instance of the ErrorIndicator
-     * class, used to alert the user of errors during the setup proccess.
      */
-    void setup(const char* deviceName, const char* macAddress,
-               ErrorIndicator* errorIndicator_P = nullptr);
+    void setup(const char* deviceName, const char* macAddress);
 
     /**
      * @brief Transmits the current pose of the robot over BLE.

@@ -51,31 +51,26 @@ BluetoothLowEnergy::BluetoothLowEnergy(const char* mainServiceUUID,
  * @param deviceName The name of the robot to broadcast.
  * @param macAddress The mac address stored in the source code, to compare
  * to the one read from the device.
- * @param errorIndicator_P A pointer to an instance of the ErrorIndicator
- * class, used to alert the user of errors during the setup proccess.
  */
-void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress,
-                               ErrorIndicator* errorIndicator_P) {
-
-    bool errorIndicatorAvailable = (errorIndicator_P != NULL);
-
+void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
+    // Raise a critical error if BLE can't start.
     if (!BLE.begin()) {
-        if (errorIndicatorAvailable) {
-            String errorMessage = "BLE initialisation has failed.";
-            errorIndicator_P->errorOccurred(errorMessage);
-        }
+        String errorMessage = "BLE initialisation has failed.";
+        ErrorIndicator_G.errorOccurred(errorMessage);
     }
 
+    // Raise a critical error the mac address read from the board differs from
+    // the one saved in the source code. The purpose of this is to ensure
+    // compatibility with the central program, as both programs read the mac
+    // address from the same file.
     if (BLE.address() != macAddress) {
-        if (errorIndicatorAvailable) {
-            String errorMessage =
-                "The BLE MAC address read from the device is not the same as "
-                "the one defined in systemInfo.h.\nPlease update the "
-                "BLE_MAC_ADDRESS in systemInfo.h to " +
-                String(BLE.address()) + ".";
+        String errorMessage =
+            "The BLE MAC address read from the device is not the same as "
+            "the one defined in systemInfo.h.\nPlease update the "
+            "BLE_MAC_ADDRESS in systemInfo.h to " +
+            String(BLE.address()) + ".";
 
-            errorIndicator_P->errorOccurred(errorMessage);
-        }
+        ErrorIndicator_G.errorOccurred(errorMessage);
     }
 
     // Name the device.
