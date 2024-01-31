@@ -86,11 +86,7 @@ uint8_t Bumper::read() {
  * @brief The interrupt service routine that is called when any of the 8
  * buttons are pressed, responsible for raising the _interruptFlag.
  */
-void Bumper::isr() {
-    this->_interruptFlag = true;
-    // TODO add a way to stop the motors instantly when a button has been
-    // pressed.
-}
+void Bumper::isr() { this->_interruptFlag = true; }
 
 /**
  * @brief Check if the _interruptFlag has been raised, and then sets the
