@@ -158,6 +158,12 @@ class Ultrasonic {
     int16_t _pulseWidthMicros = 0;
 
     /**
+     * @brief An instance of the PassiveScheduler class, used for ensuring that
+     * the poll function only runs at designated time intervals.
+     */
+    PassiveSchedule _pollSchedule;
+
+    /**
      * @brief Waits for a pulse to the echo pin.
      *
      * @return (int16_t) The duration of the pulse to the echo pin.

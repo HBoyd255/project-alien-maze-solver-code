@@ -44,7 +44,8 @@ Ultrasonic::Ultrasonic(uint8_t triggerPin, uint8_t echoPin, uint32_t timeout,
       _timeout(timeout),
       _maxRange(maxRange),
       _dataShelfLife(dataShelfLife),
-      _distanceFromCentre(distanceFromCentre) {}
+      _distanceFromCentre(distanceFromCentre),
+      _pollSchedule(TRIGGER_POLL_PERIOD) {}
 
 /**
  * @brief Sets up the class by attaching the interrupt pin to the provided
@@ -153,12 +154,8 @@ void Ultrasonic::isr() {
  * pulse.
  */
 void Ultrasonic::poll() {
-    // Create static scheduler that will run wait for a given minimum duration
-    // before running a function.
-    static PassiveSchedule ultrasonicSchedule(TRIGGER_POLL_PERIOD);
-
     // If enough time has passed since the last time the function ran,
-    if (ultrasonicSchedule.isReadyToRun()) {
+    if (this->_pollSchedule.isReadyToRun()) {
         // Pulse the trigger pin.
         this->_trigger();
         // Record the time at which the trigger pin was pulsed.
