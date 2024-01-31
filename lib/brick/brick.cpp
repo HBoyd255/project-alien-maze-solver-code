@@ -104,7 +104,7 @@ Zone Brick::calculateZone(Position target) {
  * c = (a * a + b * b) ^ 0.5
  *
  * @param target The other position to calculate the squared distance
- * param zone_IP
+ * @param zone_IP The pointer to return the zone from the brick.
  * @param dx_P A pointer to return the difference in x positions.
  * @param dy_P A pointer to return the difference in y positions.
  * @return (float) The square of the euclidean distance to the target
@@ -219,18 +219,42 @@ String Brick::toString() {
     return stringToReturn;
 }
 
+/**
+ * @brief Construct a new BrickList object, and appends the 4 starting walls.
+ */
 BrickList::BrickList() { this->_addWalls(); };
 
+/**
+ * @brief Get the number of bricks in the list.
+ *
+ * @return (int) The number of bricks in the list.
+ */
 int BrickList::getBrickCount() { return this->_brickCount; }
 
+/**
+ * @brief Get the Brick at a given index in the list.
+ *
+ * @param index The index of the brick to return.
+ * @return (Brick) The brick at the given index in the list.
+ */
 Brick BrickList::getBrick(int index) {
+    // If the requested brick is not in the list
     if (index > this->getBrickCount()) {
+        // complain to the serial monitor
         Serial.println("Brick out of range");
+
+        // and returns a dummy brick.
         return Brick(Position(-1, -1), 0);
     }
+    // If the requested brick is in the list, return it
     return this->_brickArray[index];
 }
 
+/**
+ * @brief Converts the BrickList into a human readable string.
+ *
+ * @return (String) The BrickList as a human readable string.
+ */
 String BrickList::toString() {
     int brickCount = this->getBrickCount();
 
@@ -251,49 +275,13 @@ String BrickList::toString() {
     return stringToReturn;
 }
 
-bool BrickList::_attemptAppendBrick(Brick brickToAdd) {
-    int closestDistance = this->lowestDistance(brickToAdd.position);
-
-    // TODO improve brick self coition detection.
-
-    if (closestDistance > 0) {
-        this->_appendBrick(brickToAdd);
-        return true;
-    }
-    return false;
-}
-
-void BrickList::setPreprogrammedMazeData() {
-    // This is the hard coded data for the "seen maze"
-    // This data is only used for algorithm testing,
-    // it is at no point used during the demonstration.
-
-    // this->_appendBrick(Brick(125, 460, false));
-    // this->_appendBrick(Brick(375, 460, false));
-    // this->_appendBrick(Brick(40, 1000, true));
-    // this->_appendBrick(Brick(125, 1460, false));
-    // this->_appendBrick(Brick(375, 1460, false));
-    // this->_appendBrick(Brick(540, 1545, true));
-    // this->_appendBrick(Brick(1460, 1545, true));
-    // this->_appendBrick(Brick(1295, 1460, false));
-    // this->_appendBrick(Brick(1130, 1375, true));
-    // this->_appendBrick(Brick(1460, 625, true));
-    // this->_appendBrick(Brick(1295, 540, false));
-    // this->_appendBrick(Brick(1130, 455, true));
-    // this->_appendBrick(Brick(460, 1000, true));
-    // this->_appendBrick(Brick(625, 915, false));
-    // this->_appendBrick(Brick(875, 915, false));
-}
-
 /**
- * @brief checks if a seen brick corner falls withing the outer bounds of
- * the maze, and if so places a brick in the brick list, flat against the
- * wall.
+ * @brief Takes the position of a corner seen by the robot, and decided if
+ * it is along one of the walls of the maze.
  *
- * @param brickCorner The position of the corner of the brick that was seen
- * by a sensor.
- * @return (true) If a brick has been added to the list.
- * @return (false) If a brick has been not been added to the list.
+ * @param brickCorner The corner position seen by the robot,
+ * @return (true) If a brick is added to the list.
+ * @return (false) If a brick is not added to the list.
  */
 bool BrickList::handleBrickFromWallPosition(Position brickOuterCorner) {
     // How close, in millimeters, a corner needs to be to the wall, to be
@@ -305,51 +293,32 @@ bool BrickList::handleBrickFromWallPosition(Position brickOuterCorner) {
     bool onTopWall = within(brickOuterCorner.y, MAZE_LENGTH, wallTolerance);
     bool onRightWall = within(brickOuterCorner.y, MAZE_WIDTH, wallTolerance);
 
-    // This could be improved with trigonometry, but is perfectly functional
-    // and readable as is, so doesn't need refactoring at this stage.
+    bool onAWall = onBottomWall || onLeftWall || onTopWall || onRightWall;
+
+    // If the brick that has been seen is not on an outer wall,
+    if (!onAWall) {
+        // return false to indicate that no brick have been added to the list.
+        return false;
+    }
+
+    Brick brickToAdd;
+    brickToAdd.isVertical = onLeftWall || onRightWall;
     if (onBottomWall) {
-        Brick brickToAdd;
-
-        brickToAdd.position.x = brickOuterCorner.x - 125;
-        brickToAdd.position.y = 45;
-        brickToAdd.isVertical = false;
-
-        // return a boolean indicating if a brick has been added to the list.
-        return this->_attemptAppendBrick(brickToAdd);
-    }
-    if (onLeftWall) {
-        Brick brickToAdd;
-
-        brickToAdd.position.x = 45;
-        brickToAdd.position.y = brickOuterCorner.y + 125;
-        brickToAdd.isVertical = true;
-
-        // return a boolean indicating if a brick has been added to the list.
-        return this->_attemptAppendBrick(brickToAdd);
-    }
-    if (onTopWall) {
-        Brick brickToAdd;
-
-        brickToAdd.position.x = brickOuterCorner.x + 125;
-        brickToAdd.position.y = 1955;
-        brickToAdd.isVertical = false;
-
-        // return a boolean indicating if a brick has been added to the list.
-        return this->_attemptAppendBrick(brickToAdd);
-    }
-    if (onRightWall) {
-        Brick brickToAdd;
-
-        brickToAdd.position.x = 1455;
-        brickToAdd.position.y = brickOuterCorner.y - 125;
-        brickToAdd.isVertical = true;
-
-        // return a boolean indicating if a brick has been added to the list.
-        return this->_attemptAppendBrick(brickToAdd);
+        brickToAdd.position.x = brickOuterCorner.x - (BRICK_LENGTH / 2);
+        brickToAdd.position.y = (BRICK_WIDTH / 2) + 5;
+    } else if (onLeftWall) {
+        brickToAdd.position.x = (BRICK_WIDTH / 2) + 5;
+        brickToAdd.position.y = brickOuterCorner.y + (BRICK_LENGTH / 2);
+    } else if (onTopWall) {
+        brickToAdd.position.x = brickOuterCorner.x + (BRICK_LENGTH / 2);
+        brickToAdd.position.y = MAZE_LENGTH - (BRICK_WIDTH / 2) - 5;
+    } else if (onRightWall) {
+        brickToAdd.position.x = MAZE_WIDTH - (BRICK_WIDTH / 2) - 5;
+        brickToAdd.position.y = brickOuterCorner.y - (BRICK_LENGTH / 2);
     }
 
-    // return false as no bricks have been added to the list.
-    return false;
+    // Return true if a brick gets added to the list, and false if not.
+    return this->_attemptAppendBrick(brickToAdd);
 }
 
 /**
@@ -394,94 +363,77 @@ bool BrickList::handleBrickFromLine(Position robotPosition,
     bool seenShortSide = within(lineLength, BRICK_WIDTH, lengthTolerance);
     bool seenLongSide = within(lineLength, BRICK_LENGTH, lengthTolerance);
 
-    // This could be improved with trigonometry, but is perfectly functional
-    // and readable as is, so doesn't need refactoring at this stage.
+    // check if the line see was withing tolerance of ther short of long side of
+    // a brick.
+    if (!seenShortSide && !seenLongSide) {
+        return 0;
+    }
 
-    if (seenShortSide && lineIsVertical) {
-        Brick brickToAdd;
+    bool newBrickIsVertical = (seenShortSide != lineIsVertical);
+
+    // This could be improved with trigonometry, but
+    // is perfectly functional and readable as is, so
+    // doesn't need refactoring at this stage.
+
+    Brick brickToAdd;
+    brickToAdd.isVertical = newBrickIsVertical;
+
+    int centreOffset;
+
+    if (seenShortSide) {
+        centreOffset = BRICK_LENGTH / 2;
+    } else {
+        centreOffset = BRICK_WIDTH / 2;
+    }
+
+    if (lineIsVertical) {
+        brickToAdd.position.y = lineCentrePosition.y;
 
         if (robotIsLeftOfLine) {
-            brickToAdd.position.x = lineCentrePosition.x + (BRICK_LENGTH / 2);
+            brickToAdd.position.x = lineCentrePosition.x + centreOffset;
         } else {
-            brickToAdd.position.x = lineCentrePosition.x - (BRICK_LENGTH / 2);
+            brickToAdd.position.x = lineCentrePosition.x - centreOffset;
         }
-
-        brickToAdd.position.y = lineCentrePosition.y;
-        brickToAdd.isVertical = false;
-
-        return this->_attemptAppendBrick(brickToAdd);
-    }
-
-    if (seenLongSide && lineIsVertical) {
-        Brick brickToAdd;
-
-        brickToAdd.position.y = lineCentrePosition.y;
-        brickToAdd.isVertical = true;
-
-        if (robotIsLeftOfLine) {
-            brickToAdd.position.x = lineCentrePosition.x + (BRICK_WIDTH / 2);
-        } else {
-            brickToAdd.position.x = lineCentrePosition.x - (BRICK_WIDTH / 2);
-        }
-        return this->_attemptAppendBrick(brickToAdd);
-    }
-
-    if (seenShortSide && !lineIsVertical) {
-        Brick brickToAdd;
-
+    } else {
         brickToAdd.position.x = lineCentrePosition.x;
-        brickToAdd.isVertical = true;
-
         if (robotIsBelowLine) {
-            brickToAdd.position.y = lineCentrePosition.y + (BRICK_LENGTH / 2);
+            brickToAdd.position.y = lineCentrePosition.y + seenShortSide;
         } else {
-            brickToAdd.position.y = lineCentrePosition.y - (BRICK_LENGTH / 2);
+            brickToAdd.position.y = lineCentrePosition.y - seenShortSide;
         }
-        return this->_attemptAppendBrick(brickToAdd);
-    }
-    if (seenLongSide && !lineIsVertical) {
-        Brick brickToAdd;
-
-        brickToAdd.position.x = lineCentrePosition.x;
-        brickToAdd.isVertical = false;
-
-        if (robotIsBelowLine) {
-            brickToAdd.position.y = lineCentrePosition.y + (BRICK_WIDTH / 2);
-        } else {
-            brickToAdd.position.y = lineCentrePosition.y - (BRICK_WIDTH / 2);
-        }
-        return this->_attemptAppendBrick(brickToAdd);
     }
 
-    return false;
+    // Attempt to append the new brick to the list, and return its success.
+    return this->_attemptAppendBrick(brickToAdd);
 }
 
 /**
- * @brief
+ * @brief Takes a sensor reading from a position, and compared it to the
+ * curent map data and brick list, and if applicable adds a new brick to
+ * the list.
  *
- * @param robotPosition
- * @param angleOfSensor
- * @param measuredDistance
- * @param tolerance
- * @param map_P
- * @return (true) If a brick has been added to the list.
- * @return (false) If a brick has been not been added to the list.
+ * @param robotPosition The current position on the robot.
+ * @param angleOfSensor The direction that the sensor that captured the data
+ * is pointing.
+ * @param measuredDistance The distance read by the sensor.
+ * @param tolerance The maximum offset that the sensor can be from an
+ * orthogonal direction, before readings start getting rejected;
+ * @param map_P A pointer to the map data.
+ * @return (-1) If the robot's position needs recalibrating.
+ * @return (0) If no changes have been made.
+ * @return (1) If a brick has been added to the list.
  */
-bool BrickList::handleBrickFromSensorAndMap(Position robotPosition,
-                                            Angle angleOfSensor,
-                                            int measuredDistance, int tolerance,
-                                            Map* map_P) {
-    bool needsRecalibration = false;
-
-    // This code needs refactoring badly but I ran out of time.
-
+int BrickList::handleBrickFromSensorAndMap(Position robotPosition,
+                                           Angle angleOfSensor,
+                                           int measuredDistance, int tolerance,
+                                           Map* map_P) {
     if (!angleOfSensor.isOrthogonal(tolerance)) {
         // This function only works with orthogonal angles
-        return false;
+        return 0;
     }
 
     if (measuredDistance > 400) {
-        return false;
+        return 0;
     }
 
     bool pointingDown = angleOfSensor.isPointingDown();
@@ -491,7 +443,9 @@ bool BrickList::handleBrickFromSensorAndMap(Position robotPosition,
 
     Position brickEdgePosition;
 
-    // TODO improve with trigonometry
+    // This could be improved with trigonometry down the line, but for now
+    // this works, as it is supposed to assume that the angles are perfectly
+    // orthogonal.
     if (pointingDown) {
         brickEdgePosition = {0, -(float)measuredDistance};
     } else if (pointingLeft) {
@@ -501,7 +455,6 @@ bool BrickList::handleBrickFromSensorAndMap(Position robotPosition,
     } else if (pointingRight) {
         brickEdgePosition = {(float)measuredDistance, 0};
     }
-
     brickEdgePosition += robotPosition;
 
     map_P->seenPosition(brickEdgePosition);
@@ -509,104 +462,294 @@ bool BrickList::handleBrickFromSensorAndMap(Position robotPosition,
     int comparison =
         this->_compare(robotPosition, angleOfSensor, measuredDistance);
 
-    if (comparison == 1) {
-        Position positionA;
-        Position positionB;
-
-        Position positionC;
-        Position positionD;
-
-        if (pointingDown) {
-            if (brickEdgePosition.y < 250) {
-                return false;
-            }
-
-            positionA.x = brickEdgePosition.x + BRICK_WIDTH / 2;
-            positionA.y = brickEdgePosition.y;
-            positionB.x = brickEdgePosition.x - BRICK_WIDTH / 2;
-            positionB.y = brickEdgePosition.y - BRICK_LENGTH;
-
-            positionC.x = brickEdgePosition.x + BRICK_LENGTH / 2;
-            positionC.y = brickEdgePosition.y;
-            positionD.x = brickEdgePosition.x - BRICK_LENGTH / 2;
-            positionD.y = brickEdgePosition.y - BRICK_WIDTH;
-        }
-
-        if (pointingLeft) {
-            if (brickEdgePosition.x < 250) {
-                return false;
-            }
-            positionA.x = brickEdgePosition.x;
-            positionA.y = brickEdgePosition.y - BRICK_WIDTH / 2;
-            positionB.x = brickEdgePosition.x - BRICK_LENGTH;
-            positionB.y = brickEdgePosition.y + BRICK_WIDTH / 2;
-
-            positionC.x = brickEdgePosition.x;
-            positionC.y = brickEdgePosition.y - BRICK_LENGTH / 2;
-            positionD.x = brickEdgePosition.x - BRICK_WIDTH;
-            positionD.y = brickEdgePosition.y + BRICK_LENGTH / 2;
-        }
-        if (pointingUp) {
-            if (brickEdgePosition.y > 1750) {
-                return false;
-            }
-            positionA.x = brickEdgePosition.x - BRICK_WIDTH / 2;
-            positionA.y = brickEdgePosition.y;
-            positionB.x = brickEdgePosition.x + BRICK_WIDTH / 2;
-            positionB.y = brickEdgePosition.y + BRICK_LENGTH;
-
-            positionC.x = brickEdgePosition.x - BRICK_LENGTH / 2;
-            positionC.y = brickEdgePosition.y;
-            positionD.x = brickEdgePosition.x + BRICK_LENGTH / 2;
-            positionD.y = brickEdgePosition.y + BRICK_WIDTH;
-        }
-        if (pointingRight) {
-            if (brickEdgePosition.x > 1250) {
-                return false;
-            }
-            positionA.x = brickEdgePosition.x;
-            positionA.y = brickEdgePosition.y + BRICK_WIDTH / 2;
-            positionB.x = brickEdgePosition.x + BRICK_LENGTH;
-            positionB.y = brickEdgePosition.y - BRICK_WIDTH / 2;
-
-            positionC.x = brickEdgePosition.x;
-            positionC.y = brickEdgePosition.y + BRICK_LENGTH / 2;
-            positionD.x = brickEdgePosition.x + BRICK_WIDTH;
-            positionD.y = brickEdgePosition.y - BRICK_LENGTH / 2;
-        }
-
-        bool hasRanOffMaze = false;
-        bool brickCouldBeVert =
-            map_P->safeForBrick(positionA, positionB, &hasRanOffMaze);
-
-        // disregard any values that are too close to the edge.
-        if (hasRanOffMaze) {
-            return false;
-        }
-
-        // TODO change to int 0 for not safe, 1 for safe, -1 for ran off
-        // maze.
-        bool brickCouldBeHor =
-            map_P->safeForBrick(positionC, positionD, &hasRanOffMaze);
-
-        if (hasRanOffMaze) {
-            return false;
-        }
-
-        if (brickCouldBeVert) {
-        } else if (brickCouldBeHor) {
-            this->_setBrickFromEdge(brickEdgePosition, angleOfSensor,
-                                    tolerance);
-        }
-    } else if (comparison == -1) {
-        needsRecalibration = true;
+    // Check if the current bricks in the list already satisfy the data
+    // obtained from the sensors.
+    if (comparison == 0) {
+        return 0;
     }
-    return needsRecalibration;
+
+    // Check if the robot needs recalibrating.
+    else if (comparison == -1) {
+        // return -1 to tell to the calling function to recalibrate the
+        // robot.
+        return -1;
+    }
+
+    // These variables could do with better names,
+    // RC stands for Relative corner, BL and TR stand for Bottom left and
+    // Top right, and Vert and Hor stand for Vertical and horizontal.
+
+    // these two pairs of coordinates plot of the corners of where a brick
+    // would be palaced if it was either horizontal or vertical.
+
+    // In this context, Bottom left and Top right, Vertical and horizontal
+    // are all relative to the sensor that has seen the brick.
+
+    Position RC_BL_Vert;
+    Position RC_TR_Vert;
+
+    Position RC_BL_Hor;
+    Position RC_TR_Hor;
+
+    // This chunk could also be improved using trig.
+    if (pointingDown) {
+        RC_BL_Vert.x = brickEdgePosition.x + BRICK_WIDTH / 2;
+        RC_BL_Vert.y = brickEdgePosition.y;
+        RC_TR_Vert.x = brickEdgePosition.x - BRICK_WIDTH / 2;
+        RC_TR_Vert.y = brickEdgePosition.y - BRICK_LENGTH;
+
+        RC_BL_Hor.x = brickEdgePosition.x + BRICK_LENGTH / 2;
+        RC_BL_Hor.y = brickEdgePosition.y;
+        RC_TR_Hor.x = brickEdgePosition.x - BRICK_LENGTH / 2;
+        RC_TR_Hor.y = brickEdgePosition.y - BRICK_WIDTH;
+    }
+
+    if (pointingLeft) {
+        RC_BL_Vert.x = brickEdgePosition.x;
+        RC_BL_Vert.y = brickEdgePosition.y - BRICK_WIDTH / 2;
+        RC_TR_Vert.x = brickEdgePosition.x - BRICK_LENGTH;
+        RC_TR_Vert.y = brickEdgePosition.y + BRICK_WIDTH / 2;
+
+        RC_BL_Hor.x = brickEdgePosition.x;
+        RC_BL_Hor.y = brickEdgePosition.y - BRICK_LENGTH / 2;
+        RC_TR_Hor.x = brickEdgePosition.x - BRICK_WIDTH;
+        RC_TR_Hor.y = brickEdgePosition.y + BRICK_LENGTH / 2;
+    }
+    if (pointingUp) {
+        RC_BL_Vert.x = brickEdgePosition.x - BRICK_WIDTH / 2;
+        RC_BL_Vert.y = brickEdgePosition.y;
+        RC_TR_Vert.x = brickEdgePosition.x + BRICK_WIDTH / 2;
+        RC_TR_Vert.y = brickEdgePosition.y + BRICK_LENGTH;
+
+        RC_BL_Hor.x = brickEdgePosition.x - BRICK_LENGTH / 2;
+        RC_BL_Hor.y = brickEdgePosition.y;
+        RC_TR_Hor.x = brickEdgePosition.x + BRICK_LENGTH / 2;
+        RC_TR_Hor.y = brickEdgePosition.y + BRICK_WIDTH;
+    }
+    if (pointingRight) {
+        RC_BL_Vert.x = brickEdgePosition.x;
+        RC_BL_Vert.y = brickEdgePosition.y + BRICK_WIDTH / 2;
+        RC_TR_Vert.x = brickEdgePosition.x + BRICK_LENGTH;
+        RC_TR_Vert.y = brickEdgePosition.y - BRICK_WIDTH / 2;
+
+        RC_BL_Hor.x = brickEdgePosition.x;
+        RC_BL_Hor.y = brickEdgePosition.y + BRICK_LENGTH / 2;
+        RC_TR_Hor.x = brickEdgePosition.x + BRICK_WIDTH;
+        RC_TR_Hor.y = brickEdgePosition.y - BRICK_LENGTH / 2;
+    }
+
+    // Check if each the vertical and horizontal brick could fit on the map.
+    int verticalViability = map_P->safeForBrick(RC_BL_Vert, RC_TR_Vert);
+    int horizontalViability = map_P->safeForBrick(RC_BL_Hor, RC_TR_Hor);
+
+    // If the vertical brick will not fit(but is not out of bounds) and the
+    // horizontal brick will fit, place a horizontal brick in the list.
+    if ((verticalViability == 0) && (horizontalViability == 1)) {
+        // Creates a brick based on its edge position and the angle of the
+        // sensor.
+        Brick brickToAdd =
+            this->_getBrickFromEdge(brickEdgePosition, angleOfSensor);
+
+        // return 1 if a new brick is placed, 0 if it is not.
+        return this->_attemptAppendBrick(brickToAdd);
+    }
+
+    // return 0 to indicate that no changes have been made to the list.
+    return 0;
 }
 
+/**
+ * @brief Returns the distance to the closest brick in the list, from a
+ * given target position.
+ *
+ * Also returns via reference, the index of this closest brick, and the zone
+ * from this closest brick.
+ *
+ * @param target The position to calculate the distance to,
+ * @param indexOfClosestBrick_P The pointer used to return the index of the
+ * closest brick.
+ * @param zoneFromClosestBrick_P The pointer used to return the zone from
+ * the closest brick.
+ * @return (int) The distance to the closest brick.
+ */
+int BrickList::lowestDistance(Position testPosition, int* indexOfClosestBrick_P,
+                              int* zoneFromClosestBrick_P) {
+    // Local placeholders for the values to be returned via reference to
+    // indexOfClosestBrick_P and zoneFromClosestBrick_P.
+    int indexOfClosestBrick_L = -1;
+    int zoneFromClosestBrick_L = -1;
+    int lowestSquaredDistance = INT32_MAX;
+
+    // iterate through the bricks in the list,
+    for (int i = 0; i < this->getBrickCount(); i++) {
+        Brick brick = this->getBrick(i);
+
+        // The "zone from" refers to which of the 9 zones the target position is
+        // in relative to the brick.
+        // For example, given a test position and test brick, if the brick
+        // is to the top right of the the test position, then the test position
+        // is in the bricks bottom left zone.
+        int zoneFromCurrentBrick = -1;
+
+        // Get the squared distance to the current brick.
+        int squaredDistanceToBrick =
+            brick.squaredDistanceTo(testPosition, &zoneFromCurrentBrick);
+
+        // If the current brick is the closest sofar.
+        if (squaredDistanceToBrick < lowestSquaredDistance) {
+            lowestSquaredDistance = squaredDistanceToBrick;
+            // keep track of its index
+            indexOfClosestBrick_L = i;
+            // and its zone.
+            zoneFromClosestBrick_L = zoneFromCurrentBrick;
+        }
+    }
+
+    // if indexOfClosestBrick_L was set, return it via reference.
+    if (indexOfClosestBrick_L != -1) {
+        *indexOfClosestBrick_P = indexOfClosestBrick_L;
+    }
+
+    // if zoneFromClosestBrick_L was set, return it via reference.
+    if (zoneFromClosestBrick_L != -1) {
+        *zoneFromClosestBrick_P = zoneFromClosestBrick_L;
+    }
+
+    // TODO could make this run better using a similar method to the one used in
+    // Position::distanceTo()
+    return sqrt(lowestSquaredDistance);
+}
+
+#if 0  // Blocked out until it is needed again for testing.
+/**
+ * @brief populates the brick list with a set of hard coded bricks that
+ * represent the data in the provided "Seen Maze".
+ *
+ * This function should only be used for algorithm testing,
+ */
+void BrickList::setPreprogrammedMazeData() {
+    // This is the hard coded data for the "seen maze"
+    // This data is only used for algorithm testing,
+    // it is at no point used during the demonstration.
+
+    
+    this->_appendBrick(Brick(125, 460, false));
+    this->_appendBrick(Brick(375, 460, false));
+    this->_appendBrick(Brick(40, 1000, true));
+    this->_appendBrick(Brick(125, 1460, false));
+    this->_appendBrick(Brick(375, 1460, false));
+    this->_appendBrick(Brick(540, 1545, true));
+    this->_appendBrick(Brick(1460, 1545, true));
+    this->_appendBrick(Brick(1295, 1460, false));
+    this->_appendBrick(Brick(1130, 1375, true));
+    this->_appendBrick(Brick(1460, 625, true));
+    this->_appendBrick(Brick(1295, 540, false));
+    this->_appendBrick(Brick(1130, 455, true));
+    this->_appendBrick(Brick(460, 1000, true));
+    this->_appendBrick(Brick(625, 915, false));
+    this->_appendBrick(Brick(875, 915, false));
+}
+#endif
+
+/**
+ * @brief Compares a sensors reading the expected reading, obtained from the
+ * existing items in the brick list.
+ *
+ * @param robotPose The current pose of the robot.
+ * @param angleOfSensor The direction that the sensor that captured the data
+ * is pointing.
+ * @param measuredDistance The distance read by the sensor.
+ * @return (1) If a brick need placing.
+ * @return (0) If no changes need making.
+ * @return (-1) If the robot's position need recalibrating.
+ */
+int BrickList::_compare(Position robotPosition, Angle angleOfSensor,
+                        int measuredDistance) {
+    const int driftTolerance = 20;
+
+    if (!angleOfSensor.isOrthogonal()) {
+        // This function only works with orthogonal
+        return 0;
+    }
+
+    int expectedDistance =
+        this->_getOrthogonalBrickDistance(robotPosition, angleOfSensor);
+
+    if (expectedDistance < 1) {
+        return -2;
+    }
+
+    // If the measured reading is withing a tolerance of the expected reading,
+    if (within(expectedDistance, measuredDistance, driftTolerance)) {
+        // return 0 to indicate that no changes need to be made.
+        return 0;
+    }
+    // If the expected reading is greater than the measured distance,
+    else if (expectedDistance > measuredDistance) {
+        // return 1 to indicate that a brick could be added to the list.
+        return 1;
+    }
+    // If the expected reading is smaller than the measured distance,
+    else {
+        // return -1 to indicate that the robots position needs to be
+        // recalibrated.
+        return -1;
+    }
+}
+
+/**
+ * @brief Creates a brick based on the position of its edge, and the angle
+ * of the sensor that saw it.
+ *
+ * The brick will be places so that the position seen (brickEdgePosition)
+ * will be on the centre of its long side, and will extrude away from the
+ * sensor.
+ *
+ * @param brickEdgePosition The position seen by the sensor.
+ * @param angleOfSensor The angle that the sensor was facing when the brick
+ * was seen.
+ * @return (Brick) The newly created brick.
+ */
+Brick BrickList::_getBrickFromEdge(Position brickEdgePosition,
+                                   Angle angleOfSensor) {
+    bool pointingLeft = angleOfSensor.isPointingLeft();
+    bool pointingRight = angleOfSensor.isPointingRight();
+
+    bool isVertical = (pointingLeft || pointingRight);
+
+    Brick newBrick(brickEdgePosition, isVertical);
+
+    Position offset = Position(newBrick.width / 2, 0).rotate(angleOfSensor);
+
+    newBrick.position.offset(offset);
+
+    return newBrick;
+}
+
+/**
+ * @brief Get the distance to the closest brick in a chosen direction,
+ * Only works with orthogonal directions.
+ *
+ * @param robotPosition The position of the robot.
+ * @param directionOfBrick The direction to look in, will be rounded to the
+ * nearest right angle.
+ * @return (int) The distance to the brick in the chosen direction.
+ * Returns -1 if no brick was seen.
+ */
 int BrickList::_getOrthogonalBrickDistance(Position robotPosition,
                                            Angle directionOfBrick) {
-    // This function assumes that the angle provided is pretty orthogonal
+    // In its current state this function can only get the distance to
+    // orthogonal bricks, the input angle is rounded to the closest right
+    // angle.
+
+    // The "zone from" refers to which of the 9 zones the target position is
+    // in relative to the brick.
+    // For example, given a test position and test brick, if the brick
+    // is to the top right of the the test position, then the test position
+    // is in the bricks bottom left zone.
+
+    // So, Finding all the bricks directly below the robot, involves finding all
+    // the bricks that place the robot in their upper zone.
 
     Zone targetZone;
 
@@ -624,159 +767,104 @@ int BrickList::_getOrthogonalBrickDistance(Position robotPosition,
     }
 
     const int startingValue = UINT16_MAX;
-    int closestDistance = startingValue;
+    int shortestDistance = startingValue;
 
-    int brickCount = this->getBrickCount();
+    // Iterate through each brick in the list
+    for (int i = 0; i < this->getBrickCount(); i++) {
+        Brick brick = this->getBrick(i);
 
-    for (int i = 0; i < brickCount; i++) {
-        Brick currentBrick = this->getBrick(i);
-        Zone zoneFromBrick = currentBrick.calculateZone(robotPosition);
-        if (zoneFromBrick == targetZone) {
-            if (currentBrick.distanceTo(robotPosition) < closestDistance) {
-                closestDistance = currentBrick.distanceTo(robotPosition);
+        Zone zoneFromCurrentBrick = brick.calculateZone(robotPosition);
+
+        // If the zone relative to the current brick matches the predetermined
+        // target zone, then check if its distance is shorter than the current
+        // shortest distance.
+        if (zoneFromCurrentBrick == targetZone) {
+            if (brick.distanceTo(robotPosition) < shortestDistance) {
+                shortestDistance = brick.distanceTo(robotPosition);
             }
         }
     }
 
-    if (closestDistance == startingValue) {
-        return -1;  // FAIL
-    }
-
-    return closestDistance;
-}
-
-/**
- * @brief
- *
- * @return (1) If a brick need placing.
- * @return (0) If noting needs doing.
- * @return (-1) If Position need recalibrating.
- * @return (-2) Any other error.
- */
-int BrickList::_compare(Position robotPosition, Angle angleOfSensor,
-                        int measuredDistance) {
-    const int driftTolerance = 20;
-
-    if (!angleOfSensor.isOrthogonal()) {
-        // This function only works with orthogonal
-        return 0;
-    }
-
-    int storedDistance =
-        this->_getOrthogonalBrickDistance(robotPosition, angleOfSensor);
-
-    if (storedDistance < 1) {
-        return -2;
-    }
-
-    // TODO document this better.
-    if (abs(storedDistance - measuredDistance) < driftTolerance) {
-        // IF storedDistance ≈≈ measuredDistance:
-        //     Brick is already stored
-
-        // Everything is fine
-        return 0;
-    } else if (storedDistance > measuredDistance) {
-        // IF storedDistance >≈ measuredDistance:
-        //     THere is a brick that is not stored
-
-        // Need to ad a brick
-        return 1;
-    } else if (storedDistance < measuredDistance) {
-        // IF storedDistance <≈ measuredDistance:
-        //     SOmething has gone wrong, robot has drifted,
-
-        // Need to recalibrate
+    // If the lowest value retains its starting value, then no bricks where
+    // found in the chosen direction.
+    if (shortestDistance == startingValue) {
+        // Return -1 to indicate a failure.
         return -1;
     }
 
-    // -2 is an error value;
-    return -2;
+    return shortestDistance;
 }
 
-void BrickList::_setBrickFromEdge(Position brickEdgePosition,
-                                  Angle angleOfSensor, int tolerance) {
-    if (!angleOfSensor.isOrthogonal(tolerance)) {
-        // This function only works when the sensor is orthogonal.
-        return;
+/**
+ * @brief Add a brick to the end of the brick list, if there is space
+ * remaining.
+ *
+ * @param brickToAdd The brick to add.
+ * @return (true) If the brick was added to the list.
+ * @return (false) If the list was already full.
+ */
+bool BrickList::_appendBrick(Brick brickToAdd) {
+    // If the list is already full,
+    if (this->_brickCount >= MAX_BRICK_COUNT) {
+        // return false.
+        return false;
     }
 
-    bool pointingLeft = angleOfSensor.isPointingLeft();
-    bool pointingRight = angleOfSensor.isPointingRight();
+    // Add the new brick to the list.
+    this->_brickArray[this->_brickCount] = brickToAdd;
+    this->_brickCount += 1;
 
-    bool isVertical = (pointingLeft || pointingRight);
-
-    Brick newBrick(brickEdgePosition, isVertical);
-
-    Position offset = Position(newBrick.width / 2, 0).rotate(angleOfSensor);
-
-    newBrick.position.offset(offset);
-
-    this->_attemptAppendBrick(newBrick);
+    // Return true to indicate that a brick was added to the list.
+    return true;
 }
 
-int BrickList::lowestDistance(Position testPosition, int* indexOfClosestBrick_P,
-                              int* zoneFromClosestBrick_P) {
-    int brickCount = this->getBrickCount();
+/**
+ * @brief Adds a brick the the end of the brick list, if it does not collide
+ * with an existing brick in the list.
+ *
+ * @param brickToAdd  The brick to add.
+ * @return (true) If the brick was added to the list.
+ * @return (false) If the brick could not be added.
+ */
+bool BrickList::_attemptAppendBrick(Brick brickToAdd) {
+    int shortestDistance = this->lowestDistance(brickToAdd.position);
 
-    int indexOfClosestBrick_L = -1;
-    int zoneFromClosestBrick_L = -1;
-    int lowestSquaredDistance = INT32_MAX;
+    // TODO improve brick self coition detection.
 
-    for (int i = 0; i < brickCount; i++) {
-        Brick brick = this->getBrick(i);
-
-        int local_zoneFromBrick = -1;
-
-        int squaredDistanceToBrick =
-            brick.squaredDistanceTo(testPosition, &local_zoneFromBrick);
-
-        if (squaredDistanceToBrick < lowestSquaredDistance) {
-            lowestSquaredDistance = squaredDistanceToBrick;
-            indexOfClosestBrick_L = i;
-            zoneFromClosestBrick_L = local_zoneFromBrick;
-        }
-    }
-    if (indexOfClosestBrick_L != -1) {
-        *indexOfClosestBrick_P = indexOfClosestBrick_L;
+    // If the centre point of the new brick is not inside an existing brick,
+    if (shortestDistance > 0) {
+        // add the new brick to the end of the list.
+        // return true if the brick was added successfully.
+        return this->_appendBrick(brickToAdd);
     }
 
-    if (zoneFromClosestBrick_L != -1) {
-        *zoneFromClosestBrick_P = zoneFromClosestBrick_L;
-    }
-
-    // TODO make this just get the lowest Brick, then do stuff to it.
-    return sqrt(lowestSquaredDistance);
+    // Return false to indicate that no brick was added to the list.
+    return false;
 }
 
-void BrickList::_appendBrick(Brick brickToAdd) {
-    if (this->_brickCount < MAX_BRICK_COUNT) {
-        this->_brickArray[this->_brickCount] = brickToAdd;
-        this->_brickCount += 1;
-    }
-}
-
+/**
+ * @brief Append 4 brick to the list, representing the 4 boundary walls.
+ */
 void BrickList::_addWalls() {
-    Brick bottomWall = Brick(Position(750, -40), false);
-    bottomWall.length = 1500;
-    bottomWall.width = 80;
+    Brick bottomWall = Brick(Position(MAZE_WIDTH / 2, -BRICK_WIDTH / 2), false);
+    bottomWall.length = MAZE_WIDTH;
+    bottomWall.width = BRICK_WIDTH;
     this->_appendBrick(bottomWall);
 
-    Brick leftWall = Brick(Position(-40, 1000), true);
-    leftWall.length = 2000;
-    leftWall.width = 80;
-
+    Brick leftWall = Brick(Position(-BRICK_WIDTH / 2, MAZE_LENGTH / 2), true);
+    leftWall.length = MAZE_LENGTH;
+    leftWall.width = BRICK_WIDTH;
     this->_appendBrick(leftWall);
 
-    Brick topWall = Brick(Position(750, 2040), false);
-    topWall.length = 1500;
-    topWall.width = 80;
-
+    Brick topWall =
+        Brick(Position(MAZE_WIDTH / 2, MAZE_LENGTH + (BRICK_WIDTH / 2)), false);
+    topWall.length = BRICK_WIDTH;
+    topWall.width = BRICK_WIDTH;
     this->_appendBrick(topWall);
 
-    Brick rightWall = Brick(Position(1540, 1000), true);
-    rightWall.length = 2000;
-    rightWall.width = 80;
-
+    Brick rightWall =
+        Brick(Position(MAZE_WIDTH + (BRICK_WIDTH / 2), MAZE_LENGTH / 2), true);
+    rightWall.length = MAZE_LENGTH;
+    rightWall.width = BRICK_WIDTH;
     this->_appendBrick(rightWall);
 }

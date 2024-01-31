@@ -108,9 +108,9 @@ struct Brick {
      * c = (a * a + b * b) ^ 0.5
      *
      * @param target The other position to calculate the squared distance
-     * param zone_IP
-     * @param dx_P A pointer to return the difference in x positions.
-     * @param dy_P A pointer to return the difference in y positions.
+     * @param zone_IP The pointer to return the zone from the brick.
+     * @param dx_P The pointer to return the difference in x positions.
+     * @param dy_P The pointer to return the difference in y positions.
      * @return (float) The square of the euclidean distance to the target
      * position from the edge of this brick, in millimeters.
      */
@@ -137,7 +137,9 @@ struct Brick {
 
 /**
  * @brief The BrickList class, responsible for storing, manipulating and
- * handling a list of bricks.
+ * handling a collection of bricks.
+ *
+
  *
  */
 class BrickList {
@@ -170,22 +172,12 @@ class BrickList {
     String toString();
 
     /**
-     * @brief populates the brick list with a set of hard coded bricks that
-     * represent the data in the provided "Seen Maze".
+     * @brief Takes the position of a corner seen by the robot, and decided if
+     * it is along one of the walls of the maze.
      *
-     * This function should only be used for algorithm testing,
-     */
-    void setPreprogrammedMazeData();
-
-    /**
-     * @brief checks if a seen brick corner falls withing the outer bounds of
-     * the maze, and if so places a brick in the brick list, flat against the
-     * wall.
-     *
-     * @param brickCorner The position of the corner of the brick that was seen
-     * by a sensor.
-     * @return (true) If a brick has been added to the list.
-     * @return (false) If a brick has been not been added to the list.
+     * @param brickCorner The corner position seen by the robot,
+     * @return (true) If a brick is added to the list.
+     * @return (false) If a brick is not added to the list.
      */
     bool handleBrickFromWallPosition(Position brickCorner);
 
@@ -202,26 +194,139 @@ class BrickList {
     bool handleBrickFromLine(Position robotPosition, Position lineStart,
                              Position lineEnd);
 
-    bool handleBrickFromSensorAndMap(Position robotPosition,
-                                     Angle angleOfSensor, int measuredDistance,
-                                     int tolerance, Map* map_P);
+    /**
+     * @brief Takes a sensor reading from a position, and compared it to the
+     * curent map data and brick list, and if applicable adds a new brick to
+     * the list.
+     *
+     * @param robotPosition The current position on the robot.
+     * @param angleOfSensor The direction that the sensor that captured the data
+     * is pointing.
+     * @param measuredDistance The distance read by the sensor.
+     * @param tolerance The maximum offset that the sensor can be from an
+     * orthogonal direction, before readings start getting rejected;
+     * @param map_P A pointer to the map data.
+     * @return (-1) If the robot's position needs recalibrating.
+     * @return (0) If no changes have been made.
+     * @return (1) If a brick has been added to the list.
+     */
+    int handleBrickFromSensorAndMap(Position robotPosition, Angle angleOfSensor,
+                                    int measuredDistance, int tolerance,
+                                    Map* map_P);
 
-    int lowestDistance(Position target, int* indexOfClosestBrickPrt = nullptr,
-                       int* zoneFromClosestBrickPrt = nullptr);
+    /**
+     * @brief Returns the distance to the closest brick in the list, from a
+     * given target position.
+     *
+     * Also returns via reference, the index of this closest brick, and the zone
+     * from this closest brick.
+     *
+     * @param target The position to calculate the distance to,
+     * @param indexOfClosestBrick_P The pointer used to return the index of the
+     * closest brick.
+     * @param zoneFromClosestBrick_P The pointer used to return the zone from
+     * the closest brick.
+     * @return (int) The distance to the closest brick.
+     */
+    int lowestDistance(Position target, int* indexOfClosestBrick_P = nullptr,
+                       int* zoneFromClosestBrick_P = nullptr);
+
+#if 0  // Blocked out until it is needed again for testing.
+    /**
+     * @brief populates the brick list with a set of hard coded bricks that
+     * represent the data in the provided "Seen Maze".
+     *
+     * This function should only be used for algorithm testing,
+     */
+    void setPreprogrammedMazeData();
+#endif
 
    private:
+    /**
+     * @brief The array that holds the bricks in the list.
+     *
+     * Due to the current simplicity of the BrickList storing the data as an
+     * array works well. If, later in development, it becomes necessary to
+     * remove bricks from the list or preform other dynamic operation, the data
+     * could be refactored into a list.
+     *
+     * For the sake of consistency, this class as a whole will be referred to
+     * as the BrickList, regardless of the way that it is internally storing
+     * the bricks.
+     */
     Brick _brickArray[MAX_BRICK_COUNT];
+
+    /**
+     * @brief The number of bricks in the list.
+
+     */
     int _brickCount = 0;
 
+    /**
+     * @brief Compares a sensors reading the expected reading, obtained from the
+     * existing items in the brick list.
+     *
+     * @param robotPose The current pose of the robot.
+     * @param angleOfSensor The direction that the sensor that captured the data
+     * is pointing.
+     * @param measuredDistance The distance read by the sensor.
+     * @return (1) If a brick need placing.
+     * @return (0) If no changes need making.
+     * @return (-1) If the robot's position need recalibrating.
+     */
     int _compare(Position robotPose, Angle angleOfSensor, int measuredDistance);
-    void _setBrickFromEdge(Position brickEdgePosition, Angle angleOfSensor,
-                           int tolerance);
 
-    int _getOrthogonalBrickDistance(Position robotPosition, Angle angleOfBrick);
+    /**
+     * @brief Creates a brick based on the position of its edge, and the angle
+     * of the sensor that saw it.
+     *
+     * The brick will be places so that the position seen (brickEdgePosition)
+     * will be on the centre of its long side, and will extrude away from the
+     * sensor.
+     *
+     * @param brickEdgePosition The position seen by the sensor.
+     * @param angleOfSensor The angle that the sensor was facing when the brick
+     * was seen.
+     * @return (Brick) The newly created brick.
+     */
+    Brick _getBrickFromEdge(Position brickEdgePosition, Angle angleOfSensor);
 
-    void _appendBrick(Brick brickToAdd);
+    /**
+     * @brief Get the distance to the closest brick in a chosen direction,
+     * Only works with orthogonal directions.
+     *
+     * @param robotPosition The position of the robot.
+     * @param directionOfBrick The direction to look in, will be rounded to the
+     * nearest right angle.
+     * @return (int) The distance to the brick in the chosen direction.
+     * Returns -1 if no brick was seen.
+     */
+    int _getOrthogonalBrickDistance(Position robotPosition,
+                                    Angle directionOfBrick);
+
+    /**
+     * @brief Add a brick to the end of the brick list, if there is space
+     * remaining.
+     *
+     * @param brickToAdd The brick to add.
+     * @return (true) If the brick was added to the list.
+     * @return (false) If the list was already full.
+     */
+    bool _appendBrick(Brick brickToAdd);
+
+    /**
+     * @brief Adds a brick the the end of the brick list, if it does not collide
+     * with an existing brick in the list.
+     *
+     * @param brickToAdd  The brick to add.
+     * @return (true) If the brick was added to the list.
+     * @return (false) If the brick could not be added.
+     */
     bool _attemptAppendBrick(Brick brickToAdd);
 
+    /**
+     * @brief Append 4 brick to the list, representing the 4 boundary walls.
+     */
     void _addWalls();
 };
 
