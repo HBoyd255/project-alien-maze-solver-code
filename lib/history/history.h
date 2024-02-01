@@ -47,7 +47,7 @@ class History {
     void add(int32_t newValue);
 
     /**
-     * @brief Get the median of the values in the queue.
+     * @brief Gets the median value from the queue.
      *
      * @return (int16_t) The median of the values in the queue.
      */

@@ -53,11 +53,11 @@ void History::add(int32_t newValue) {
     this->_values.push_back(newValue);
 }
 
-/**
- * @brief Get the Median object
- *
- * @return (int16_t) The median of the values in the queue.
- */
+    /**
+     * @brief Gets the median value from the queue.
+     *
+     * @return (int16_t) The median of the values in the queue.
+     */
 int16_t History::getMedian() {
     uint16_t medianIndex = this->_values.size() >> 1;
 

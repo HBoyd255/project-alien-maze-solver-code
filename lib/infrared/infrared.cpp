@@ -1,6 +1,9 @@
 
 
 #include "infrared.h"
+
+#include <Wire.h>
+
 #include "errorIndicator.h"
 
 // Multiplexer
@@ -34,48 +37,86 @@
 
 #define MAX_IR_RANGE 639
 
+/**
+ * @brief Construct a new Infrared object from its given index on the
+ * multiplexer's bus and the distance from the robots centre.
+ *
+ * @param index The index of the sensor on the multiplexer.
+ * @param distanceFromCentre The distance in millimeters that this sensor is
+ * from the centre of the robot.
+ */
 Infrared::Infrared(uint8_t index, int distanceFromCentre)
     : _index(index),
       _valueHistory(MAX_HISTORY),
       _historyUpdater(POLL_PERIOD),
       _distanceFromCentre(distanceFromCentre) {}
 
+/**
+ * @brief Sets up the sensor by setting up the I2C communication.
+ */
 void Infrared::setup() {
+    // Initialise I2C communication.
     Wire.begin();
 
+    // Connect the current sensor to to the I2C bus.
     this->_setMultiplexer();
 
+    // Start the I2C transmission to the slave address.
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
+
+    // Set the sensor to 64cm mode.
     Wire.write(IR_SHIFT_REG_ADDRESS);
+
+    // End the transmission.
     Wire.endTransmission();
 
+    // Request 1 byte from the slave address.
     Wire.requestFrom(IR_SLAVE_ADDRESS, 1);
 
+    // If I2C communication is not available, raise a critical error.
     if (!Wire.available()) {
         String errorMessage =
             "Cannot initialize IR sensor " + String(this->_index) + ".";
         ErrorIndicator_G.errorOccurred(errorMessage);
     }
+
+    // Read in the shift value from the I2C bus.
     this->_shiftValue = Wire.read();
 }
 
+/**
+ * @brief Read the distance from the sensor.
+ *
+ * @return (int16_t) The distance read from the sensor, in millimeters.
+ * A return value of -1 indicates a reading error, typically reading exceeds
+ * the max value.
+ */
 int16_t Infrared::read() {
+    // Connect the current sensor to to the I2C bus.
     this->_setMultiplexer();
 
+    // Start the I2C transmission to the slave address.
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
-    Wire.write(IR_DISTANCE_REG_ADDRESS);
+
+    // Set the sensor to 64cm mode.
+    Wire.write(IR_SHIFT_REG_ADDRESS);
+
+    // End the transmission.
     Wire.endTransmission();
 
+    // Request 2 bytes from the sensor.
     Wire.requestFrom(IR_SLAVE_ADDRESS, 2);
 
-    // TODO add a timeout and a call to the errorIndicator.
+    // If data cannot be read from the sensor, raise a critical error.
     if (Wire.available() < 2) {
         String errorMessage =
             "Cannot read IR sensor " + String(this->_index) + ".";
         ErrorIndicator_G.errorOccurred(errorMessage);
     }
 
+    // read the first byte in as the most significant part
     uint8_t high = Wire.read();
+    //  read the second byte in as the least significant part
     uint8_t low = Wire.read();
 
     // The given formula for calculating distance is:
@@ -85,18 +126,44 @@ int16_t Infrared::read() {
 
     uint16_t distance = (((high << 4) | low) * 10) >> (4 + this->_shiftValue);
 
+    // if the distance is out of range, return -1.
     return (distance < MAX_IR_RANGE) ? distance : -1;
 }
 
+/**
+ * @brief Read the distance from the sensor, but removes anomalous results.
+ *
+ * @return (int16_t) The distance read from the sensor, in millimeters.
+ * A return value of -1 indicates a reading error, typically reading exceeds
+ * the max value.
+ */
 int16_t Infrared::readSafe() {
+    // In this context, errors mostly just mean the reading was out of
+    // range(exceeded 64cm).
+
+    // How many errors is to many errors.
     const uint8_t errorThreshold = 1;
 
+    // Check how many errors have occurred withing the recorded history of the
+    // sensor.
     uint8_t errorCount = this->_valueHistory.countErrors();
 
+    // If few enough errors have occurred, return the most recent reading.
+    // If too many errors have occurred, return -1;
     return (errorCount < errorThreshold) ? this->_valueHistory.getLast() : -1;
 }
 
-int Infrared::readFromRobotCenter(bool getOldReading) {
+/**
+ * @brief Measures the distance from the centre of the robot to the
+ * object seen by the sensor.
+ *
+ * @param getOldReading Whether to get the most recent or second most recent
+ * reading, this functionality makes it a lot easier to measure the rate of
+ * change of the sensor.
+ * @return (int) The distance from the centre of the robot to the object
+ * seen by the sensor.
+ */
+s int Infrared::readFromRobotCenter(bool getOldReading) {
     int measuredDistance;
 
     if (getOldReading) {
@@ -105,19 +172,31 @@ int Infrared::readFromRobotCenter(bool getOldReading) {
         measuredDistance = this->_mostRecentValue;
     }
 
+    // If the read value is an error,
     if (measuredDistance == -1) {
+        // return an error value.
         return -1;
     }
 
+    // Offset the reading by the sensors distance to the robot's centre.
     int totalDistance = measuredDistance + this->_distanceFromCentre;
-
-    // Serial.print(" For a total of:");
-    // Serial.print(totalDistance);
 
     return totalDistance;
 }
 
-bool Infrared::brickAppeared(int range, int requiredDistanceChange) {
+/**
+ * @brief Checks if the robot has seen a starting corner of a brick, based
+ * on the rate of change that the sensor has read. A sudden drop in distance
+ * indicated that a corner has been seen.
+ *
+ * @param range The range that the newly seen reading has to be withing to
+ * be considered valid.
+ * @param requiredDistanceChange The amount of change that must occur for a
+ * reading to be considered valid.
+ * @return (true) If a starting corner has been seen.
+ * @return (false) If a starting corner has not been seen.
+ */
+bool Infrared::seenStartingCorner(int range, int requiredDistanceChange) {
     int mostRecentValue = this->_mostRecentValue;
     if (mostRecentValue == -1) {
         mostRecentValue = MAX_IR_RANGE;
@@ -133,12 +212,24 @@ bool Infrared::brickAppeared(int range, int requiredDistanceChange) {
     bool wallInRange = (mostRecentValue < range);
     bool enoughChange = (distanceChange < -(requiredDistanceChange));
 
-    bool justAppeared = (wallInRange && enoughChange);
+    bool brickAppeared = (wallInRange && enoughChange);
 
-    return justAppeared;
+    return brickAppeared;
 }
 
-bool Infrared::brickDisappeared(int range, int requiredDistanceChange) {
+/**
+ * @brief Checks if the robot has seen an ending corner of a brick, based
+ * on the rate of change that the sensor has read. A sudden rise in distance
+ * indicated that a ending corner has been seen.
+ *
+ * @param range The range that the seen reading bust have been before
+ * rising.
+ * @param requiredDistanceChange The amount the value must have rose by
+ * to be considered valid.
+ * @return (true) If a ending corner has been seen.
+ * @return (false) If a ending corner has not been seen.
+ */
+bool Infrared::seenEndingCorner(int range, int requiredDistanceChange) {
     int mostRecentValue = this->_mostRecentValue;
     if (mostRecentValue == -1) {
         mostRecentValue = MAX_IR_RANGE;
@@ -154,31 +245,45 @@ bool Infrared::brickDisappeared(int range, int requiredDistanceChange) {
     bool wallWasInRange = (secondMostRecentValue < range);
     bool enoughChange = (distanceChange > requiredDistanceChange);
 
-    bool justDisappeared = (wallWasInRange && enoughChange);
+    bool brickDisappeared = (wallWasInRange && enoughChange);
 
-    return justDisappeared;
+    return brickDisappeared;
 }
 
+/**
+ * @brief Returns the median value from the reading history, this removed
+ * anomalous values, at the cost of introducing latency.
+ *
+ * @return (int16_t) The median value from the reading history.
+ * A return value of -1 indicates a reading error, typically reading exceeds
+ * the max value.
+ */
+int16_t Infrared::average() { return this->_valueHistory.getMedian(); }
+
+/**
+ * @brief Updates the value history, if enough time has passed.
+ */
 void Infrared::poll() {
+    // If enough time has passed since this function last ran,
     if (this->_historyUpdater.isReadyToRun()) {
+        // add a new reading to the value history.
         this->_valueHistory.add(this->read());
 
+        // Update the most recent and second most recent values.
         this->_secondMostRecentValue = this->_mostRecentValue;
         this->_mostRecentValue = this->readSafe();
     }
 }
 
-int16_t Infrared::average() { return this->_valueHistory.getMedian(); }
-
-String Infrared::getValueHistoryAsString() {
-    return (String)this->_valueHistory;
-}
-
+/**
+ * @brief Connects this sensor the the I2C bus by writing its index to the
+ * multiplexer.
+ */
 void Infrared::_setMultiplexer() {
+    // Connect to the multiplexer via I2C.
     Wire.beginTransmission(MULTIPLEXER_SLAVE_ADDRESS);
+    // Write the index of this sensor to the multiplexer.
     Wire.write(1 << this->_index);
+    // End the transmission.
     Wire.endTransmission();
 }
-
-// int Infrared::getMostResentDistance() { return this->_mostRecentValue; }
-// int Infrared::secMost() { return this->_secondMostRecentValue; }
