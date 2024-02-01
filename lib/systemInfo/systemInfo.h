@@ -1,6 +1,6 @@
 /**
  * @file systemInfo.h
- * @brief Definition for constant values related to the hardware setup of my
+ * @brief Definition for constant values related to the hardware setup for the
  * project.
  *
  * @author Harry Boyd - https://github.com/HBoyd255
@@ -29,9 +29,7 @@
 // Serial
 #define SERIAL_BAUD_RATE 230400
 
-// Hardware definitions
-
-// LEDs
+// Pixels
 // The pin that D1 of the LED strip is connected to.
 #define PIXELS_DATA_PIN D5  // USONIC 3
 // The number of Ws2812 LEDs on the robot.
@@ -57,7 +55,6 @@
 
 #define DEFAULT_DRIVE_SPEED 35
 #define INITIAL_ANGLE -90
-#define ROBOT_RADIUS 120
 
 // Bumper
 // Shift register
