@@ -322,7 +322,7 @@ class BrickList {
     bool _attemptAppendBrick(Brick brickToAdd);
 
     /**
-     * @brief Append 4 Brick structs to the list, representing the 4 boundary
+     * @brief Appends 4 Brick structs to the list, representing the 4 boundary
      * walls.
      */
     void _addWalls();
