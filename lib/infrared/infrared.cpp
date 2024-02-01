@@ -62,9 +62,9 @@
  */
 Infrared::Infrared(uint8_t index, int distanceFromCentre)
     : _index(index),
+      _distanceFromCentre(distanceFromCentre),
       _valueHistory(MAX_HISTORY),
-      _historyUpdater(POLL_PERIOD),
-      _distanceFromCentre(distanceFromCentre) {}
+      _historyUpdater(POLL_PERIOD) {}
 
 /**
  * @brief Sets up the sensor by setting up the I2C communication.
@@ -178,7 +178,7 @@ int16_t Infrared::readSafe() {
  * @return (int) The distance from the centre of the robot to the object
  * seen by the sensor.
  */
-s int Infrared::readFromRobotCenter(bool getOldReading) {
+int Infrared::readFromRobotCenter(bool getOldReading) {
     int measuredDistance;
 
     if (getOldReading) {
