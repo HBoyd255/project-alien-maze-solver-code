@@ -3,7 +3,7 @@
  * @brief Declaration of the History class, a class responsible for storing a
  * queue of uint16_t values, and calculating their median.
  *
- * @author Harry Boyd - github.com/HBoyd255
+ * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2023-12-20
  * @copyright Copyright (c) 2023
  */

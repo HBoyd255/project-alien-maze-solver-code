@@ -3,7 +3,7 @@
  * @brief A wrapper for the ArduinoBLE.h module used to simplify the process of
  * transmitting data using BLE.
  *
- * @author Harry Boyd - github.com/HBoyd255
+ * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2024-01-24
  * @copyright Copyright (c) 2024
  */

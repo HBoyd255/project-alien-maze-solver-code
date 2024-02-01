@@ -3,7 +3,7 @@
  * @brief Declaration of the Bumper class, responsible for reading the state of
  * the 8 buttons that make up the bumper around the circumference of the robot.
  *
- * @author Harry Boyd - github.com/HBoyd255
+ * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2023-12-21
  * @copyright Copyright (c) 2023
  */

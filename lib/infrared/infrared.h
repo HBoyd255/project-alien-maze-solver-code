@@ -10,7 +10,7 @@
  * The data sheet for the PCA9846 Multiplexer can be found here,
  * https://www.nxp.com/docs/en/data-sheet/PCA9846.pdf.
  *
- * @author Harry Boyd - github.com/HBoyd255
+ * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2024-02-01
  * @copyright Copyright (c) 2024
  */

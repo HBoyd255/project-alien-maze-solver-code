@@ -2,7 +2,7 @@
  * @file angleAndPosition.h
  * @brief Declaration for the Angle class and the Position and Pose Structs.
  *
- * @author Harry Boyd - github.com/HBoyd255
+ * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2023-12-21
  * @copyright Copyright (c) 2023
  */

@@ -4,7 +4,7 @@
  * @brief A wrapper for the ArduinoBLE.h module used to simplify the process of
  * transmitting data using BLE.
  *
- * @author Harry Boyd - github.com/HBoyd255
+ * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2024-01-24
  * @copyright Copyright (c) 2024
  */
@@ -14,22 +14,51 @@
 #include "errorIndicator.h"
 
 /**
- * @brief CompressedPose struct, a slimmed down version of the Pose comprised
- * of 3 16 bit integers.
+ * @brief A slimmed down version of the Pose comprised of 3 16 bit signed
+ * integers.
  *
  * This struct is designed to simplify sending data over bluetooth, as it is
  * just 6 bytes that can be interpreted easily on the other end.
  */
 struct __attribute__((packed)) CompressedPoseStruct {
-    int16_t x;      // X position in millimeters.
-    int16_t y;      // Y position in millimeters.
-    int16_t angle;  // The angle in degrees.
+    /**
+     * @brief The x position in millimeters.
+     */
+    int16_t x;
+    /**
+     * @brief The y position in millimeters.
+     */
+    int16_t y;
+    /**
+     * @brief The angle in degrees.
+     */
+    int16_t angle;
 };
 
+/**
+ * @brief A slimmed down version of the Brick Struct, with an additional value
+ * to store the index, comprised of 2 16 bit signed integers and 2 8 bit
+ * unsigned integers.
+ *
+ * This struct is designed to simplify sending data over bluetooth, as it is
+ * just 6 bytes that can be interpreted easily on the other end.
+ */
 struct __attribute__((packed)) CompressedBrickStruct {
-    int16_t x;           // X position in millimeters.
-    int16_t y;           // Y position in millimeters.
-    uint8_t isVertical;  // The angle in degrees.
+    /**
+     * @brief The x position in millimeters.
+     */
+    int16_t x;
+    /**
+     * @brief The y position in millimeters.
+     */
+    int16_t y;
+    /**
+     * @brief A boolean keeping tack of if the Brick is vertical.
+     */
+    uint8_t isVertical;
+    /**
+     * @brief The index of the Brick from within the BrickList
+     */
     uint8_t brickNumber;
 };
 

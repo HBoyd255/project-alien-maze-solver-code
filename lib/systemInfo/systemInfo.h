@@ -3,7 +3,7 @@
  * @brief Definition for constant values related to the hardware setup of my
  * project.
  *
- * @author Harry Boyd - github.com/HBoyd255
+ * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2023-12-21
  * @copyright Copyright (c) 2023
  */
@@ -57,6 +57,7 @@
 
 #define DEFAULT_DRIVE_SPEED 35
 #define INITIAL_ANGLE -90
+#define ROBOT_RADIUS 120
 
 // Bumper
 // Shift register
