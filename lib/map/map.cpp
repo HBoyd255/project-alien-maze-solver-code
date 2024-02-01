@@ -1,4 +1,12 @@
-
+/**
+ * @file map.cpp
+ * @brief Definitions of the Mapping objects, MapPoint, MapItem and Map,
+ * responsible for implementing a modified version of a flood fill algorithm.
+ *
+ * @author Harry Boyd - https://github.com/HBoyd255
+ * @date 2024-01-19
+ * @copyright Copyright (c) 2024
+ */
 
 #include "map.h"
 
