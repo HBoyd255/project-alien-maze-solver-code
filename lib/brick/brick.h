@@ -137,14 +137,12 @@ struct Brick {
 /**
  * @brief The BrickList class, responsible for storing, manipulating and
  * handling a collection of Brick structs.
- *
-
- *
  */
 class BrickList {
    public:
     /**
-     * @brief Construct a new BrickList object
+     * @brief Construct a new BrickList object, and appends the 4 starting
+     * walls.
      */
     BrickList();
 

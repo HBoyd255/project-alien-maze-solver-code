@@ -16,10 +16,10 @@
 #define ROBOT_RADIUS 120
 
 /**
- * @brief Construct a new Brick object.
+ * @brief Construct a new Brick object
  *
- * @param brickPosition The position of the brick.
- * @param isVertical The rotation of the brick, horizontal by default.
+ * @param brickPosition The position of the Brick.
+ * @param isVertical The rotation of the Brick, horizontal by default.
  */
 Brick::Brick(Position brickPosition, bool isVertical)
     : position(brickPosition),
@@ -28,9 +28,9 @@ Brick::Brick(Position brickPosition, bool isVertical)
       width(BRICK_WIDTH) {}
 
 /**
- * @brief Get the position of the bricks bottom left corner.
+ * @brief Get the position of the Brick struct's bottom left corner.
  *
- * @return (Position) The bricks bottom left corner.
+ * @return (Position) The Brick struct's bottom left corner.
  */
 Position Brick::getBottomLeft() {
     Position positionToReturn = this->position;
@@ -46,9 +46,9 @@ Position Brick::getBottomLeft() {
 }
 
 /**
- * @brief Get the position of the bricks top right corner.
+ * @brief Get the position of the Brick struct's top right corner.
  *
- * @return (Position) The bricks top right corner.
+ * @return (Position) The Brick struct's top right corner.
  */
 Position Brick::getTopRight() {
     Position positionToReturn = this->position;
@@ -65,10 +65,10 @@ Position Brick::getTopRight() {
 
 /**
  * @brief Calculates the zone that a given position is in, relative to the
- * current brick.
+ * current Brick.
  *
  * @param target the position to test.
- * @return (Zone) The zone of the position, relative to the current brick.
+ * @return (Zone) The zone of the position, relative to the current Brick.
  */
 Zone Brick::calculateZone(Position target) {
     bool onLeft = target.x < this->getBottomLeft().x;
@@ -100,7 +100,7 @@ Zone Brick::calculateZone(Position target) {
 
 /**
  * @brief Calculates the square of the euclidean distance between the edge
- * of this brick and a provided target position.
+ * of this Brick and a provided target position.
  *
  * This function uses less computation than distanceTo(), as no
  * square root required. For basic comparisons between two distances,
@@ -111,11 +111,11 @@ Zone Brick::calculateZone(Position target) {
  * c = (a * a + b * b) ^ 0.5
  *
  * @param target The other position to calculate the squared distance
- * @param zone_IP The pointer to return the zone from the brick.
- * @param dx_P A pointer to return the difference in x positions.
- * @param dy_P A pointer to return the difference in y positions.
+ * @param zone_IP The pointer to return the zone from the Brick.
+ * @param dx_P The pointer to return the difference in x positions.
+ * @param dy_P The pointer to return the difference in y positions.
  * @return (float) The square of the euclidean distance to the target
- * position from the edge of this brick, in millimeters.
+ * position from the edge of this Brick, in millimeters.
  */
 float Brick::squaredDistanceTo(Position target, int* zone_IP, int* dx_P,
                                int* dy_P) {
@@ -173,6 +173,14 @@ float Brick::squaredDistanceTo(Position target, int* zone_IP, int* dx_P,
     return measuringPosition.squaredDistanceTo(target, dx_P, dy_P);
 }
 
+/**
+ * @brief Calculates the euclidean distance between the edge of this Brick
+ * and a provided target position using the pythagorean theorem.
+ *
+ * @param target The other position to calculate the distance to.
+ * @return (float) The euclidean distance to the target position in
+ * millimeters.
+ */
 float Brick::distanceTo(Position target) {
     // a, b and cSquared are from the Pythagorean theorem.
     // A^2 + B^2 = C^2,
@@ -206,9 +214,9 @@ float Brick::distanceTo(Position target) {
 }
 
 /**
- * @brief Converts the current brick into a human readable string.
+ * @brief Converts the current Brick into a human readable string.
  *
- * @return (String) The current brick as a human readable string.
+ * @return (String) The current Brick as a human readable string.
  */
 String Brick::toString() {
     String stringToReturn;
@@ -232,17 +240,17 @@ String Brick::toString() {
 BrickList::BrickList() { this->_addWalls(); };
 
 /**
- * @brief Get the number of bricks in the list.
+ * @brief Get the number of Brick structs in the list.
  *
- * @return (int) The number of bricks in the list.
+ * @return (int) The number of Brick structs in the list.
  */
 int BrickList::getBrickCount() { return this->_brickCount; }
 
 /**
  * @brief Get the Brick at a given index in the list.
  *
- * @param index The index of the brick to return.
- * @return (Brick) The brick at the given index in the list.
+ * @param index The index of the Brick to return.
+ * @return (Brick) The Brick at the given index in the list.
  */
 Brick BrickList::getBrick(int index) {
     // If the requested brick is not in the list
@@ -287,8 +295,8 @@ String BrickList::toString() {
  * it is along one of the walls of the maze.
  *
  * @param brickCorner The corner position seen by the robot,
- * @return (true) If a brick is added to the list.
- * @return (false) If a brick is not added to the list.
+ * @return (true) If a Brick is added to the list.
+ * @return (false) If a Brick is not added to the list.
  */
 bool BrickList::handleBrickFromWallPosition(Position brickOuterCorner) {
     // How close, in millimeters, a corner needs to be to the wall, to be
@@ -330,13 +338,13 @@ bool BrickList::handleBrickFromWallPosition(Position brickOuterCorner) {
 
 /**
  * @brief Takes a line, provided as a start and end position, and calculates
- * if a brick can be approximated from it.
+ * if a Brick can be approximated from it.
  *
  * @param robotPosition The current position of the robot.
  * @param statingCorner The position that the seen line starts.
  * @param lineEnd  The position that the seen line ends.
- * @return (true) If a brick has been added to the list.
- * @return (false) If a brick has been not been added to the list.
+ * @return (true) If a Brick has been added to the list.
+ * @return (false) If a Brick has been not been added to the list.
  */
 bool BrickList::handleBrickFromLine(Position robotPosition,
                                     Position statingCorner,
@@ -416,7 +424,7 @@ bool BrickList::handleBrickFromLine(Position robotPosition,
 
 /**
  * @brief Takes a sensor reading from a position, and compared it to the
- * curent map data and brick list, and if applicable adds a new brick to
+ * curent Map data and BrickList, and if applicable adds a new Brick to
  * the list.
  *
  * @param robotPosition The current position on the robot.
@@ -428,7 +436,7 @@ bool BrickList::handleBrickFromLine(Position robotPosition,
  * @param map_P A pointer to the map data.
  * @return (-1) If the robot's position needs recalibrating.
  * @return (0) If no changes have been made.
- * @return (1) If a brick has been added to the list.
+ * @return (1) If a Brick has been added to the list.
  */
 int BrickList::handleBrickFromSensorAndMap(Position robotPosition,
                                            Angle angleOfSensor,
@@ -566,18 +574,18 @@ int BrickList::handleBrickFromSensorAndMap(Position robotPosition,
 }
 
 /**
- * @brief Returns the distance to the closest brick in the list, from a
+ * @brief Returns the distance to the closest Brick in the list, from a
  * given target position.
  *
- * Also returns via reference, the index of this closest brick, and the zone
- * from this closest brick.
+ * Also returns via reference, the index of this closest Brick, and the zone
+ * from this closest Brick.
  *
  * @param target The position to calculate the distance to,
  * @param indexOfClosestBrick_P The pointer used to return the index of the
- * closest brick.
+ * closest Brick.
  * @param zoneFromClosestBrick_P The pointer used to return the zone from
- * the closest brick.
- * @return (int) The distance to the closest brick.
+ * the closest Brick.
+ * @return (int) The distance to the closest Brick.
  */
 int BrickList::lowestDistance(Position testPosition, int* indexOfClosestBrick_P,
                               int* zoneFromClosestBrick_P) {
@@ -629,8 +637,8 @@ int BrickList::lowestDistance(Position testPosition, int* indexOfClosestBrick_P,
 
 #if 0  // Blocked out until it is needed again for testing.
 /**
- * @brief populates the brick list with a set of hard coded bricks that
- * represent the data in the provided "Seen Maze".
+ * @brief populates the Brick list with a set of hard coded Brick structs 
+ * that represent the data in the provided "Seen Maze".
  *
  * This function should only be used for algorithm testing,
  */
@@ -660,13 +668,13 @@ void BrickList::setPreprogrammedMazeData() {
 
 /**
  * @brief Compares a sensors reading the expected reading, obtained from the
- * existing items in the brick list.
+ * existing items in the BrickList.
  *
  * @param robotPose The current pose of the robot.
  * @param angleOfSensor The direction that the sensor that captured the data
  * is pointing.
  * @param measuredDistance The distance read by the sensor.
- * @return (1) If a brick need placing.
+ * @return (1) If a Brick need placing.
  * @return (0) If no changes need making.
  * @return (-1) If the robot's position need recalibrating.
  */
@@ -705,17 +713,17 @@ int BrickList::_compare(Position robotPosition, Angle angleOfSensor,
 }
 
 /**
- * @brief Creates a brick based on the position of its edge, and the angle
+ * @brief Creates a Brick based on the position of its edge, and the angle
  * of the sensor that saw it.
  *
- * The brick will be places so that the position seen (brickEdgePosition)
+ * The Brick will be places so that the position seen (brickEdgePosition)
  * will be on the centre of its long side, and will extrude away from the
  * sensor.
  *
  * @param brickEdgePosition The position seen by the sensor.
- * @param angleOfSensor The angle that the sensor was facing when the brick
+ * @param angleOfSensor The angle that the sensor was facing when the Brick
  * was seen.
- * @return (Brick) The newly created brick.
+ * @return (Brick) The newly created Brick.
  */
 Brick BrickList::_getBrickFromEdge(Position brickEdgePosition,
                                    Angle angleOfSensor) {
@@ -734,14 +742,14 @@ Brick BrickList::_getBrickFromEdge(Position brickEdgePosition,
 }
 
 /**
- * @brief Get the distance to the closest brick in a chosen direction,
+ * @brief Get the distance to the closest Brick in a chosen direction,
  * Only works with orthogonal directions.
  *
  * @param robotPosition The position of the robot.
  * @param directionOfBrick The direction to look in, will be rounded to the
  * nearest right angle.
- * @return (int) The distance to the brick in the chosen direction.
- * Returns -1 if no brick was seen.
+ * @return (int) The distance to the Brick in the chosen direction.
+ * Returns -1 if no Brick was seen.
  */
 int BrickList::_getOrthogonalBrickDistance(Position robotPosition,
                                            Angle directionOfBrick) {
@@ -803,11 +811,11 @@ int BrickList::_getOrthogonalBrickDistance(Position robotPosition,
 }
 
 /**
- * @brief Add a brick to the end of the brick list, if there is space
+ * @brief Add a Brick to the end of the BrickList, if there is space
  * remaining.
  *
- * @param brickToAdd The brick to add.
- * @return (true) If the brick was added to the list.
+ * @param brickToAdd The Brick to add.
+ * @return (true) If the Brick was added to the list.
  * @return (false) If the list was already full.
  */
 bool BrickList::_appendBrick(Brick brickToAdd) {
@@ -826,12 +834,12 @@ bool BrickList::_appendBrick(Brick brickToAdd) {
 }
 
 /**
- * @brief Adds a brick the the end of the brick list, if it does not collide
- * with an existing brick in the list.
+ * @brief Adds a Brick the the end of the BrickList, if it does not collide
+ * with an existing Brick in the list.
  *
- * @param brickToAdd  The brick to add.
- * @return (true) If the brick was added to the list.
- * @return (false) If the brick could not be added.
+ * @param brickToAdd  The Brick to add.
+ * @return (true) If the Brick was added to the list.
+ * @return (false) If the Brick could not be added.
  */
 bool BrickList::_attemptAppendBrick(Brick brickToAdd) {
     int shortestDistance = this->lowestDistance(brickToAdd.position);
@@ -850,7 +858,8 @@ bool BrickList::_attemptAppendBrick(Brick brickToAdd) {
 }
 
 /**
- * @brief Append 4 brick to the list, representing the 4 boundary walls.
+ * @brief Appends 4 Brick structs to the list, representing the 4 boundary
+ * walls.
  */
 void BrickList::_addWalls() {
     Brick bottomWall = Brick(Position(MAZE_WIDTH / 2, -BRICK_WIDTH / 2), false);
