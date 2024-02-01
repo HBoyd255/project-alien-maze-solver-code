@@ -370,11 +370,11 @@ Position::operator String() const {
 }
 
 /**
- * @brief Overloaded addition operator, used to add two angles together.
- *
- * @param otherAngle The angle (or uint16_t via implicit conversion) to sum
- * with the current angle.
- * @return The sum of the provided angles.
+ * @brief Overloaded addition operator, used to add two Positions together
+ * by summing their x and y components.
+ * @param positionToAdd The position on the right hand side of the
+ * operator.
+ * @return The Position created by summing the two provided Positions.
  */
 Position Position::operator+(Position& positionToAdd) const {
     return Position(this->x + positionToAdd.x, this->y + positionToAdd.y);
