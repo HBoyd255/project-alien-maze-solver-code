@@ -113,8 +113,8 @@ int16_t Infrared::read() {
     // Start the I2C transmission to the slave address.
     Wire.beginTransmission(IR_SLAVE_ADDRESS);
 
-    // Set the sensor to 64cm mode.
-    Wire.write(IR_SHIFT_REG_ADDRESS);
+    // Write the distance register address to the sensor
+    Wire.write(IR_DISTANCE_REG_ADDRESS);
 
     // End the transmission.
     Wire.endTransmission();
