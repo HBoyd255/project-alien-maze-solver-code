@@ -291,7 +291,7 @@ struct Position {
      * @param positionToAdd The position on the right hand side of the
      * operator.
      * @return The Position created by summing the two provided Positions.
-     */s
+     */
     Position operator+(Position& positionToAdd) const;
 
     /**
