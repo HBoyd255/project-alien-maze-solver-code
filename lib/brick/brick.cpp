@@ -546,8 +546,8 @@ int BrickList::handleBrickFromSensorAndMap(Position robotPosition,
     }
 
     // Check if each the vertical and horizontal brick could fit on the map.
-    int verticalViability = map_P->safeForBrick(RC_BL_Vert, RC_TR_Vert);
-    int horizontalViability = map_P->safeForBrick(RC_BL_Hor, RC_TR_Hor);
+    int verticalViability = map_P->checkIfSafeForBrick(RC_BL_Vert, RC_TR_Vert);
+    int horizontalViability = map_P->checkIfSafeForBrick(RC_BL_Hor, RC_TR_Hor);
 
     // If the vertical brick will not fit(but is not out of bounds) and the
     // horizontal brick will fit, place a horizontal brick in the list.
