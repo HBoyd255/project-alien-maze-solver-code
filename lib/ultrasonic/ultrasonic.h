@@ -23,6 +23,9 @@
 /**
  * @brief Ultrasonic class, responsible for reading data from a given HCSR04
  * ultrasonic sensor.
+ *
+ * sensor data sheet -
+ * https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
  */
 class Ultrasonic {
    public:
