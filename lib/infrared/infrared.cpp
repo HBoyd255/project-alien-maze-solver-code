@@ -5,9 +5,9 @@
  *
  * The data sheet for the GP2Y0E02B IR sensor can be found here,
  * https://global.sharp/products/device/lineup/data/pdf/datasheet/gp2y0e02_03_appl_e.pdf.
- * G
  *
- *  * The data sheet for the PCA9846 Multiplexer can be found here,
+ *
+ * The data sheet for the PCA9846 Multiplexer can be found here,
  * https://www.nxp.com/docs/en/data-sheet/PCA9846.pdf.
  *
  * @author Harry Boyd - github.com/HBoyd255
