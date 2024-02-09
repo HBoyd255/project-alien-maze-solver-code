@@ -43,19 +43,30 @@ struct __attribute__((packed)) CompressedPoseStruct {
  * This struct is designed to simplify sending data over bluetooth, as it is
  * just 6 bytes that can be interpreted easily on the other end.
  */
+
+/**
+ * @brief A slimmed down, repackaged version of the Brick struct. It stores the
+ * data of the brick as the respective x and y positions of its 4 sides, as
+ * signed 16 bit integers. Additionally it stores the index of the brick in the
+ * BrickList, as an unsigned byte.
+ */
 struct __attribute__((packed)) CompressedBrickStruct {
     /**
-     * @brief The x position in millimeters.
+     * @brief The y position of the bottom side of the brick, in millimeters.
      */
-    int16_t x;
+    int16_t bottom;
     /**
-     * @brief The y position in millimeters.
+     * @brief The x position of the left side of the brick, in millimeters.
      */
-    int16_t y;
+    int16_t left;
     /**
-     * @brief A boolean keeping tack of if the Brick is vertical.
+     * @brief The y position of the top side of the brick, in millimeters.
      */
-    uint8_t isVertical;
+    int16_t top;
+    /**
+     * @brief The x position of the right side of the brick, in millimeters.
+     */
+    int16_t right;
     /**
      * @brief The index of the Brick from within the BrickList
      */
@@ -155,6 +166,9 @@ void BluetoothLowEnergy::sendBrickList(BrickList brickListToSend) {
     int brickCount = brickListToSend.getBrickCount();
     for (int i = 0; i < brickCount; i++) {
         this->_sendBrick(brickListToSend.getBrick(i), i);
+
+        // TODO explain of remove this delay.
+        delay(10);
     }
 }
 
@@ -171,6 +185,7 @@ void BluetoothLowEnergy::poll() { BLE.poll(); }
  */
 bool BluetoothLowEnergy::isConnected() { return BLE.connected(); }
 
+// TODO better document how the data is sent.
 /**
  * @brief Transmits data about a given brick over BLE.
  *
@@ -180,9 +195,13 @@ bool BluetoothLowEnergy::isConnected() { return BLE.connected(); }
 void BluetoothLowEnergy::_sendBrick(Brick brickToSend, int brickNumber) {
     CompressedBrickStruct compressedBrick;
 
-    compressedBrick.x = (int16_t)brickToSend.position.x;
-    compressedBrick.y = (int16_t)brickToSend.position.y;
-    compressedBrick.isVertical = (uint8_t)brickToSend.isVertical;
+    Position bottomLeft = brickToSend.getBottomLeft();
+    Position topRight = brickToSend.getTopRight();
+
+    compressedBrick.bottom = (int16_t)bottomLeft.y;
+    compressedBrick.left = (int16_t)bottomLeft.x;
+    compressedBrick.top = (int16_t)topRight.y;
+    compressedBrick.right = (int16_t)topRight.x;
     compressedBrick.brickNumber = (uint8_t)brickNumber;
 
     uint8_t* dataToSend = (uint8_t*)&compressedBrick;
