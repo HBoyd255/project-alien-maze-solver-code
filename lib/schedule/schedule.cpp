@@ -28,7 +28,7 @@ PassiveSchedule::PassiveSchedule(uint32_t period)
  * @return (false) If enough time has not passed.
  */
 bool PassiveSchedule::isReadyToRun() {
-    if (millis() > _nextExecutionTime) {
+    if (millis() > this->_nextExecutionTime) {
         this->_nextExecutionTime = millis() + this->_period;
         return true;
     }
