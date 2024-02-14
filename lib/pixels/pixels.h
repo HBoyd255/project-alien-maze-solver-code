@@ -4,11 +4,23 @@
 
 #include <Arduino.h>
 
-// This Class builds off the NeoPixelBus library written by Michael C. Mille
-//  https://github.com/Makuna/NeoPixelBus
+// This module acts as a wrapper for the NeoPixelBus library written by
+// Michael C. Mille - https://github.com/Makuna/NeoPixelBus
 #include <NeoPixelBus.h>
 
 #include "angleAndPosition.h"
+
+struct Colour {
+    Colour(byte red, byte green, byte blue);
+    Colour(String nameOrHex);
+    void set(byte red, byte green, byte blue);
+
+    String toString();
+
+    byte red;
+    byte green;
+    byte blue;
+};
 
 class Pixels {
    public:
@@ -16,17 +28,11 @@ class Pixels {
 
     void setup();
 
-    void setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b);
+    void setPixel(int index, Colour colour, bool show = false);
 
-    void setPixel(uint8_t pixel, uint8_t r, uint8_t g, uint8_t b, bool show);
+    void setAll(Colour colour, bool show = false);
 
-    void setAll(uint8_t r, uint8_t g, uint8_t b);
-
-    void setAll(uint8_t r, uint8_t g, uint8_t b, bool show);
-
-    void clear();
-
-    void clear(bool show);
+    void clear(bool show = false);
 
     void show();
 
@@ -39,5 +45,7 @@ class Pixels {
     NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> _ledStrip;
     Angle _rotationOffset;
 };
+
+// void pixelsTest();
 
 #endif  // PIXELS_H
