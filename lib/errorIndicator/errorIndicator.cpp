@@ -11,61 +11,75 @@
 
 #include "errorIndicator.h"
 
-// The period to wait while flashing the leds
-#define ERROR_INDICATOR_DELAY 500
-
 /**
  * @brief Construct a new Error Indicator object
  */
 ErrorIndicator::ErrorIndicator() : _hasBegun(false) {}
 
 /**
- * @brief Sets up the class by setting the led pin to output.
+ * @brief Initialises the Error Indicator object, by setting the pin number
+ * of led to flash and the baud rate of the serial monitor.
+ *
+ * @param serialBaudRate The baud rate of the serial monitor.
+ * @param ledPin The pin number of led to flash.
  */
-void ErrorIndicator::begin(uint8_t ledPin, uint32_t serialBaudRate) {
-    this->_ledPin = ledPin;
+void ErrorIndicator::begin(uint32_t serialBaudRate, uint8_t ledPin) {
     this->_serialBaudRate = serialBaudRate;
+    this->_ledPin = ledPin;
 
-    pinMode(this->_ledPin, OUTPUT);
-
+    // Set the has begun flag to true.
     this->_hasBegun = true;
 }
 
 /**
- * @brief Assigns a Pixels object to pointer the class, used for flashing
- * the lights to grab the users attention.
+ * @brief Adds a function to call when an error occurs, to stop ongoing
+ * operations, such as stopping the motors.
  *
- * @param pixels_P (Pixels*) A pointer to a preexisting Pixels class.
+ * @param haltCallback_P A pointer to the function to call when an error
+ * occurs.
  */
-void ErrorIndicator::assignPixels(Pixels* pixels_P) {
-    this->_pixels_P = pixels_P;
+void ErrorIndicator::addHaltCallback(voidFuncPtr haltCallback_P) {
+    this->_haltCallback_P = haltCallback_P;
 }
 
 /**
- * @brief Assigns a Pixels object pointer to the class, used for halting the
- * motors when an error occurs.
+ * @brief Adds a function to call when an error occurs, to draw the users
+ * attention to the serial monitor. This will be ran constantly, until the
+ * user has opened the serial monitor.
  *
- * @param drive_P (Drive*) A pointer to a preexisting Drive class.
+ * @param drawAttentionCallback_P A pointer to the function to call when an
+ * error occurs and the serial monitor is closed.
  */
-void ErrorIndicator::assignDrive(Drive* drive_P) { this->_drive_P = drive_P; }
+void ErrorIndicator::addDrawAttentionCallback(
+    voidFuncPtr drawAttentionCallback_P) {
+    this->_drawAttentionCallback_P = drawAttentionCallback_P;
+}
 
 /**
- * @brief Permanently stops the program, flashes the given LED, flashes the
- * Pixels LEDs(if available), stops the motors(if available) and prints and
- * error message to the serial monitor.
+ * @brief Adds a function to call after an error has occurred, when the user
+ * has opened the serial monitor.
  *
- * This can only be escaped by reseting the program.
+ * @param attentionDrawnCallback_P A pointer to the function to call after
+ * an error has occurred and the user has opened the serial monitor.
+ */
+void ErrorIndicator::addAttentionDrawnCallback_P(
+    voidFuncPtr attentionDrawnCallback_P) {
+    this->_attentionDrawnCallback_P = attentionDrawnCallback_P;
+}
+
+/**
+ * @brief Permanently stops the program, halts ongoing operations, and
+ * attemps to draw the users attention to the serial monitor.
  *
- * @param errorMessage (String) The error message to display to the serial
+ * This function can only be escaped by reseting the program.
+ *
+ * @param errorMessage The error message to display to the serial
  * monitor.
  */
 void ErrorIndicator::errorOccurred(String errorMessage) {
     // If this instance has not been initialised using ErrorIndicator::begin,
-    // Hope that the Serial Post has been initialised and spam the received
-    // error message to it. This case should be avoided as this will lead to the
-    // motors not being halted, no LEDs being enabled to draw the users
-    // attention and a hard to read wall of text being printed to the serial
-    // monitor, if one is even connected at all.
+    // Hope that the Serial Port has been initialised and spam the received
+    // error message to it. This case should be avoided if possible.
     if (!this->_hasBegun) {
         while (true) {
             Serial.println("ErrorIndicator Not initialised, Error");
@@ -74,72 +88,57 @@ void ErrorIndicator::errorOccurred(String errorMessage) {
         }
     }
 
-    // If a pointer to the drive class has been given, halt the motors.
-    if (this->_drive_P != NULL) {
-        this->_drive_P->stop();
+    // If the halt function has been provided, call it.
+    if (this->_haltCallback_P != NULL) {
+        this->_haltCallback_P();
     }
 
-    // Initialise serial communication, if not already initialized.
+    // Begin the serial monitor and set the LED pin to output, this method of
+    // initialising the serial monitor and LED pin is typically bad practice, as
+    // it can interfere with other modules that may be using these resources.
+    // However, as this is essentially a last resort, and all other operations
+    // have been halted, this function takes priority.
     Serial.begin(this->_serialBaudRate);
+    pinMode(this->_ledPin, OUTPUT);
 
-    // A boolean representing if the serial motor is connected.
-    bool serialAvailability = (bool)Serial;
-    // A boolean representing is last state of the serialAvailability boolean,
-    // used for detecting the point at which the serial monitor becomes
-    // available.
+    // A boolean representing if the serial motor is available.
+    bool serialAvailable = false;
+
+    // A boolean representing if the serial motor was available in the previous
+    // loop.
     bool oldSerialAvailability = false;
 
-    // A boolean representing if the pixels class has been provided.
-    bool pixelsAvailability = this->_pixels_P != NULL;
+    // A boolean representing if the serial motor was connected since the last
+    // loop.
+    bool serialNewlyAvailable = false;
 
-    // A boolean used for flipping the LED on and off.
-    bool ledToggle = false;
-
-    // This loop will not end until the program is reset.
     while (true) {
-        // If the pixels class has been provided and the serial monitor is
-        // unavailable.
-        if (pixelsAvailability && !serialAvailability) {
-            // Clear the LEDs.
-            this->_pixels_P->clear();
+        // Flash the LED each second.
+        digitalWrite(this->_ledPin, millis() / 500 % 2);
 
-            // Get the number of LEDs that the Pixels class represents.
-            uint16_t ledCount = this->_pixels_P->getLedCount();
+        // Update the availability status of the serial monitor.
+        serialAvailable = (bool)Serial;
+        serialNewlyAvailable = serialAvailable && !oldSerialAvailability;
+        oldSerialAvailability = serialAvailable;
 
-            // Set every other pixel to bright red, offset by the ledToggle
-            // boolean.
-            for (int i = 0; i < (ledCount / 2); i++) {
-                this->_pixels_P->setPixel((i * 2) + ledToggle, 255, 0, 0);
-            }
-            // Show all the LEDs.
-            this->_pixels_P->show();
+        // If the serial monitor is unavailable, attempt to grab the users
+        // attention.
+        if (!serialAvailable) {
+            // If the grab attention function has been provided, call it.
+            if (this->_drawAttentionCallback_P != NULL) {
+                this->_drawAttentionCallback_P();
+            };
+        } else if (serialNewlyAvailable) {
+            // If the has attention function has been provided, call it.
+            if (this->_attentionDrawnCallback_P != NULL) {
+                this->_attentionDrawnCallback_P();
+            };
 
-            // If the pixels class has been provided and the serial monitor is
-            // available, then turn off all the Pixels.
-        } else if (pixelsAvailability && serialAvailability) {
-            _pixels_P->clear(true);
-        }
-
-        // if the Serial monitor has only became available since the last loop.
-        if (serialAvailability && !oldSerialAvailability) {
             // Display the error message to the serial monitor.
             Serial.println("Error Occurred!");
             Serial.println(errorMessage);
             Serial.println("Please address this issue and reset the program.");
         }
-
-        // Toggle the LED, regardless of if the serial monitor is available.
-        digitalWrite(this->_ledPin, ledToggle);
-
-        // Wait for a predefined period.
-        delay(ERROR_INDICATOR_DELAY);
-
-        // Toggle the ledToggle boolean.
-        ledToggle = !ledToggle;
-
-        // Check if the serial monitor has became available.
-        oldSerialAvailability = serialAvailability;
-        serialAvailability = (bool)Serial;
     }
 }
 

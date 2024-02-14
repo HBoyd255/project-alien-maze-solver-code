@@ -14,9 +14,6 @@
 
 #include <Arduino.h>
 
-#include "drive.h"
-#include "pixels.h"
-
 /**
  * @brief ErrorIndicator class, responsible for halting operations upon an
  * error, and drawing the user's attention to the serial monitor.
@@ -35,35 +32,46 @@ class ErrorIndicator {
      * @brief Initialises the Error Indicator object, by setting the pin number
      * of led to flash and the baud rate of the serial monitor.
      *
-     * @param ledPin The pin number of led to flash.
      * @param serialBaudRate The baud rate of the serial monitor.
+     * @param ledPin The pin number of led to flash.
      */
-    void begin(uint8_t ledPin, uint32_t serialBaudRate);
+    void begin(uint32_t serialBaudRate, uint8_t ledPin);
 
     /**
-     * @brief Assigns a Pixels object to pointer the class, used for
-     * flashing the lights to grab the users attention.
+     * @brief Adds a function to call when an error occurs, to stop ongoing
+     * operations, such as stopping the motors.
      *
-     * @param pixels_P (Pixels*) A pointer to a preexisting Pixels class.
+     * @param haltCallback_P A pointer to the function to call when an error
+     * occurs.
      */
-    void assignPixels(Pixels* pixels_P);
+    void addHaltCallback(voidFuncPtr haltCallback_P);
 
     /**
-     * @brief Assigns a Pixels object pointer to the class, used for halting the
-     * motors when an error occurs.
+     * @brief Adds a function to call when an error occurs, to draw the users
+     * attention to the serial monitor. This will be ran constantly, until the
+     * user has opened the serial monitor.
      *
-     * @param drive_P (Drive*) A pointer to a preexisting Drive class.
+     * @param drawAttentionCallback_P A pointer to the function to call when an
+     * error occurs and the serial monitor is closed.
      */
-    void assignDrive(Drive* drive_P);
+    void addDrawAttentionCallback(voidFuncPtr drawAttentionCallback_P);
 
     /**
-     * @brief Permanently stops the program, flashes the given LED, flashes the
-     * Pixels LEDs(if available), stops the motors(if available) and prints and
-     * error message to the serial monitor.
+     * @brief Adds a function to call after an error has occurred, when the user
+     * has opened the serial monitor.
      *
-     * This can only be escaped by reseting the program.
+     * @param attentionDrawnCallback_P A pointer to the function to call after
+     * an error has occurred and the user has opened the serial monitor.
+     */
+    void addAttentionDrawnCallback_P(voidFuncPtr attentionDrawnCallback_P);
+
+    /**
+     * @brief Permanently stops the program, halts ongoing operations, and
+     * attemps to draw the users attention to the serial monitor.
      *
-     * @param errorMessage (String) The error message to display to the serial
+     * This function can only be escaped by reseting the program.
+     *
+     * @param errorMessage The error message to display to the serial
      * monitor.
      */
     void errorOccurred(String errorMessage);
@@ -76,21 +84,31 @@ class ErrorIndicator {
     bool _hasBegun;
 
     /**
-     * @brief The  pin of the LED to flash upon error.
-     */
-    uint8_t _ledPin;
-    /**
      * @brief The baud rate of the serial monitor.
      */
     uint32_t _serialBaudRate;
+
     /**
-     * @brief A pointer to a preexisting Pixels class.
+     * @brief The  pin of the LED to flash upon error.
      */
-    Pixels* _pixels_P = NULL;
+    uint8_t _ledPin;
+
     /**
-     * @brief  A pointer to a preexisting Drive class.
+     * @brief A pointer to the function to call when an error occurs.
      */
-    Drive* _drive_P = NULL;
+    voidFuncPtr _haltCallback_P = NULL;
+
+    /**
+     * @brief A pointer to the function to call when an error occurs and the
+     * serial monitor is closed.
+     */
+    voidFuncPtr _drawAttentionCallback_P = NULL;
+
+    /**
+     * @brief A pointer to the function to call after an error has occurred and
+     * the user has opened the serial monitor.
+     */
+    voidFuncPtr _attentionDrawnCallback_P = NULL;
 };
 
 // Declaration of the global ErrorIndicator instance.
