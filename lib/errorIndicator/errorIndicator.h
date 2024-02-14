@@ -74,7 +74,7 @@ class ErrorIndicator {
      * @param errorMessage The error message to display to the serial
      * monitor.
      */
-    void errorOccurred(String errorMessage);
+    void errorOccurred(String file, int line, String errorMessage);
 
    private:
     /**
@@ -109,6 +109,15 @@ class ErrorIndicator {
      * the user has opened the serial monitor.
      */
     voidFuncPtr _attentionDrawnCallback_P = NULL;
+
+    /**
+     * @brief Prints the error message to the serial monitor.
+     *
+     * @param file The file in which the error occurred.
+     * @param line The line number at which the error occurred.
+     * @param errorMessage The error message to display to the serial monitor.
+     */
+    void _printError(String file, int line, String errorMessage);
 };
 
 // Declaration of the global ErrorIndicator instance.

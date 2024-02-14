@@ -76,28 +76,28 @@ void ErrorIndicator::addAttentionDrawnCallback_P(
  * @param errorMessage The error message to display to the serial
  * monitor.
  */
-void ErrorIndicator::errorOccurred(String errorMessage) {
-    // If this instance has not been initialised using ErrorIndicator::begin,
-    // Hope that the Serial Port has been initialised and spam the received
-    // error message to it. This case should be avoided if possible.
-    if (!this->_hasBegun) {
-        while (true) {
-            Serial.println("ErrorIndicator Not initialised, Error");
-            Serial.println(errorMessage);
-            Serial.println();
-        }
-    }
-
-    // If the halt function has been provided, call it.
+void ErrorIndicator::errorOccurred(String file, int line, String errorMessage) {
+    // If the halt function has been provided, call to stop and critical
+    // operation.
     if (this->_haltCallback_P != NULL) {
         this->_haltCallback_P();
     }
 
+    // If this instance has not been initialised using ErrorIndicator::begin,
+    // hope that the serial Port has been initialised and spam the received
+    // error message to it. This case should be avoided if possible.
+    while (!this->_hasBegun) {
+        Serial.println(
+            "Make sure to call ErrorIndicator::begin before using "
+            "ErrorIndicator::errorOccurred.");
+        this->_printError(file, line, errorMessage);
+    }
+
     // Begin the serial monitor and set the LED pin to output, this method of
-    // initialising the serial monitor and LED pin is typically bad practice, as
-    // it can interfere with other modules that may be using these resources.
-    // However, as this is essentially a last resort, and all other operations
-    // have been halted, this function takes priority.
+    // initialising the serial monitor and LED pin inside this instance is
+    // typically bad practice, as it can interfere with other modules that may
+    // be using these resources. However, as this function a last resort,
+    // and all other operations have been halted, this function takes priority.
     Serial.begin(this->_serialBaudRate);
     pinMode(this->_ledPin, OUTPUT);
 
@@ -134,12 +134,26 @@ void ErrorIndicator::errorOccurred(String errorMessage) {
                 this->_attentionDrawnCallback_P();
             };
 
-            // Display the error message to the serial monitor.
-            Serial.println("Error Occurred!");
-            Serial.println(errorMessage);
-            Serial.println("Please address this issue and reset the program.");
+            this->_printError(file, line, errorMessage);
         }
     }
+}
+
+/**
+ * @brief Prints the error message to the serial monitor.
+ *
+ * @param file The file in which the error occurred.
+ * @param line The line number at which the error occurred.
+ * @param errorMessage The error message to display to the serial monitor.
+ */
+void ErrorIndicator::_printError(String file, int line, String errorMessage) {
+    Serial.println(
+        "----------------------------------------"
+        "----------------------------------------");
+    Serial.println("Error Occurred at " + file + ":" + String(line) + ":");
+    Serial.println(errorMessage);
+    Serial.println("Please address this issue and reset the program.");
+    Serial.println();
 }
 
 // Definition of the global ErrorIndicator instance.
