@@ -5,16 +5,15 @@
 
 #include "angleAndPosition.h"
 #include "bluetoothLowEnergy.h"
-#include "infrared.h"
 #include "motor.h"
+#include "schedule.h"
 
 // Forward declaration of the Motor class.
 class Motor;
 
 class MotionTracker {
    public:
-    MotionTracker(Motor* leftMotor_P, Motor* rightMotor_P,
-                  Angle statingAngle);
+    MotionTracker(Motor* leftMotor_P, Motor* rightMotor_P, Angle statingAngle);
 
     Angle angleFromOdometry();
 
@@ -34,10 +33,16 @@ class MotionTracker {
 
     Position _currentPosition;
     const Angle _statingAngle;
-    Angle _currentAngle = 90;
-    Angle _angleCalibration = 0;
+    Angle _currentAngle;
+    Angle _angleCalibration;
 
-    int32_t _averageTravelDistance();
+    int _currentAverageDistance;
+    int _lastAverageDistance;
+
+    PassiveSchedule _pollSchedule;
+
+    int _getAverageDistance();
+    int _getChangeInDistance();
 };
 
 #endif  // MOTION_TRACKER_H

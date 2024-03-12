@@ -32,6 +32,11 @@ class Pixels {
 
     void setAll(Colour colour, bool show = false);
 
+    // This function will need to be called routinely to keep the LEDs flashing,
+    // otherwise the LEDs will stop flashing and freeze on the last state.
+    void flash(Colour onColour = Colour("Red"), bool alternate = true,
+               int period = 1000, Colour offColour = Colour("Black"));
+
     void clear(bool show = false);
 
     void show();

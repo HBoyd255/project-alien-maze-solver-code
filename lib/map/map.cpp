@@ -14,6 +14,7 @@
 
 #include "angleAndPosition.h"
 #include "brick.h"
+#include "errorIndicator.h"
 
 /**
  * @brief The maximum value of an 11 bit unsigned integer, equivalent to 2047
@@ -270,9 +271,8 @@ void Map::solve(BrickList brickList, Position endPosition) {
 
     // IF the end point is invalid,
     if (!_validatePoint(endPoint)) {
-        // complain to the serial monitor.
-        Serial.println("Point out of bounds.");
-        return;
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__,
+                                       "Point out of bounds.");
     }
 
     // Start of the flood fill implementation
@@ -303,6 +303,14 @@ void Map::solve(BrickList brickList, Position endPosition) {
         // Iterate thought the 8 outer points.
         for (int direction_I = 0; direction_I < 8; direction_I++) {
             MapPoint outerPoint = innerPoint + this->_neighbors[direction_I];
+
+            // TODO re-document.
+
+            // If the outer point is not on the map, move onto the next point.
+            if (!(this->_validatePoint(outerPoint))) {
+                continue;
+            }
+
             uint16_t existingOuterValue = this->_getDistanceToGoal(outerPoint);
 
             // If the outer Point is diagonal, increase it by DIAGONAL_DISTANCE,
@@ -312,14 +320,13 @@ void Map::solve(BrickList brickList, Position endPosition) {
 
             int newOuterValue = innerValue + distanceToOuterPoint;
 
-            bool outerIsValid = this->_validatePoint(outerPoint);
             bool outerNotBlocked = !(this->_getBlocked(outerPoint));
             bool newOuterIsSmaller = newOuterValue < existingOuterValue;
 
             // If the outer point is valid, is not blocked and is smaller than
             // the current value stored in that cell, set the outer cell's value
             // to the new calculated value and push the outer cell to the queue.
-            if (outerIsValid && outerNotBlocked && newOuterIsSmaller) {
+            if (outerNotBlocked && newOuterIsSmaller) {
                 this->_setDistanceToGoal(outerPoint, newOuterValue);
                 pointQueue.push(outerPoint);
             }
@@ -427,6 +434,16 @@ void Map::_populateDirections() {
         for (uint8_t direction_I = 0; direction_I < 8; direction_I++) {
             MapPoint outerPoint = scanPoint + this->_neighbors[direction_I];
 
+            // If the outer point is not on the map, move onto the next point.
+            if (!(this->_validatePoint(outerPoint))) {
+                continue;
+            }
+
+            // If the outer point blocked by a brick, move onto the next point.
+            if (this->_getBlocked(outerPoint)) {
+                continue;
+            }
+
             // If the outer Point is diagonal, increase it by DIAGONAL_DISTANCE,
             // if it's orthogonal increase it ORTHOGONAL_DISTANCE
             int distanceToOuterPoint =
@@ -434,14 +451,6 @@ void Map::_populateDirections() {
 
             int outerPointPathLength =
                 this->_getDistanceToGoal(outerPoint) + distanceToOuterPoint;
-
-            bool outerIsValid = this->_validatePoint(outerPoint);
-            bool outerNotBlocked = !(this->_getBlocked(outerPoint));
-
-            // if the outer point is invalid, break the loop.
-            if (!outerIsValid || !outerNotBlocked) {
-                continue;
-            }
 
             // Ihe new path is lower than the current lowest,
             if (outerPointPathLength <= LowestValue) {
@@ -561,7 +570,10 @@ bool Map::_getBeen(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].been;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
         return 0;
     }
 }
@@ -576,7 +588,10 @@ void Map::_setBeen(MapPoint point, bool beenStatus) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].been = beenStatus;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 }
 
@@ -591,7 +606,10 @@ bool Map::_getBlocked(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].blocked;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
         return 0;
     }
 }
@@ -606,7 +624,10 @@ void Map::_setBlocked(MapPoint point, bool blockedStatus) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].blocked = blockedStatus;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 }
 
@@ -620,7 +641,10 @@ uint8_t Map::_getDirection(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].direction;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
         return 0;
     }
 }
@@ -635,7 +659,10 @@ void Map::_setDirection(MapPoint point, uint8_t newDirection) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].direction = newDirection;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 }
 
@@ -649,7 +676,10 @@ uint16_t Map::_getDistanceToGoal(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].distanceToGoal;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
         return 0;
     }
 }
@@ -664,7 +694,10 @@ void Map::_setDistanceToGoal(MapPoint point, uint16_t newDistance) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].distanceToGoal = newDistance;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 }
 
@@ -678,7 +711,10 @@ uint8_t Map::_getDistanceToWall(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].distanceToWall;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
         return 0;
     }
 }
@@ -693,7 +729,10 @@ void Map::_setDistanceToWall(MapPoint point, uint8_t newDistanceToWall) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].distanceToWall = newDistanceToWall;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 }
 
@@ -708,7 +747,10 @@ uint8_t Map::_getSeen(MapPoint point) {
     if (this->_validatePoint(point)) {
         return this->_mapData[point.y][point.x].seen;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
         return 0;
     }
 }
@@ -724,7 +766,10 @@ void Map::_setSeen(MapPoint point, uint8_t seenOccurrence) {
     if (this->_validatePoint(point)) {
         this->_mapData[point.y][point.x].seen = seenOccurrence;
     } else {
-        Serial.println("Out of range");
+        String errorMessage = "";
+        errorMessage += point.toString();
+        errorMessage += " is out of range.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 }
 

@@ -92,7 +92,7 @@ void Infrared::setup() {
     if (!Wire.available()) {
         String errorMessage =
             "Cannot initialize IR sensor " + String(this->_index) + ".";
-        ErrorIndicator_G.errorOccurred(errorMessage);
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 
     // Read in the shift value from the I2C bus.
@@ -126,7 +126,7 @@ int16_t Infrared::read() {
     if (Wire.available() < 2) {
         String errorMessage =
             "Cannot read IR sensor " + String(this->_index) + ".";
-        ErrorIndicator_G.errorOccurred(errorMessage);
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 
     // read the first byte in as the most significant part

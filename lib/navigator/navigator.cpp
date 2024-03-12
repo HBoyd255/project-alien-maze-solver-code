@@ -195,8 +195,8 @@ bool Navigator::_goToAngle(Angle angleToGoTo) {
 
 bool Navigator::_goToPosition(Position positionToGoTo) {
     Position currentPosition = this->_motionTracker_P->getPosition();
-
     int distanceToTarget = currentPosition.distanceTo(positionToGoTo);
+
     if (distanceToTarget < this->_inRangeTolerance) {
         this->_drive_P->stop();
         return true;
@@ -206,6 +206,7 @@ bool Navigator::_goToPosition(Position positionToGoTo) {
     Angle globalAngleToTarget =
         currentPosition.calculateAngleTo(positionToGoTo);
     Angle angleToTurn = globalAngleToTarget - currentAngle;
+
     bool drivingForwards = true;
 
     const int upperAngle = this->_angleTolerance;

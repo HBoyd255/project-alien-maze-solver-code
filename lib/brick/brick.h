@@ -17,6 +17,8 @@
 // to store 50 Bricks.
 #define MAX_BRICK_COUNT 50
 
+#define DEBUG_ALLOW_PREFILLED_MAZE 1
+
 /**
  * @brief Enumeration representing various zones, relative to a Brick.
  */
@@ -69,7 +71,7 @@ struct Brick {
      * @param brickPosition The position of the Brick.
      * @param isVertical The rotation of the Brick, horizontal by default.
      */
-    Brick(Position brickPosition = Position(0, 0), bool isVertical = 0);
+    Brick(Position brickPosition = Position(0, 0), bool isVertical = false);
 
     /**
      * @brief Get the position of the Brick struct's bottom left corner.
@@ -228,9 +230,9 @@ class BrickList {
     int lowestDistance(Position target, int* indexOfClosestBrick_P = nullptr,
                        int* zoneFromClosestBrick_P = nullptr);
 
-#if 0  // Blocked out until it is needed again for testing.
+#if DEBUG_ALLOW_PREFILLED_MAZE
     /**
-     * @brief populates the Brick list with a set of hard coded Brick structs 
+     * @brief populates the Brick list with a set of hard coded Brick structs
      * that represent the data in the provided "Seen Maze".
      *
      * This function should only be used for algorithm testing,

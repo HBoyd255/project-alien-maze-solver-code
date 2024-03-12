@@ -10,9 +10,11 @@
 #include "brick.h"
 
 #include "comparison.h"
+#include "errorIndicator.h"
 #include "map.h"
 #include "mazeConstants.h"
 
+// TODO read this value in.
 #define ROBOT_RADIUS 120
 
 /**
@@ -255,11 +257,8 @@ int BrickList::getBrickCount() { return this->_brickCount; }
 Brick BrickList::getBrick(int index) {
     // If the requested brick is not in the list
     if (index > this->getBrickCount()) {
-        // complain to the serial monitor
-        Serial.println("Brick out of range");
-
-        // and returns a dummy brick.
-        return Brick(Position(-1, -1), 0);
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__,
+                                       "Brick out of range");
     }
     // If the requested brick is in the list, return it
     return this->_brickArray[index];
@@ -635,9 +634,9 @@ int BrickList::lowestDistance(Position testPosition, int* indexOfClosestBrick_P,
     return sqrt(lowestSquaredDistance);
 }
 
-#if 0  // Blocked out until it is needed again for testing.
+#if DEBUG_ALLOW_PREFILLED_MAZE
 /**
- * @brief populates the Brick list with a set of hard coded Brick structs 
+ * @brief populates the Brick list with a set of hard coded Brick structs
  * that represent the data in the provided "Seen Maze".
  *
  * This function should only be used for algorithm testing,
@@ -647,22 +646,21 @@ void BrickList::setPreprogrammedMazeData() {
     // This data is only used for algorithm testing,
     // it is at no point used during the demonstration.
 
-    
-    this->_appendBrick(Brick(125, 460, false));
-    this->_appendBrick(Brick(375, 460, false));
-    this->_appendBrick(Brick(40, 1000, true));
-    this->_appendBrick(Brick(125, 1460, false));
-    this->_appendBrick(Brick(375, 1460, false));
-    this->_appendBrick(Brick(540, 1545, true));
-    this->_appendBrick(Brick(1460, 1545, true));
-    this->_appendBrick(Brick(1295, 1460, false));
-    this->_appendBrick(Brick(1130, 1375, true));
-    this->_appendBrick(Brick(1460, 625, true));
-    this->_appendBrick(Brick(1295, 540, false));
-    this->_appendBrick(Brick(1130, 455, true));
-    this->_appendBrick(Brick(460, 1000, true));
-    this->_appendBrick(Brick(625, 915, false));
-    this->_appendBrick(Brick(875, 915, false));
+    this->_appendBrick(Brick(Position(125, 460), false));
+    this->_appendBrick(Brick(Position(375, 460), false));
+    this->_appendBrick(Brick(Position(40, 1000), true));
+    this->_appendBrick(Brick(Position(125, 1460), false));
+    this->_appendBrick(Brick(Position(375, 1460), false));
+    this->_appendBrick(Brick(Position(540, 1545), true));
+    this->_appendBrick(Brick(Position(1460, 1545), true));
+    this->_appendBrick(Brick(Position(1295, 1460), false));
+    this->_appendBrick(Brick(Position(1130, 1375), true));
+    this->_appendBrick(Brick(Position(1460, 625), true));
+    this->_appendBrick(Brick(Position(1295, 540), false));
+    this->_appendBrick(Brick(Position(1130, 455), true));
+    this->_appendBrick(Brick(Position(460, 1000), true));
+    this->_appendBrick(Brick(Position(625, 915), false));
+    this->_appendBrick(Brick(Position(875, 915), false));
 }
 #endif
 
@@ -874,7 +872,7 @@ void BrickList::_addWalls() {
 
     Brick topWall =
         Brick(Position(MAZE_WIDTH / 2, MAZE_LENGTH + (BRICK_WIDTH / 2)), false);
-    topWall.length = BRICK_WIDTH;
+    topWall.length = MAZE_WIDTH;
     topWall.width = BRICK_WIDTH;
     this->_appendBrick(topWall);
 

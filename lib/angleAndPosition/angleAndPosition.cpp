@@ -282,14 +282,14 @@ void Position::transformByPose(Pose offsetPose) {
  * c = (a * a + b * b) ^ 0.5
  *
  * @param target The other position to calculate the squared distance
- * @param dx_P A pointer to return the difference in x positions.
- * @param dy_P A pointer to return the difference in y positions.
+ * @param dx_P A pointer to return the absolute difference in x positions.
+ * @param dy_P A pointer to return the absolute difference in y positions.
  * @return (float) The square of the euclidean distance to the target
  * position in millimeters.
  */
 float Position::squaredDistanceTo(Position target, int* dx_P, int* dy_P) {
-    float dx = target.x - this->x;
-    float dy = target.y - this->y;
+    float dx = abs(target.x - this->x);
+    float dy = abs(target.y - this->y);
 
     *dx_P = dx;
     *dy_P = dy;

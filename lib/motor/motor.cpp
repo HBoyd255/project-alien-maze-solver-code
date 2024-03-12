@@ -1,5 +1,7 @@
 #include "motor.h"
 
+#include "errorIndicator.h"
+
 Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderChannelA,
              uint8_t encoderChannelB, bool rotationInverted)
     : _directionPin(directionPin),
@@ -29,7 +31,10 @@ void Motor::setSpeedAndDir(uint8_t formattedSpeed, bool direction) {
     // Make sure that the provided value is within the range of 0 to 100,
     // return 1 if not to signify an error.
     if (formattedSpeed > 100) {
-        Serial.println("Speed must be between 0 and 100");
+        String errorMessage = "";
+        errorMessage += formattedSpeed;
+        errorMessage += " is out of range, speed must be between 0 and 100.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
         return;
     }
 
@@ -60,8 +65,11 @@ void Motor::setVelocity(int8_t formattedVelocity) {
     // Make sure that the provided value is withing the range of -100 to
     // 100, return 1 if not to signify an error.
     if ((formattedVelocity > 100) || (formattedVelocity < -100)) {
-        Serial.println("Velocity must be between -100 and 100");
-        return;
+        String errorMessage = "";
+        errorMessage += formattedVelocity;
+        errorMessage +=
+            " is out of range, velocity must be between -100 and 100.";
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 
     // Set the direction to forwards("1") if the speed is greater than 0,

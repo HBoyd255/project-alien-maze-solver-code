@@ -1,3 +1,28 @@
+/**
+ * @file main.cpp
+ * @brief The main file and entry point of the project.
+ *
+ * @author Harry Boyd - https://github.com/HBoyd255
+ * @date 2024-02-01
+ * @copyright Copyright (c) 2024
+ */
+
+//  ██████╗ ██████╗  ██████╗      ██╗███████╗ ██████╗████████╗
+//  ██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝██╔════╝╚══██╔══╝
+//  ██████╔╝██████╔╝██║   ██║     ██║█████╗  ██║        ██║
+//  ██╔═══╝ ██╔══██╗██║   ██║██   ██║██╔══╝  ██║        ██║
+//  ██║     ██║  ██║╚██████╔╝╚█████╔╝███████╗╚██████╗   ██║
+//  ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚══════╝ ╚═════╝   ╚═╝
+//
+//   █████╗    ██╗        ██╗   ███████╗   ███╗   ██╗
+//  ██╔══██╗   ██║        ██║   ██╔════╝   ████╗  ██║
+//  ███████║   ██║        ██║   █████╗     ██╔██╗ ██║
+//  ██╔══██║   ██║        ██║   ██╔══╝     ██║╚██╗██║
+//  ██║  ██║██╗███████╗██╗██║██╗███████╗██╗██║ ╚████║██╗
+//  ╚═╝  ╚═╝╚═╝╚══════╝╚═╝╚═╝╚═╝╚══════╝╚═╝╚═╝  ╚═══╝╚═╝
+
+// Ascii text generated at https://patorjk.com/software/taag/
+// Font used - ANSI Shadow
 
 // https://www.arduino.cc/reference/en/
 #include <Arduino.h>
@@ -12,6 +37,7 @@
 #include "history.h"
 #include "infrared.h"
 #include "map.h"
+#include "mazeConstants.h"
 #include "motionTracker.h"
 #include "motor.h"
 #include "navigator.h"
@@ -19,8 +45,25 @@
 #include "schedule.h"
 #include "systemInfo.h"
 #include "ultrasonic.h"
+#include "unitTesting.h"
 
-ErrorIndicator errorIndicator(LED_BUILTIN, SERIAL_BAUD_RATE);
+// ███████╗██╗      █████╗  ██████╗ ███████╗
+// ██╔════╝██║     ██╔══██╗██╔════╝ ██╔════╝
+// █████╗  ██║     ███████║██║  ███╗███████╗
+// ██╔══╝  ██║     ██╔══██║██║   ██║╚════██║
+// ██║     ███████╗██║  ██║╚██████╔╝███████║
+// ╚═╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+//
+
+#define WAIT_UPON_START false
+#define PREFILL_BRICK_LIST false
+
+//   ██████╗ ██████╗      ██╗███████╗ ██████╗████████╗███████╗
+//  ██╔═══██╗██╔══██╗     ██║██╔════╝██╔════╝╚══██╔══╝██╔════╝
+//  ██║   ██║██████╔╝     ██║█████╗  ██║        ██║   ███████╗
+//  ██║   ██║██╔══██╗██   ██║██╔══╝  ██║        ██║   ╚════██║
+//  ╚██████╔╝██████╔╝╚█████╔╝███████╗╚██████╗   ██║   ███████║
+//   ╚═════╝ ╚═════╝  ╚════╝ ╚══════╝ ╚═════╝   ╚═╝   ╚══════╝
 
 Motor leftMotor(LEFT_MOTOR_DIRECTION_PIN, LEFT_MOTOR_SPEED_PIN,
                 LEFT_MOTOR_ENCODER_A_PIN, LEFT_MOTOR_ENCODER_B_PIN,
@@ -38,13 +81,11 @@ Ultrasonic ultrasonic(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO,
                       ULTRASONIC_DATA_SHELF_LIFE,
                       FRONT_ULTRASONIC_FORWARD_DISTANCE);
 
-Infrared leftInfrared(&errorIndicator, LEFT_INFRARED_INDEX,
-                      LEFT_INFRARED_FORWARD_DISTANCE);
-Infrared rightInfrared(&errorIndicator, RIGHT_INFRARED_INDEX,
-                       RIGHT_INFRARED_FORWARD_DISTANCE);
-Infrared frontLeftInfrared(&errorIndicator, FRONT_LEFT_INFRARED_INDEX,
+Infrared leftInfrared(LEFT_INFRARED_INDEX, LEFT_INFRARED_FORWARD_DISTANCE);
+Infrared rightInfrared(RIGHT_INFRARED_INDEX, RIGHT_INFRARED_FORWARD_DISTANCE);
+Infrared frontLeftInfrared(FRONT_LEFT_INFRARED_INDEX,
                            FRONT_LEFT_INFRARED_FORWARD_DISTANCE);
-Infrared frontRightInfrared(&errorIndicator, FRONT_RIGHT_INFRARED_INDEX,
+Infrared frontRightInfrared(FRONT_RIGHT_INFRARED_INDEX,
                             FRONT_RIGHT_INFRARED_FORWARD_DISTANCE);
 
 Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
@@ -62,28 +103,32 @@ BrickList brickList;
 
 Map gridMap;
 
-// ███████ ████████  █████  ██████  ████████     ██   ██ ███████ ██████  ███████
-// ██         ██    ██   ██ ██   ██    ██        ██   ██ ██      ██   ██ ██
-// ███████    ██    ███████ ██████     ██        ███████ █████   ██████  █████
-//      ██    ██    ██   ██ ██   ██    ██        ██   ██ ██      ██   ██ ██
-// ███████    ██    ██   ██ ██   ██    ██        ██   ██ ███████ ██   ██ ███████
-// https://patorjk.com/software/taag/
+/**
+ * @brief Am instance of the PassiveSchedule class, that can trigger a function
+ * once per second.
+ *
+ */
+PassiveSchedule oneSecondSchedule(1000);
+
+//  ██████╗ ███████╗ █████╗ ██████╗     ███╗   ███╗███████╗
+//  ██╔══██╗██╔════╝██╔══██╗██╔══██╗    ████╗ ████║██╔════╝
+//  ██████╔╝█████╗  ███████║██║  ██║    ██╔████╔██║█████╗
+//  ██╔══██╗██╔══╝  ██╔══██║██║  ██║    ██║╚██╔╝██║██╔══╝
+//  ██║  ██║███████╗██║  ██║██████╔╝    ██║ ╚═╝ ██║███████╗
+//  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝     ╚═╝     ╚═╝╚══════╝
 
 /*
 Im going to preface all of this by saying that I ran out of time,
 There is still a lot of documenting and refactoring that I would like to do, but
 in its current state the logic is sound and everything works.
 
-
 Logic Flow
 
- Oversimplification
-  Stage 1 - Follow the left wall, plot all the bricks encountered om this lap.
+  Stage 1 - Follow the left wall, plot all the bricks encountered on this lap.
   Stage 2 - Use the flood fill to make a first attempt at plotting the maze.
   Stage 3 - Use this map to drive through the centre of the maze.
   Stage 4 - Hit an island in the middle of the maze, then left wall follow all
-            the way around this island Stage 4 - hit an island in the middle of
-            the maze.
+            the way around this island.
   Stage 5 - Drive back to the start of the maze.
   Stage 6 - Use the flood fill Solve and drive the maze.
   Stage 7 - Celebrate.
@@ -93,6 +138,12 @@ The robot starts by facing away from the maze, with its coordinates off the
 maze, It then drives until it finds a wall It uses that wall to calibrate its
  y position to place itself on the map. It then turns right and does the same
 again to calibrate its x Position.
+
+The way that the robot preforms left wall following is by driving until it
+measures a drop in distance from the infrared sensor on the left.
+It then drives a further 15cm and preforms a 90° left turn, and keeps driving.
+If while driving forwards it detects a obstacle less that
+
 
 
 Ive implemented a naming convention for tagging variables
@@ -132,17 +183,41 @@ Thought my robustness ive been able to;
 None of the code submitted was generated by AI.
 */
 
+//  ███████╗███████╗████████╗██╗   ██╗██████╗
+//  ██╔════╝██╔════╝╚══██╔══╝██║   ██║██╔══██╗
+//  ███████╗█████╗     ██║   ██║   ██║██████╔╝
+//  ╚════██║██╔══╝     ██║   ██║   ██║██╔═══╝
+//  ███████║███████╗   ██║   ╚██████╔╝██║
+//  ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝
+
+void alertUser() {}
+
+/**
+ * @brief The setup function, responsible for initialising the objects that
+ * require initialization.
+ */
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
-    errorIndicator.assignPixels(&pixels);
-    errorIndicator.assignDrive(&drive);
-    errorIndicator.setup();
+    // ErrorIndicator should be initialised first
+    ErrorIndicator_G.begin(SERIAL_BAUD_RATE, LED_BUILTIN);
+
+    // Add a callback to the ErrorIndicator to stop the motors if an error
+    // occurs.
+    ErrorIndicator_G.addHaltCallback([]() { drive.stop(); });
+
+    // Add a callback to the ErrorIndicator to flash the pixels to draw the
+    // users attention to the serial monitor.
+    ErrorIndicator_G.addDrawAttentionCallback([]() { pixels.flash(); });
+
+    // Add a callback to the ErrorIndicator to clear the pixels once the user
+    // has opened the serial monitor.
+    ErrorIndicator_G.addAttentionDrawnCallback_P([]() { pixels.clear(true); });
 
     // Interrupts must be connected to a void function pointer, not class
     // methods, so to attach a class method to an interrupt pin it must be
-    // converted to a void function pointer using a global instance and a lamda
-    // function.
+    // converted to a void function pointer using a global instance and a
+    // lamda function.
     leftMotor.setup([]() { leftMotor.isr(); });
     rightMotor.setup([]() { rightMotor.isr(); });
 
@@ -157,9 +232,25 @@ void setup() {
 
     bumper.setup([]() { bumper.isr(); });
 
-    bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS, &errorIndicator);
+    bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
+
+    // TODO come back and handle test failures.
+    runAllTests();
+
+#if PREFILL_BRICK_LIST
+    brickList.setPreprogrammedMazeData();
+#endif  // PREFILL_BRICK_LIST
+
+#if WAIT_UPON_START
+    while (!(bluetoothLowEnergy.isConnected() || (bool)bumper.read())) {
+        bluetoothLowEnergy.poll();
+    }
+#endif  // WAIT_UPON_START
 }
 
+/**
+ * @brief Polls the various classes that need to be polled.
+ */
 void polls() {
     frontLeftInfrared.poll();
     frontRightInfrared.poll();
@@ -171,6 +262,49 @@ void polls() {
     motionTracker.poll();
 
     bluetoothLowEnergy.poll();
+}
+
+/**
+ * @brief Check if there is an incoming serial message, and if so break it down
+ * into its arguments by splitting the sting up at the spaces
+ *
+ * This function it designed to be expandable, currently is just has one
+ * function.
+ *
+ * Available commands:
+ *  get-map - Sends the map over serial.
+ *
+ */
+void checkIncomingSerialCommands() {
+    if (Serial.available() > 0) {
+        String data = Serial.readString();
+        const int maxArgs_C = 10;
+        String args[maxArgs_C];
+        int foundArgs = 0;
+        int spaceIndex = 0;
+
+        while ((data.length() > 0) && (foundArgs < maxArgs_C) &&
+               (spaceIndex != -1)) {
+            spaceIndex = data.indexOf(" ");
+            args[foundArgs] = data.substring(0, spaceIndex);
+            data = data.substring(spaceIndex + 1);
+            foundArgs++;
+        }
+
+        if (args[0] == "get-map") {
+            drive.stop();
+
+            gridMap.sendOverSerial();
+        }
+    }
+}
+
+/**
+ * @brief Send the BrickList and the current pose of the robot over bluetooth.
+ */
+void sendDataOverBLE() {
+    bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
+    bluetoothLowEnergy.sendBrickList(brickList);
 }
 
 // Forward declaration of states.
@@ -195,9 +329,14 @@ enum Objective {
 
 Objective currentObjective_G = MapOuterWall;
 
-void sendDataOverBLE() {
-    bluetoothLowEnergy.sendRobotPose(motionTracker.getPose());
-    bluetoothLowEnergy.sendBrickList(brickList);
+void colourCodeState(voidFuncPtr currentState_P) {
+    if (currentState_P == followingLeftWall_S) {
+        pixels.setAll(Colour("White"));
+    } else if (currentState_P == aligningWithWall_S) {
+        pixels.setAll(Colour("Blue"));
+    } else if (currentState_P == followingMaze_S) {
+        pixels.setAll(Colour("Magenta"));
+    }
 }
 
 void followingLeftWall_S() {
@@ -206,6 +345,9 @@ void followingLeftWall_S() {
     Angle robotAngle = motionTracker.getAngle();
 
     static Objective lastObjective = NoObjective;
+
+    // Boolean listing whether the objective has changed since the last call to
+    // this function.
     bool objectiveIsNew = lastObjective != currentObjective_G;
     lastObjective = currentObjective_G;
 
@@ -224,28 +366,49 @@ void followingLeftWall_S() {
     // of the map have been done, and if so move onto the next objective
     if (currentObjective_G == MapOuterWall) {
         static Position otherSideOfMaze;
-        static int halfLaps;
-        if (objectiveIsNew) {
-            otherSideOfMaze = {1300, 1800};
-            halfLaps = 0;
-        }
+        static int halfLapCounter;
+
         const int otherSideTolerance = 200;
 
+        // If this is the first call to this function in which the goal is to
+        // map the outer wall.
+        if (objectiveIsNew) {
+            // the set the coordinate of the other side of the maze,
+            otherSideOfMaze = {MAZE_WIDTH - otherSideTolerance,
+                               MAZE_LENGTH - otherSideTolerance};
+            // and sent the half lap counter to zero.
+            halfLapCounter = 0;
+        }
+
+        // Measure the distance to the furthest corner of the maze.
         int distanceToOtherSide = robotPosition.distanceTo(otherSideOfMaze);
 
+        // If the robot has reached the other side of the maze, then increment
+        // the half lap counter.
         if (distanceToOtherSide < otherSideTolerance) {
-            halfLaps += 1;
-            bool halfLapsIsOdd = halfLaps & 1;
+            halfLapCounter += 1;
+
+            // If the robot has completed an o
+            bool halfLapsIsOdd = halfLapCounter & 1;
 
             if (halfLapsIsOdd) {
-                otherSideOfMaze = {200, 200};
+                otherSideOfMaze = {otherSideTolerance, otherSideTolerance};
             } else {
-                otherSideOfMaze = {1300, 1800};
+                otherSideOfMaze = {MAZE_WIDTH - otherSideTolerance,
+                                   MAZE_LENGTH - otherSideTolerance};
             }
 
-            if (halfLaps == 2) {
+            // The number of laps that must be ran before the robot moves onto
+            // the next stage, increasing the laps can lead to a more accurately
+            // plotted brickiest, but ideally only one lap should be necessary.
+            const int requiredLaps = 1;
+
+            // If the robot has completed enough laps,
+            if ((halfLapCounter >> 1) == requiredLaps) {
+                // update the current objective,
                 currentObjective_G = DriveToEndViaCentre;
-                UseMazeToGoTo({1300, 1800});
+                // and take a first attempt at solving the maze.
+                UseMazeToGoTo(Position(MAZE_WIDTH - 200, MAZE_LENGTH - 200));
             }
         }
     }
@@ -258,13 +421,16 @@ void followingLeftWall_S() {
         static bool innerTraveledFarEnough;
         static Position islandStartPosition;
 
+        // If this is the first call to this function in which the goal is to
+        // map the inner island,
         if (objectiveIsNew) {
+            // set the start position,
             islandStartPosition = robotPosition;
+            // and lower the TraveledFarEnough flag.
             innerTraveledFarEnough = false;
         }
 
         const int islandOuterTolerance = 150;
-
         const int islandInnerTolerance = 75;
 
         int distanceFromStart = robotPosition.distanceTo(islandStartPosition);
@@ -275,23 +441,29 @@ void followingLeftWall_S() {
         }
 
         // If close enough to the start, and the outer flag has been raised,
-        // move onto the next state.
+
         if ((distanceFromStart < islandInnerTolerance) &&
             innerTraveledFarEnough) {
+            // move onto the next state,
             currentObjective_G = DriveToStart;
+            // and drive to the start.
             UseMazeToGoTo({200, 200});
             return;
         }
     }
 
+    // Get the difference between the angle the robot is driving, and the
+    // closest right angle.
     int orthogonalOffset = robotAngle.OrthogonalOffset();
+    // Use this angle difference to calibrate the forwards function.
     drive.forwards(orthogonalOffset);
 
+    // Read in the front distance from the Ultrasonic sensor.
     int frontUSDistance = ultrasonic.readFromRobotCenter();
 
-    const int orthTolerance = 5;
+    const int orthogonalTolerance = 5;
 
-    if (robotAngle.isOrthogonal(orthTolerance)) {
+    if (robotAngle.isOrthogonal(orthogonalTolerance)) {
         Angle roundedRobotAngle = robotAngle.closestRightAngle();
 
         static PassiveSchedule compareBrickScheduler(10);
@@ -309,19 +481,19 @@ void followingLeftWall_S() {
                 Angle frontSensorAngle = roundedRobotAngle;
                 brickList.handleBrickFromSensorAndMap(
                     robotPosition, frontSensorAngle, frontUSDistance,
-                    orthTolerance, &gridMap);
+                    orthogonalTolerance, &gridMap);
             }
 
             else if ((!usingFrontSensor) && (leftIRDistance > 120)) {
                 Angle leftSensorAngle = roundedRobotAngle + 90;
                 brickList.handleBrickFromSensorAndMap(
                     robotPosition, leftSensorAngle, leftIRDistance,
-                    orthTolerance, &gridMap);
+                    orthogonalTolerance, &gridMap);
             }
         }
     }
 
-    if (leftInfrared.brickAppeared(150, 50)) {
+    if (leftInfrared.seenStartingCorner(150, 50)) {
         float distanceToWall = leftInfrared.readFromRobotCenter(false);
 
         leftStatingCorner = Position(-distanceToWall, -startingCornerDropOff);
@@ -330,7 +502,7 @@ void followingLeftWall_S() {
         brickList.handleBrickFromWallPosition(leftStatingCorner);
     };
 
-    if (leftInfrared.brickDisappeared(150, 50)) {
+    if (leftInfrared.seenEndingCorner(150, 50)) {
         float distanceToWall = leftInfrared.readFromRobotCenter(true);
 
         leftEndingCorner = Position(-distanceToWall, 0);
@@ -346,13 +518,13 @@ void followingLeftWall_S() {
         navigator.turnLeft(150);
     }
 
-    if (rightInfrared.brickAppeared(150, 50)) {
+    if (rightInfrared.seenStartingCorner(150, 50)) {
         float distanceToWall = rightInfrared.readFromRobotCenter(false);
         rightStatingCorner = Position(distanceToWall, 0);
         rightStatingCorner.transformByPose(robotPose);
     }
 
-    if (rightInfrared.brickDisappeared(150, 50)) {
+    if (rightInfrared.seenEndingCorner(150, 50)) {
         float distanceToWall = rightInfrared.readFromRobotCenter(true);
 
         rightEndingCorner = Position(distanceToWall, -startingCornerDropOff);
@@ -362,7 +534,7 @@ void followingLeftWall_S() {
                                       rightEndingCorner);
     }
 
-    // if a wall is there
+    // If a wall is there.
     if (frontUSDistance < 185 && frontUSDistance != -1) {
         nextState_GP = aligningWithWall_S;
 
@@ -403,11 +575,11 @@ void aligningWithWall_S() {
 
         if (wallsRecelebratedAgainst == 1) {
             // If against a wall, flash the Pixels red to indicate.
-            pixels.setAll(255, 0, 0, true);
+            pixels.setAll(Colour("Red"), true);
             delay(100);
         }
         if (wallsRecelebratedAgainst == 2) {
-            pixels.setAll(255, 87, 51, true);
+            pixels.setAll(Colour("Pink"), true);
             // If in a corner, flash the Pixels pink to indicate.
             delay(100);
         }
@@ -422,7 +594,7 @@ void aligningWithWall_S() {
 
 void UseMazeToGoTo(Position positionToGoTo) {
     drive.stop();
-    pixels.setAll(255, 87, 51, true);
+    pixels.setAll(Colour("Pink"), true);
 
     gridMap.solve(brickList, positionToGoTo);
 
@@ -435,13 +607,13 @@ void followingMaze_S() {
     Position robotPosition = motionTracker.getPosition();
     Angle robotAngle = motionTracker.getAngle();
 
-    gridMap.getAngle(robotPosition, &angleToDrive);
+    gridMap.updateAngleToDrive(robotPosition, &angleToDrive);
 
     Angle angleToTurn = angleToDrive - robotAngle;
 
     drive.forwards(angleToTurn);
 
-    int distanceToEndMM = gridMap.getEuclideanDistanceToEnd(robotPosition);
+    int distanceToEndMM = gridMap.getCrowDistanceToEnd(robotPosition);
 
     const int range = 100;
     // if the robot is less than 100 mm from the goal, move onto the next
@@ -493,91 +665,74 @@ void celebrating_S() {
 
     // Each second toggle alternating leds yellow
     for (int i = 0; i < (ledCount / 2); i++) {
-        pixels.setPixel((i * 2) + ledToggle, 255, 255, 0);
+        pixels.setPixel((i * 2) + ledToggle, Colour("Yellow"));
     }
     pixels.show();
 }
 
-void colourCodeState(voidFuncPtr currentState_P) {
-    if (currentState_P == followingLeftWall_S) {
-        pixels.setAll(255, 255, 255);
-    } else if (currentState_P == aligningWithWall_S) {
-        pixels.setAll(0, 0, 255);
-    } else if (currentState_P == followingMaze_S) {
-        pixels.setAll(255, 0, 255);
+/**
+ * @brief Update the objective of the robot, depending on a combination of
+ * bumper data, the current objective and the current position.
+ *
+ * @param bumperData The byte read in from the bumper values.
+ * @param currentObjective The current objecting of the robot.
+ * @param robotPosition The current position of the robot.
+ */
+void updateObjective(byte bumperData, Objective currentObjective,
+                     Position robotPosition) {
+    bool bumperIsPressed = (bool)bumperData;
+
+    bool inFromLeft = (robotPosition.x > 300);
+    bool inFromRight = (robotPosition.x < 1200);
+    bool inFromBottom = (robotPosition.y > 600);
+    bool inFromTop = (robotPosition.y < 1400);
+
+    bool inMiddle = (inFromLeft && inFromRight && inFromBottom && inFromTop);
+
+    // If one of the bumpers is pressed, the robot is in the middle of the maze
+    // and the current objective is to drive to the end through the centre,
+    if (bumperIsPressed && inMiddle &&
+        (currentObjective == DriveToEndViaCentre)) {
+        // then update the current objective to  drive to the centre, and
+        currentObjective_G = MapIsland;
+        nextState_GP = followingLeftWall_S;
     }
 }
 
-bool readyToGo = false;
-
 void loop() {
-    polls();
-
-    static PassiveSchedule eachSecond(1000);
+    drive.forwards();
 
     byte bumperData = bumper.read();
     if (bumperData) {
-        readyToGo = true;
-        navigator.hitBumper(bumperData);
-
-        Position robotPosition = motionTracker.getPosition();
-
-        bool inFromLeft = (robotPosition.x > 300);
-        bool inFromRight = (robotPosition.x < 1200);
-        bool inFromBottom = (robotPosition.y > 600);
-        bool inFromTop = (robotPosition.y < 1400);
-
-        bool inMiddle =
-            (inFromLeft && inFromRight && inFromBottom && inFromTop);
-
-        // if the robot has hit a wall, while on the first attempt at driving
-        // the maze, move to the next stage.
-        if ((currentObjective_G == DriveToEndViaCentre) && (inMiddle)) {
-            currentObjective_G = MapIsland;
-            nextState_GP = followingLeftWall_S;
-        }
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, "Bumper hit");
     }
 
-    if (readyToGo) {
-        if (eachSecond.isReadyToRun()) {
-            Position robotPosition = motionTracker.getPosition();
-            gridMap.snowPlow(robotPosition);
+        polls();
+        checkIncomingSerialCommands();
+    
+        byte bumperData = bumper.read();
+        if (bumperData) {
+            navigator.hitBumper(bumperData);
         }
-
+    
+        updateObjective(bumperData, currentObjective_G,
+                        motionTracker.getPosition());
+    
+        if (oneSecondSchedule.isReadyToRun()) {
+            Position robotPosition = motionTracker.getPosition();
+            gridMap.plotVisitedPointsOnMap(robotPosition);
+        }
+    
         colourCodeState(nextState_GP);
+    
         if (!navigator.hasNoPath()) {
-            pixels.setAll(0, 255, 0);
+            pixels.setAll(Colour("Green"));
+    
             navigator.moveToTarget();
+    
         } else {
             nextState_GP();
         }
-    } else {
-        // Start if bluetooth is connected.
-        readyToGo = bluetoothLowEnergy.isConnected();
-    }
-
-    // pixels.clear();
-    pixels.show();
-
-    if (Serial.available() > 0) {
-        String data = Serial.readString();
-        const int maxArgs_C = 10;
-        String args[maxArgs_C];
-        int foundArgs = 0;
-        int spaceIndex = 0;
-
-        while ((data.length() > 0) && (foundArgs < maxArgs_C) &&
-               (spaceIndex != -1)) {
-            spaceIndex = data.indexOf(" ");
-            args[foundArgs] = data.substring(0, spaceIndex);
-            data = data.substring(spaceIndex + 1);
-            foundArgs++;
-        }
-
-        if (args[0] == "get-map") {
-            drive.stop();
-
-            gridMap.sendOverSerial();
-        }
-    }
+    
+        pixels.show();
 }

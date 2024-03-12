@@ -12,13 +12,19 @@ MotionTracker::MotionTracker(Motor* leftMotor_P, Motor* rightMotor_P,
                              Angle statingAngle)
     : _leftMotor_P(leftMotor_P),
       _rightMotor_P(rightMotor_P),
-      _statingAngle(statingAngle) {}
+      _statingAngle(statingAngle),
+      _currentAngle(statingAngle),
+      _angleCalibration(0),
+      _currentAverageDistance(0),
+      _lastAverageDistance(0),
 
-// TODO Check if the vales of distance traveled has changes before doing all
+      _pollSchedule(MOTION_TRACKER_POLL_RATE) {}
+
+// TODO Check if the values of distance traveled has changes before doing all
 // that maths
 Angle MotionTracker::angleFromOdometry() {
-    int32_t leftTravelDistance = this->_leftMotor_P->getDistanceTraveled();
-    int32_t rightTravelDistance = this->_rightMotor_P->getDistanceTraveled();
+    int leftTravelDistance = this->_leftMotor_P->getDistanceTraveled();
+    int rightTravelDistance = this->_rightMotor_P->getDistanceTraveled();
 
     int16_t motorTravelDifference = rightTravelDistance - leftTravelDistance;
 
@@ -41,24 +47,18 @@ bool MotionTracker::updateAngle() {
 }
 
 bool MotionTracker::updatePosition() {
-    static int32_t AverageDistance = 0;
-    static int32_t lastAverageDistance = 0;
-    static int32_t difference;
-
     bool hasMoved = false;
 
-    AverageDistance = this->_averageTravelDistance();
-    difference = AverageDistance - lastAverageDistance;
-    lastAverageDistance = AverageDistance;
+    int changeInDistance = this->_getChangeInDistance();
 
-    if (difference != 0) {
+    if (changeInDistance != 0) {
         hasMoved = true;
 
         float sinAngle = sin(this->_currentAngle.getRadians());
         float cosAngle = cos(this->_currentAngle.getRadians());
 
-        float xDif = difference * cosAngle;
-        float yDif = difference * sinAngle;
+        float xDif = changeInDistance * cosAngle;
+        float yDif = changeInDistance * sinAngle;
 
         this->_currentPosition.x += xDif;
         this->_currentPosition.y += yDif;
@@ -67,9 +67,7 @@ bool MotionTracker::updatePosition() {
 }
 
 bool MotionTracker::poll() {
-    static PassiveSchedule motionTrackerSchedule(MOTION_TRACKER_POLL_RATE);
-
-    if (motionTrackerSchedule.isReadyToRun()) {
+    if (_pollSchedule.isReadyToRun()) {
         bool angleHasChanged = this->updateAngle();
 
         bool positionHasChanged = this->updatePosition();
@@ -90,11 +88,10 @@ int MotionTracker::recalibratePosition(int frontDistance, int leftDistance) {
     this->_angleCalibration += angleDrift;
     this->updateAngle();
 
-    // TODO refactor this.
-    bool facingBottom = (this->_currentAngle == -90);
-    bool facingLeft = (this->_currentAngle == 180);
-    bool facingTop = (this->_currentAngle == 90);
-    bool facingRight = (this->_currentAngle == 0);
+    bool facingBottom = this->_currentAngle.isPointingDown();
+    bool facingLeft = this->_currentAngle.isPointingLeft();
+    bool facingTop = this->_currentAngle.isPointingUp();
+    bool facingRight = this->_currentAngle.isPointingRight();
 
     Position currentPosition = this->getPosition();
 
@@ -156,12 +153,19 @@ Pose MotionTracker::getPose() {
     return poseToReturn;
 }
 
-int32_t MotionTracker::_averageTravelDistance() {
-    int32_t leftTravelDistance = this->_leftMotor_P->getDistanceTraveled();
-    int32_t rightTravelDistance = this->_rightMotor_P->getDistanceTraveled();
+int MotionTracker::_getAverageDistance() {
+    int leftTravelDistance = this->_leftMotor_P->getDistanceTraveled();
+    int rightTravelDistance = this->_rightMotor_P->getDistanceTraveled();
 
-    int32_t averageTravelDistance =
-        (leftTravelDistance + rightTravelDistance) / 2;
+    int averageTravelDistance = (leftTravelDistance + rightTravelDistance) / 2;
 
     return averageTravelDistance;
+}
+
+int MotionTracker::_getChangeInDistance() {
+    this->_currentAverageDistance = this->_getAverageDistance();
+    int changeInDistance = _currentAverageDistance - _lastAverageDistance;
+    this->_lastAverageDistance = this->_currentAverageDistance;
+
+    return changeInDistance;
 }

@@ -104,7 +104,7 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
     // Raise a critical error if BLE can't start.
     if (!BLE.begin()) {
         String errorMessage = "BLE initialisation has failed.";
-        ErrorIndicator_G.errorOccurred(errorMessage);
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 
     // Raise a critical error the mac address read from the board differs from
@@ -118,7 +118,7 @@ void BluetoothLowEnergy::setup(const char* deviceName, const char* macAddress) {
             "BLE_MAC_ADDRESS in systemInfo.h to " +
             String(BLE.address()) + ".";
 
-        ErrorIndicator_G.errorOccurred(errorMessage);
+        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, errorMessage);
     }
 
     // Name the device.

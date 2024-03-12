@@ -237,24 +237,24 @@ struct Position {
      */
     void transformByPose(Pose offsetPose);
 
-    /**
-     * @brief Calculates the square of the euclidean distance between this
-     * position and a provided target position.
-     *
-     * This function uses less computation than distanceTo(), as no
-     * square root required. For basic comparisons between two distances,
-     * this function is more efficient.
-     *
-     * c * c == a * a + b * b
-     * is a lot easier to compute than
-     * c = (a * a + b * b) ^ 0.5
-     *
-     * @param target The other position to calculate the squared distance
-     * @param dx_P A pointer to return the difference in x positions.
-     * @param dy_P A pointer to return the difference in y positions.
-     * @return (float) The square of the euclidean distance to the target
-     * position in millimeters.
-     */
+/**
+ * @brief Calculates the square of the euclidean distance between this
+ * position and a provided target position.
+ *
+ * This function uses less computation than distanceTo(), as no
+ * square root required. For basic comparisons between two distances,
+ * this function is more efficient.
+ *
+ * c * c == a * a + b * b
+ * is a lot easier to compute than
+ * c = (a * a + b * b) ^ 0.5
+ *
+ * @param target The other position to calculate the squared distance
+ * @param dx_P A pointer to return the absolute difference in x positions.
+ * @param dy_P A pointer to return the absolute difference in y positions.
+ * @return (float) The square of the euclidean distance to the target
+ * position in millimeters.
+ */
     float squaredDistanceTo(Position target, int* dx_P = nullptr,
                             int* dy_P = nullptr);
 
@@ -328,3 +328,5 @@ struct Pose {
 };
 
 #endif  // ANGLE_AND_POSITION_H
+
+//TODO add a way to do unit Testing
