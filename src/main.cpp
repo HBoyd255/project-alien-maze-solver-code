@@ -232,6 +232,7 @@ void setup() {
 
     bumper.setup([]() { bumper.isr(); });
 
+    // Initialise the bluetooth connection.
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 
     // TODO come back and handle test failures.
@@ -700,39 +701,39 @@ void updateObjective(byte bumperData, Objective currentObjective,
 }
 
 void loop() {
-    drive.forwards();
+    //     drive.forwards();
+    //
+    //     byte bumperData = bumper.read();
+    //     if (bumperData) {
+    //         ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, "Bumper hit");
+    //     }
+
+    polls();
+    checkIncomingSerialCommands();
 
     byte bumperData = bumper.read();
     if (bumperData) {
-        ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, "Bumper hit");
+        navigator.hitBumper(bumperData);
     }
 
-        polls();
-        checkIncomingSerialCommands();
-    
-        byte bumperData = bumper.read();
-        if (bumperData) {
-            navigator.hitBumper(bumperData);
-        }
-    
-        updateObjective(bumperData, currentObjective_G,
-                        motionTracker.getPosition());
-    
-        if (oneSecondSchedule.isReadyToRun()) {
-            Position robotPosition = motionTracker.getPosition();
-            gridMap.plotVisitedPointsOnMap(robotPosition);
-        }
-    
-        colourCodeState(nextState_GP);
-    
-        if (!navigator.hasNoPath()) {
-            pixels.setAll(Colour("Green"));
-    
-            navigator.moveToTarget();
-    
-        } else {
-            nextState_GP();
-        }
-    
-        pixels.show();
+    updateObjective(bumperData, currentObjective_G,
+                    motionTracker.getPosition());
+
+    if (oneSecondSchedule.isReadyToRun()) {
+        Position robotPosition = motionTracker.getPosition();
+        gridMap.plotVisitedPointsOnMap(robotPosition);
+    }
+
+    colourCodeState(nextState_GP);
+
+    if (!navigator.hasNoPath()) {
+        pixels.setAll(Colour("Green"));
+
+        navigator.moveToTarget();
+
+    } else {
+        nextState_GP();
+    }
+
+    pixels.show();
 }

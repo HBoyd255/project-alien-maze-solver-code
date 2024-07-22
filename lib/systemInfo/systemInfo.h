@@ -12,7 +12,7 @@
 #define SYSTEM_INFO_H
 
 // The mac address of the BLE module.
-#define BLE_MAC_ADDRESS "ad:3b:c7:5d:ee:35"
+#define BLE_MAC_ADDRESS "e3:95:8a:e9:b3:f5"
 
 // The name of the BLE device.
 #define BLE_DEVICE_NAME "A.L.I.E.N"
