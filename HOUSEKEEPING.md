@@ -13,114 +13,133 @@ refactored to be more readable and maintainable.
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### angleAndPosition
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### binary
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### bluetoothLowEnergy
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### brick
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### bumper
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### comparison
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### drive
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### drive
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### errorIndicator
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### history
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### infrared
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### map
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### mazeConstants
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### motionTracker
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### motor
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### navigator
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### pixels
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### schedule
 
 - [ ] Fixed
 - [ ] Commented
 - [ ] Refactored
+- [ ] Tested
 
 ### ultrasonic
 
