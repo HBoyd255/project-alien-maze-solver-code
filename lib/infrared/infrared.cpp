@@ -1,14 +1,13 @@
 /**
  * @file infrared.cpp
  * @brief Definitions of the class responsible for taking readings from the
- * GP2Y0E02B Infrared sensor, while utilizing the PCA9846 multiplexer.
+ * GP2Y0E02B Infrared sensor, while utilizing the PCA9546 multiplexer.
  *
  * The data sheet for the GP2Y0E02B IR sensor can be found here,
  * https://global.sharp/products/device/lineup/data/pdf/datasheet/gp2y0e02_03_appl_e.pdf.
  *
- *
- * The data sheet for the PCA9846 Multiplexer can be found here,
- * https://www.nxp.com/docs/en/data-sheet/PCA9846.pdf.
+ * The data sheet for the PCA9546 Multiplexer can be found here,
+ * https://www.nxp.com/docs/en/data-sheet/PCA9546A.pdf.
  *
  * @author Harry Boyd - https://github.com/HBoyd255
  * @date 2024-02-01
@@ -22,9 +21,9 @@
 #include "errorIndicator.h"
 
 // Multiplexer
-// https://www.nxp.com/docs/en/data-sheet/PCA9846.pdf
+// https://www.nxp.com/docs/en/data-sheet/PCA9546A.pdf
 // Multiplexer address, shifted to provide 7-bit version
-#define MULTIPLEXER_SLAVE_ADDRESS 0xEE >> 1
+#define MULTIPLEXER_SLAVE_ADDRESS 0xE0 >> 1
 #define MULTIPLEXER_CHANNEL_COUNT 4
 
 // Infrared sensor

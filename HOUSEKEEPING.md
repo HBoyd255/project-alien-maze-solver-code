@@ -87,10 +87,10 @@ refactored to be more readable and maintainable.
 
 ### infrared
 
-- [ ] Fixed
-- [ ] Commented
+- [x] Fixed
+- [x] Commented
 - [ ] Refactored
-- [ ] Tested
+- [x] Tested
 
 ### map
 
