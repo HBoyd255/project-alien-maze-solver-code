@@ -8,6 +8,12 @@ done in the project.
 Every library should be Fixed(To work with the new hardware), Commented, and
 refactored to be more readable and maintainable.
 
+### Main
+
+- [ ] Fixed
+- [ ] Commented
+- [ ] Refactored
+
 ### angleAndPosition
 
 - [ ] Fixed
@@ -117,12 +123,6 @@ refactored to be more readable and maintainable.
 - [ ] Refactored
 
 ### ultrasonic
-
-- [ ] Fixed
-- [ ] Commented
-- [ ] Refactored
-
-### unitTesting
 
 - [ ] Fixed
 - [ ] Commented

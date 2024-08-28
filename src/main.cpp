@@ -45,7 +45,6 @@
 #include "schedule.h"
 #include "systemInfo.h"
 #include "ultrasonic.h"
-#include "unitTesting.h"
 
 // ███████╗██╗      █████╗  ██████╗ ███████╗
 // ██╔════╝██║     ██╔══██╗██╔════╝ ██╔════╝
@@ -88,8 +87,8 @@ Infrared frontLeftInfrared(FRONT_LEFT_INFRARED_INDEX,
 Infrared frontRightInfrared(FRONT_RIGHT_INFRARED_INDEX,
                             FRONT_RIGHT_INFRARED_FORWARD_DISTANCE);
 
-Bumper bumper(BUMPER_SHIFT_REG_DATA, BUMPER_SHIFT_REG_LOAD,
-              BUMPER_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN,
+Bumper bumper(BUMPER_SHIFT_REG_DATA, COMMON_SHIFT_REG_LOAD,
+              COMMON_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN,
               BUMPER_ROTATION_OFFSET);
 
 BluetoothLowEnergy bluetoothLowEnergy(MAIN_SERVICE_UUID, ROBOT_POSE_UUID,
@@ -234,9 +233,6 @@ void setup() {
 
     // Initialise the bluetooth connection.
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
-
-    // TODO come back and handle test failures.
-    runAllTests();
 
 #if PREFILL_BRICK_LIST
     brickList.setPreprogrammedMazeData();
