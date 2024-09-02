@@ -770,7 +770,36 @@ void loop() {
  * set to true.
  */
 void testLoop() {
-    // infrared_test(&leftInfrared, &frontLeftInfrared, &frontRightInfrared,
-    //               &rightInfrared);
-    Serial.println(bumper.read());
+    // Just stay stationary until a bumper is pressed, then drive away from it.
+    polls();
+
+    byte bumperData = bumper.read();
+    if (bumperData) {
+        navigator.hitBumper(bumperData);
+    }
+
+    if (!navigator.hasNoPath()) {
+        pixels.setAll(Colour("Green"));
+
+        Serial.print(" Robot pose:");
+        Serial.print(motionTracker.getPose());
+
+        Serial.print(" Path: ");
+        Serial.println(navigator.getPathAsString());
+
+        navigator.moveToTarget();
+
+    } else {
+        pixels.setAll(Colour("Black"));
+
+        Serial.print(" Robot pose:");
+        Serial.print(motionTracker.getPose());
+
+        Serial.print(" Path: ");
+        Serial.println("Stopped");
+
+        drive.stop();
+    }
+
+    pixels.show();
 }
