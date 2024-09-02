@@ -115,10 +115,10 @@ refactored to be more readable and maintainable.
 
 ### motor
 
-- [ ] Fixed
-- [ ] Commented
-- [ ] Refactored
-- [ ] Tested
+- [x] Fixed
+- [x] Commented
+- [x] Refactored
+- [x] Tested
 
 ### navigator
 
