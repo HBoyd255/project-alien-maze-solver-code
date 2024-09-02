@@ -55,9 +55,19 @@
 // ╚═╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 //
 
-#define WAIT_UPON_START false
+// If true, the robot will wait for the user to press the bumper or for a BLE
+// connection before starting.
+#define WAIT_UPON_START true
+
+// If true, the robot will prefill the brick list with the maze data.
 #define PREFILL_BRICK_LIST false
-#define RUN_TESTS true
+
+// If true, the robot will run tests instead of the main code.
+#define RUN_TESTS false
+
+// If true, after setup, the robot with count down for 2 seconds before
+// starting to give the user time to open the serial monitor.
+#define SERIAL_DELAY false
 
 //   ██████╗ ██████╗      ██╗███████╗ ██████╗████████╗███████╗
 //  ██╔═══██╗██╔══██╗     ██║██╔════╝██╔════╝╚══██╔══╝██╔════╝
@@ -162,6 +172,17 @@ Position and MapPoint, both store x and y, but Position is measured in
 millimeters and MapPoint is in centimeter, MapPoint is also stores its values as
 ints, because its primary use is referencing items in the map via its index.
 
+Coordinate System
+
+The robot uses a coordinate system where the start is in the bottom left corner
+of the maze. The x axis is the width of the maze, and the y axis is the length
+of the maze. The angles are measured in degrees, with 0° being the positive x
+axis. The angle increases in the counter-clockwise direction. This means that
+while the robot is going "forwards" it is driving in the 90° direction, which is
+a little unintuitive, but makes the calculations easier.
+
+
+
 
 Default units;
 
@@ -173,7 +194,7 @@ angle - degrees
 It is true that not everything is fully documented, but everything is
 modularized and made robust.
 
-Thought my robustness ive been able to;
+Thought my robustness I've been able to;
 . Pretty much remove all false positives from the IR reading.
 . Detaching the ultrasonic from the timer and get US reading and BLE working
   simultaneously.
@@ -250,6 +271,14 @@ void setup() {
                       &rightInfrared);
     }
 #endif  // RUN_TESTS
+
+#if SERIAL_DELAY
+    // Count down for 2 seconds.
+    for (int i = 2000; i > 0; i--) {
+        Serial.println(i);
+        delay(1);
+    }
+#endif  // SERIAL_DELAY
 }
 
 /**
@@ -708,7 +737,7 @@ void loop() {
     //
     //     byte bumperData = bumper.read();
     //     if (bumperData) {
-    //         ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, "Bumper hit");
+    //         ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, "Bumperhit");
     //     }
 
     polls();
