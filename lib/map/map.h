@@ -182,7 +182,7 @@ class Map {
      *
      * @param seenPosition The Position that has been seen by a sensor.
      */
-    void seenPosition(Position seenPosition);
+    void incrementSeenPosition(Position seenPosition);
 
     /**
      * @brief Checks if an area (the zone between the two provided points) is

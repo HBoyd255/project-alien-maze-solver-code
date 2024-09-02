@@ -177,10 +177,19 @@ void Map::plotVisitedPointsOnMap(Position robotPosition) {
  *
  * @param seenPosition The Position that has been seen by a sensor.
  */
-void Map::seenPosition(Position seenPosition) {
+void Map::incrementSeenPosition(Position seenPosition) {
     // Create a MapPoint based on the given seen Position.
     MapPoint seenPoint;
     seenPoint.setFromPosition(seenPosition);
+
+    // If the given position is not on the map, return immediately.
+    // This should not break the program, as the seen feild is only used to
+    // loosely track the points that the robot has measured with it's sensors.
+    // Occasionally, the robot may measure a point that is out of bounds of the
+    // map. This is not cause for concern.
+    if (!this->_validatePoint(seenPoint)) {
+        return;
+    }
 
     // If the given position has been seen less times than its max value,
     // increment its count.

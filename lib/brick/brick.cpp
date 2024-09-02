@@ -471,7 +471,7 @@ int BrickList::handleBrickFromSensorAndMap(Position robotPosition,
     }
     brickEdgePosition += robotPosition;
 
-    map_P->seenPosition(brickEdgePosition);
+    map_P->incrementSeenPosition(brickEdgePosition);
 
     int comparison =
         this->_compare(robotPosition, angleOfSensor, measuredDistance);
