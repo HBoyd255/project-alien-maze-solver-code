@@ -88,18 +88,9 @@ void Drive::backwards(int offset) {
  * speed.
  */
 void Drive::turnLeft() {
-    long lastLeft = this->_leftMotor_P->timeSinceLastMoved();
-    long lestRight = this->_rightMotor_P->timeSinceLastMoved();
-    long timeSinceLastMove = min(lastLeft, lestRight);
-
-    int rotationSpeed = this->_defaultSpeed;
-    int linearSpeed = 0;
-
-    // if been stuck for 100 miliseconds, set the speed to max
-    if (timeSinceLastMove > 100) {
-        rotationSpeed = 100;
-    }
-    this->setVelocity(linearSpeed, rotationSpeed);
+    // Set the linear velocity to 0, and the rotational velocity to the default
+    // speed.
+    this->setVelocity(0, this->_defaultSpeed);
 }
 
 /**
@@ -107,18 +98,9 @@ void Drive::turnLeft() {
  * the negative default speed and the left motor to the default speed.
  */
 void Drive::turnRight() {
-    long lastLeft = this->_leftMotor_P->timeSinceLastMoved();
-    long lestRight = this->_rightMotor_P->timeSinceLastMoved();
-    long timeSinceLastMove = min(lastLeft, lestRight);
-
-    int rotationSpeed = this->_defaultSpeed;
-    int linearSpeed = 0;
-
-    // if been stuck for 100 miliseconds, set the speed to max
-    if (timeSinceLastMove > 100) {
-        rotationSpeed = 100;
-    }
-    this->setVelocity(linearSpeed, -rotationSpeed);
+    // Set the linear velocity to 0, and the rotational velocity to the negative
+    // default speed.
+    this->setVelocity(0, -this->_defaultSpeed);
 }
 
 /**

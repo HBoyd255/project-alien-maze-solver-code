@@ -12,11 +12,6 @@ Motor::Motor(uint8_t directionPin, uint8_t speedPin, uint8_t encoderChannelA,
 
 {}
 
-/**
- * @brief Sets up the motor class by
- *
- * @param isr_P Pointer to the
- */
 void Motor::setup(voidFuncPtr isr_P) {
     pinMode(this->_directionPin, OUTPUT);
     pinMode(this->_speedPin, OUTPUT);
@@ -76,12 +71,13 @@ void Motor::setVelocity(int8_t formattedVelocity) {
     // Direction represents the drive direction, not the rotation direction
     bool direction = formattedVelocity > 0;
 
+    // If the rotation is inverted, invert the direction.
+    direction ^= this->_rotationInverted;
+
     this->setSpeedAndDir(abs(formattedVelocity), direction);
 }
 
 void Motor::stop() { this->setSpeedAndDir(0, 0); }
-
-void Motor::resetTimer() { this->_lastMoveTime = millis(); }
 
 void Motor::isr() {
     if (digitalRead(this->_encoderChannelA) !=
@@ -90,10 +86,9 @@ void Motor::isr() {
     } else {
         this->_encoderSteps--;
     }
-    this->resetTimer();
 }
 
-int32_t Motor::getDistanceTraveled() {
+long Motor::getDistanceTraveled() {
     // One rotation is 300 steps
     // and the wheel circumference is 147.65mm
     // so 1 step is like 0.5mm
@@ -105,5 +100,3 @@ int32_t Motor::getDistanceTraveled() {
 
     return this->_encoderSteps / 1.95;
 }
-
-long Motor::timeSinceLastMoved() { return millis() - this->_lastMoveTime; }

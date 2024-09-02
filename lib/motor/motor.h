@@ -13,15 +13,9 @@ class Motor {
 
     void stop();
 
-    void resetTimer();
-    void isr();
-
-    /// @brief getter that returns the linear travel distance of the motor in
-    // In millimetres.
-    /// @return the steps taken
     int32_t getDistanceTraveled();
 
-    long timeSinceLastMoved();
+    void isr();
 
    private:
     void setSpeedAndDir(uint8_t formattedSpeed, bool direction);
@@ -33,7 +27,5 @@ class Motor {
     volatile int32_t _encoderSteps = 0;
 
     bool _rotationInverted;
-
-    long _lastMoveTime = 0;
 };
 #endif  // MOTORS_H

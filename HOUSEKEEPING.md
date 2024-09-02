@@ -59,9 +59,9 @@ refactored to be more readable and maintainable.
 
 ### drive
 
-- [ ] Fixed
-- [ ] Commented
-- [ ] Refactored
+- [x] Fixed
+- [x] Commented
+- [x] Refactored
 - [ ] Tested
 
 ### drive
