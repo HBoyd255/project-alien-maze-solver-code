@@ -55,19 +55,19 @@
 // ╚═╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 //
 
-// If true, the robot will wait for the user to press the bumper or for a BLE
-// connection before starting.
-#define WAIT_UPON_START true
+// If true, the robot will run tests instead of the main code.
+#define RUN_TESTS true
 
 // If true, the robot will prefill the brick list with the maze data.
 #define PREFILL_BRICK_LIST false
 
-// If true, the robot will run tests instead of the main code.
-#define RUN_TESTS false
-
 // If true, after setup, the robot with count down for 2 seconds before
 // starting to give the user time to open the serial monitor.
 #define SERIAL_DELAY false
+
+// If true, the robot will wait for the user to press the bumper or for a BLE
+// connection before starting.
+#define WAIT_UPON_START false
 
 //   ██████╗ ██████╗      ██╗███████╗ ██████╗████████╗███████╗
 //  ██╔═══██╗██╔══██╗     ██║██╔════╝██╔════╝╚══██╔══╝██╔════╝
@@ -255,22 +255,17 @@ void setup() {
     // Initialise the bluetooth connection.
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 
+#if RUN_TESTS
+    while (true) {
+        // infrared_test(&leftInfrared, &frontLeftInfrared, &frontRightInfrared,
+        //               &rightInfrared);
+        Serial.println(bumper.read());
+    }
+#endif  // RUN_TESTS
+
 #if PREFILL_BRICK_LIST
     brickList.setPreprogrammedMazeData();
 #endif  // PREFILL_BRICK_LIST
-
-#if WAIT_UPON_START
-    while (!(bluetoothLowEnergy.isConnected() || (bool)bumper.read())) {
-        bluetoothLowEnergy.poll();
-    }
-#endif  // WAIT_UPON_START
-
-#if RUN_TESTS
-    while (true) {
-        infrared_test(&leftInfrared, &frontLeftInfrared, &frontRightInfrared,
-                      &rightInfrared);
-    }
-#endif  // RUN_TESTS
 
 #if SERIAL_DELAY
     // Count down for 2 seconds.
@@ -279,6 +274,12 @@ void setup() {
         delay(1);
     }
 #endif  // SERIAL_DELAY
+
+#if WAIT_UPON_START
+    while (!(bluetoothLowEnergy.isConnected() || (bool)bumper.read())) {
+        bluetoothLowEnergy.poll();
+    }
+#endif  // WAIT_UPON_START
 }
 
 /**
