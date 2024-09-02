@@ -55,8 +55,8 @@
 // ╚═╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 //
 
-// If true, the robot will run tests instead of the main code.
-#define RUN_TESTS true
+// If true, the robot will run a test loop instead of the main code.
+#define RUN_TEST_LOOP false
 
 // If true, the robot will prefill the brick list with the maze data.
 #define PREFILL_BRICK_LIST false
@@ -100,8 +100,7 @@ Infrared frontRightInfrared(FRONT_RIGHT_INFRARED_INDEX,
 Infrared rightInfrared(RIGHT_INFRARED_INDEX, RIGHT_INFRARED_FORWARD_DISTANCE);
 
 Bumper bumper(BUMPER_SHIFT_REG_DATA, COMMON_SHIFT_REG_LOAD,
-              COMMON_SHIFT_REG_CLOCK, BUMPER_INTERRUPT_PIN,
-              BUMPER_ROTATION_OFFSET);
+              COMMON_SHIFT_REG_CLOCK, BUMPER_BIT_OFFSET);
 
 BluetoothLowEnergy bluetoothLowEnergy(MAIN_SERVICE_UUID, ROBOT_POSE_UUID,
                                       BRICK_UUID);
@@ -113,6 +112,12 @@ Navigator navigator(&motionTracker, &drive);
 BrickList brickList;
 
 Map gridMap;
+
+/**
+ * @brief A test loop to run instead of loop() if the RUN_TEST_LOOP define is
+ * set to true.
+ */
+void testLoop();
 
 /**
  * @brief Am instance of the PassiveSchedule class, that can trigger a function
@@ -250,18 +255,14 @@ void setup() {
 
     ultrasonic.setup([]() { ultrasonic.isr(); });
 
-    bumper.setup([]() { bumper.isr(); });
-
     // Initialise the bluetooth connection.
     bluetoothLowEnergy.setup(BLE_DEVICE_NAME, BLE_MAC_ADDRESS);
 
-#if RUN_TESTS
+#if RUN_TEST_LOOP
     while (true) {
-        // infrared_test(&leftInfrared, &frontLeftInfrared, &frontRightInfrared,
-        //               &rightInfrared);
-        Serial.println(bumper.read());
+        testLoop();
     }
-#endif  // RUN_TESTS
+#endif  // RUN_TEST_LOOP
 
 #if PREFILL_BRICK_LIST
     brickList.setPreprogrammedMazeData();
@@ -734,13 +735,6 @@ void updateObjective(byte bumperData, Objective currentObjective,
 }
 
 void loop() {
-    //     drive.forwards();
-    //
-    //     byte bumperData = bumper.read();
-    //     if (bumperData) {
-    //         ErrorIndicator_G.errorOccurred(__FILE__, __LINE__, "Bumperhit");
-    //     }
-
     polls();
     checkIncomingSerialCommands();
 
@@ -769,4 +763,14 @@ void loop() {
     }
 
     pixels.show();
+}
+
+/**
+ * @brief A test loop to run instead of loop() if the RUN_TEST_LOOP define is
+ * set to true.
+ */
+void testLoop() {
+    // infrared_test(&leftInfrared, &frontLeftInfrared, &frontRightInfrared,
+    //               &rightInfrared);
+    Serial.println(bumper.read());
 }

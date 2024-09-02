@@ -54,13 +54,6 @@
 #define COMMON_SHIFT_REG_CLOCK A2
 #define BUMPER_BIT_OFFSET 4
 
-// Interrupt pin
-#define BUMPER_INTERRUPT_PIN D8 //TODO Remove
-
-// The offset in degrees that the bumper buttons have been rotated around from
-// the position where the front button would be at 0 degrees.
-#define BUMPER_ROTATION_OFFSET 180  //TODO Remove
-
 // Pixels
 // The pin that D1 of the LED strip is connected to.
 #define PIXELS_DATA_PIN D5

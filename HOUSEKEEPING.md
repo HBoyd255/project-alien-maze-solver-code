@@ -45,10 +45,10 @@ refactored to be more readable and maintainable.
 
 ### bumper
 
-- [ ] Fixed
-- [ ] Commented
-- [ ] Refactored
-- [ ] Tested
+- [x] Fixed
+- [x] Commented
+- [x] Refactored
+- [x] Tested
 
 ### comparison
 
