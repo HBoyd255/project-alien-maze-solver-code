@@ -770,36 +770,58 @@ void loop() {
  * set to true.
  */
 void testLoop() {
-    // Just stay stationary until a bumper is pressed, then drive away from it.
-    polls();
+//     // Just stay stationary until a bumper is pressed, then drive away from it.
+//     polls();
+// 
+//     byte bumperData = bumper.read();
+//     if (bumperData) {
+//         navigator.hitBumper(bumperData);
+//     }
+// 
+//     if (!navigator.hasNoPath()) {
+//         pixels.setAll(Colour("Green"));
+// 
+//         Serial.print(" Robot pose:");
+//         Serial.print(motionTracker.getPose());
+// 
+//         Serial.print(" Path: ");
+//         Serial.println(navigator.getPathAsString());
+// 
+//         navigator.moveToTarget();
+// 
+//     } else {
+//         pixels.setAll(Colour("Black"));
+// 
+//         Serial.print(" Robot pose:");
+//         Serial.print(motionTracker.getPose());
+// 
+//         Serial.print(" Path: ");
+//         Serial.println("Stopped");
+// 
+//         drive.stop();
+//     }
+// 
+//     pixels.show();
 
-    byte bumperData = bumper.read();
-    if (bumperData) {
-        navigator.hitBumper(bumperData);
-    }
+    Serial.println("Forwards");
+    pixels.setAll(Colour("Green"), true);
+    drive.forwards();
+    delay(1000);
 
-    if (!navigator.hasNoPath()) {
-        pixels.setAll(Colour("Green"));
+    pixels.setAll(Colour("Black"), true);
+    drive.stop();
+    delay(3000);
 
-        Serial.print(" Robot pose:");
-        Serial.print(motionTracker.getPose());
+    Serial.println("Backwards");
+    pixels.setAll(Colour("Red"), true);
+    drive.backwards();
+    delay(1000);
 
-        Serial.print(" Path: ");
-        Serial.println(navigator.getPathAsString());
+    pixels.setAll(Colour("Black"), true);
+    drive.stop();
+    delay(3000);
+    
+ 
 
-        navigator.moveToTarget();
 
-    } else {
-        pixels.setAll(Colour("Black"));
-
-        Serial.print(" Robot pose:");
-        Serial.print(motionTracker.getPose());
-
-        Serial.print(" Path: ");
-        Serial.println("Stopped");
-
-        drive.stop();
-    }
-
-    pixels.show();
 }
