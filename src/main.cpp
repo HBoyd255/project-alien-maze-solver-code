@@ -26,6 +26,7 @@
 
 // https://www.arduino.cc/reference/en/
 #include <Arduino.h>
+#include <NESControllerInterface.h>
 
 #include "angleAndPosition.h"
 #include "binary.h"
@@ -68,6 +69,9 @@
 // If true, the robot will wait for the user to press the bumper or for a BLE
 // connection before starting.
 #define WAIT_UPON_START false
+
+// If true, the robot will continue to lap the maze until the user stops it.
+#define DEMO_MODE true
 
 //   ██████╗ ██████╗      ██╗███████╗ ██████╗████████╗███████╗
 //  ██╔═══██╗██╔══██╗     ██║██╔════╝██╔════╝╚══██╔══╝██╔════╝
@@ -112,6 +116,9 @@ Navigator navigator(&motionTracker, &drive);
 BrickList brickList;
 
 Map gridMap;
+
+NESControllerInterface nes(NES_SHIFT_REG_DATA, COMMON_SHIFT_REG_LOAD,
+                           COMMON_SHIFT_REG_CLOCK);
 
 /**
  * @brief A test loop to run instead of loop() if the RUN_TEST_LOOP define is
@@ -433,6 +440,9 @@ void followingLeftWall_S() {
                                    MAZE_LENGTH - otherSideTolerance};
             }
 
+// If demo mode is true, progress to the next stage after one lap.
+#if not DEMO_MODE
+
             // The number of laps that must be ran before the robot moves onto
             // the next stage, increasing the laps can lead to a more accurately
             // plotted brickiest, but ideally only one lap should be necessary.
@@ -445,6 +455,7 @@ void followingLeftWall_S() {
                 // and take a first attempt at solving the maze.
                 UseMazeToGoTo(Position(MAZE_WIDTH - 200, MAZE_LENGTH - 200));
             }
+#endif  // not DEMO_MODE
         }
     }
 
@@ -738,71 +749,99 @@ void loop() {
     polls();
     checkIncomingSerialCommands();
 
-    byte bumperData = bumper.read();
-    if (bumperData) {
-        navigator.hitBumper(bumperData);
+    static bool NES_MODE = false;
+
+    NESInput nesReading = nes.getNESInput();
+
+    if ((millis() < 5000) && nesReading.anyButtonPressed()) {
+        NES_MODE = true;
+        pixels.setAll(Colour("Black"), true);
     }
+    if (NES_MODE) {
+        bool upLeft = nesReading.buttonUp && nesReading.buttonLeft;
+        bool upRight = nesReading.buttonUp && nesReading.buttonRight;
+        bool downLeft = nesReading.buttonDown && nesReading.buttonLeft;
+        bool downRight = nesReading.buttonDown && nesReading.buttonRight;
 
-    updateObjective(bumperData, currentObjective_G,
-                    motionTracker.getPosition());
-
-    if (oneSecondSchedule.isReadyToRun()) {
-        Position robotPosition = motionTracker.getPosition();
-        gridMap.plotVisitedPointsOnMap(robotPosition);
-    }
-
-    colourCodeState(nextState_GP);
-
-    if (!navigator.hasNoPath()) {
-        pixels.setAll(Colour("Green"));
-
-        navigator.moveToTarget();
-
+        if (upLeft) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, HIGH);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, HIGH);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 100);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 150);
+        } else if (upRight) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, HIGH);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, HIGH);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 100);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 100);
+        } else if (downLeft) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, LOW);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, LOW);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 100);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 150);
+        } else if (downRight) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, LOW);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, LOW);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 150);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 100);
+        } else if (nesReading.buttonUp) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, HIGH);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, HIGH);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 150);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 150);
+        } else if (nesReading.buttonDown) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, LOW);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, LOW);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 150);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 150);
+        } else if (nesReading.buttonLeft) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, LOW);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, HIGH);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 100);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 100);
+        } else if (nesReading.buttonRight) {
+            digitalWrite(LEFT_MOTOR_DIRECTION_PIN, HIGH);
+            digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, LOW);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 100);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 100);
+        } else {  // If no NES direction buttons are pressed, stop the
+                  // motors.
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 0);
+            analogWrite(RIGHT_MOTOR_SPEED_PIN, 0);
+        }
     } else {
-        nextState_GP();
-    }
+        byte bumperData = bumper.read();
+        if (bumperData) {
+            navigator.hitBumper(bumperData);
+        }
 
-    pixels.show();
+        updateObjective(bumperData, currentObjective_G,
+                        motionTracker.getPosition());
+
+        if (oneSecondSchedule.isReadyToRun()) {
+            Position robotPosition = motionTracker.getPosition();
+            gridMap.plotVisitedPointsOnMap(robotPosition);
+        }
+
+        colourCodeState(nextState_GP);
+
+        if (!navigator.hasNoPath()) {
+            pixels.setAll(Colour("Green"));
+
+            navigator.moveToTarget();
+
+        } else {
+            nextState_GP();
+        }
+
+        pixels.show();
+    }
 }
 
 /**
- * @brief A test loop to run instead of loop() if the RUN_TEST_LOOP define is
- * set to true.
+ * @brief A test loop to run instead of loop() if the RUN_TEST_LOOP define
+ * is set to true.
  */
 void testLoop() {
-//     // Just stay stationary until a bumper is pressed, then drive away from it.
-//     polls();
-// 
-//     byte bumperData = bumper.read();
-//     if (bumperData) {
-//         navigator.hitBumper(bumperData);
-//     }
-// 
-//     if (!navigator.hasNoPath()) {
-//         pixels.setAll(Colour("Green"));
-// 
-//         Serial.print(" Robot pose:");
-//         Serial.print(motionTracker.getPose());
-// 
-//         Serial.print(" Path: ");
-//         Serial.println(navigator.getPathAsString());
-// 
-//         navigator.moveToTarget();
-// 
-//     } else {
-//         pixels.setAll(Colour("Black"));
-// 
-//         Serial.print(" Robot pose:");
-//         Serial.print(motionTracker.getPose());
-// 
-//         Serial.print(" Path: ");
-//         Serial.println("Stopped");
-// 
-//         drive.stop();
-//     }
-// 
-//     pixels.show();
-
     Serial.println("Forwards");
     pixels.setAll(Colour("Green"), true);
     drive.forwards();
@@ -820,8 +859,4 @@ void testLoop() {
     pixels.setAll(Colour("Black"), true);
     drive.stop();
     delay(3000);
-    
- 
-
-
 }
