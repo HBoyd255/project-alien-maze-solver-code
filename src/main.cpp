@@ -771,7 +771,7 @@ void loop() {
         } else if (upRight) {
             digitalWrite(LEFT_MOTOR_DIRECTION_PIN, HIGH);
             digitalWrite(RIGHT_MOTOR_DIRECTION_PIN, HIGH);
-            analogWrite(LEFT_MOTOR_SPEED_PIN, 100);
+            analogWrite(LEFT_MOTOR_SPEED_PIN, 150);
             analogWrite(RIGHT_MOTOR_SPEED_PIN, 100);
         } else if (downLeft) {
             digitalWrite(LEFT_MOTOR_DIRECTION_PIN, LOW);
