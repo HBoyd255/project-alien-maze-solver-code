@@ -32,7 +32,6 @@
 
 // https://global.sharp/products/device/lineup/data/pdf/datasheet/gp2y0e02_03_appl_e.pdf#page=16
 // Address  | Register Name  | Reg Field    | Default   | R/W   | Description
-
 // 0x35     | Shift Bit      | [2:0]        | 0x02      | R/W   |  0x01 =
 // MaximumDisplay 128cm  0x02=Maximum Display 64cm
 #define IR_SHIFT_REG_ADDRESS 0x35
